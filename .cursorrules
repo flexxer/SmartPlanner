@@ -1,0 +1,26 @@
+# AI context: Smart Planner (Flutter)
+
+> **Documentation:** All project docs (PRD, PROJECT_STRUCTURE, README, specs) must be written in **English**. UI strings may be localized (e.g. Russian in widgets), always update documentation after changes in files.
+
+## Tech stack
+- Framework: Flutter (latest stable)
+- State management: BLoC (strict typing)
+- Local DB: Isar (tasks, categories, task attachments)
+- Device calendars: device_calendar
+- Notifications: flutter_local_notifications, workmanager
+- Attachments: image_picker, url_launcher, geolocator, flutter_map, flutter_contacts, map_launcher, http (Nominatim)
+
+## Architecture
+Feature-driven Clean Architecture. Features: `calendar_integration`, `todo_list`, `notifications`, `dashboard`. Per feature: `data`, `domain`, `presentation`.
+
+See `PROJECT_STRUCTURE.md` and `PRD_PRODUCT_SPEC.md` for details.
+
+## Code rules
+- Strict Dart with explicit types; avoid `dynamic`.
+- Separate UI widgets from business logic.
+- Prefer reusable UI components (`TaskExpandableTile`, `TaskBadge`, `PostponeTaskSheet`, `TaskOverdueRules`, `AppDateUtils`).
+- Postpone: use `Task.postponeDueDate` / `postponeToNextDay`; do not bump `overdueCount` manually.
+- Calendar **events** = device calendar; **tasks** = local Isar (not Google Tasks API).
+- **Linked subtasks** = `Task.parentTaskId`; **checklist** = `TaskAttachmentType.checklist` (not embedded on `Task`).
+- Attachments: `TaskAttachment` + `TaskAttachmentCodec`; postpone checklist via dashboard BLoC, not manual payload edits.
+- Theming: `ThemeMode.system` + `AppTheme.light` / `AppTheme.dark`; use `ColorScheme`, not hardcoded colors.

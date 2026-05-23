@@ -1,0 +1,23 @@
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Cursor
+.cursor/
+
+# Flutter build outputs (repo root + package)
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+
+# Secrets
+.env
+*.keystore
+**/google-services.json
+**/GoogleService-Info.plist

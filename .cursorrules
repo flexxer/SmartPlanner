@@ -18,7 +18,9 @@ See `PROJECT_STRUCTURE.md` and `PRD_PRODUCT_SPEC.md` for details.
 ## Code rules
 - Strict Dart with explicit types; avoid `dynamic`.
 - Separate UI widgets from business logic.
-- Prefer reusable UI components (`TaskExpandableTile`, `TaskBadge`, `PostponeTaskSheet`, `TaskOverdueRules`, `AppDateUtils`).
+- Prefer reusable UI components (`TaskExpandableTile`, `TaskBadge`, `PostponeTaskSheet`, `TaskOverdueRules`, `TaskOverdueSelection`, `AppDateUtils`, `DashboardWeekDateStrip`).
+- Dashboard: `overdueTasks` only when selected day is today; week dots via `DashboardDayMarkersRepository` (batch fetch, do not query per day in the strip).
+- Location attachments: store Nominatim `display_name` as `LocationAttachmentPayload.placeName`; display via `TaskAttachmentCodec.locationDisplayTitle`.
 - Postpone: use `Task.postponeDueDate` / `postponeToNextDay`; do not bump `overdueCount` manually.
 - Calendar **events** = device calendar; **tasks** = local Isar (not Google Tasks API).
 - **Linked subtasks** = `Task.parentTaskId`; **checklist** = `TaskAttachmentType.checklist` (not embedded on `Task`).

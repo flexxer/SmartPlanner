@@ -1,6 +1,8 @@
 # Smart Planner (Smart Time & Task Linker)
 
-Mobile planner: **device calendars** + **local tasks** (day view, postpone, completed archive). Flutter app lives in [`smart_planner/`](smart_planner/).
+Mobile planner: **device calendars** + **local tasks** (day view, overdue block, week activity dots, attachments, postpone, completed archive). Flutter app lives in [`smart_planner/`](smart_planner/).
+
+**Source repository:** [github.com/flexxer/SmartPlanner](https://github.com/flexxer/SmartPlanner)
 
 ## Documentation
 

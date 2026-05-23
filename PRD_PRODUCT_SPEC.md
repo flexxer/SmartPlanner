@@ -9,7 +9,8 @@
 A mobile app that aggregates multiple calendars and provides flexible task lists, with a focus on informative home-screen widgets and smart reminders.
 
 **Working name:** Smart Planner / Smart Time & Task Linker  
-**Repository layout:** Flutter app in `smart_planner/`
+**Repository layout:** Flutter app in `smart_planner/`  
+**Source:** [github.com/flexxer/SmartPlanner](https://github.com/flexxer/SmartPlanner)
 
 ---
 
@@ -36,7 +37,7 @@ Professionals, freelancers, and people with high cognitive load who juggle multi
 | Requirement | Status | Notes |
 |-------------|--------|-------|
 | Tasks without strict time binding | **Implemented** | Optional `dueDate`; undated tasks appear only on “today” |
-| Roll unfinished tasks with overdue indicator | **Partial** | Manual **postpone** in UI; `overdueCount` via `TaskOverdueRules`; automatic midnight roll not yet wired (`background_service` TODO) |
+| Roll unfinished tasks with overdue indicator | **Partial** | Dedicated **overdue panel** on today; badge via `overdueCount` on postpone; automatic midnight roll not yet wired (`background_service` TODO) |
 | Tasks filtered by selected calendar day | **Implemented** | Dashboard date bar; default = today |
 | Postpone task (tomorrow or pick date) | **Implemented** | Expanded tile + `PostponeTaskSheet`; `PostponeTask` / `PostponeTaskToNextDay` |
 | Categories: Work, Home, Hobby, Rest, Finance | **Partial** | `TaskCategory` model; demo seed uses Work/Home |
@@ -109,7 +110,10 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 
 ### Date navigation
 
-- **Date bar:** previous / next day, tap to open date picker, “Today” shortcut; horizontal week strip with activity dots (calendar = primary/calendar color, local tasks = secondary).
+- **Date bar:** previous / next day, center label (tap → date picker), “Today” when another day is selected.
+- **Week strip** (`DashboardWeekDateStrip`): horizontally scrollable ~3 weeks; tap a day to select it.
+  - **Dots** (3.5 px) under the day number: **calendar** = `ColorScheme.primary` or first event’s calendar color; **local tasks** = `ColorScheme.secondary`.
+  - Markers prefetched for the visible range (one Isar read + one `getEvents` call, cached in `DashboardDayMarkersRepository`).
 - **Default day:** today.
 - **Calendar events** and **tasks** both respect the selected day.
 
@@ -121,14 +125,17 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 
 ### Tasks
 
-- **`DashboardLoaded.overdueTasks`:** when the selected day is today, the dashboard state includes root uncompleted tasks whose `dueDate` is strictly before today (for a dedicated overdue section in UI); empty on any other selected day.
+- **Overdue section (today only):** collapsible **“Просрочено (N)”** panel above the main list; uses `DashboardLoaded.overdueTasks` (root tasks with `dueDate` strictly before today). Hidden on other days.
 - **One full-width tile per row** (`TaskExpandableTile`).
-- **Collapsed:** bold title, description preview (up to 2 lines, ellipsis), badges (priority, due date, overdue if applicable), checkbox to complete.
-- **Expanded (tap tile):** smooth vertical animation; **linked subtasks**; **attachments** (see §3.2.1); full description; detail lines; **actions:**
-  - **“Tomorrow”** — `PostponeTaskToNextDay` relative to the selected dashboard day.
-  - **“Postpone”** — `PostponeTaskSheet`: quick tomorrow or pick another date.
-- **Collapsed:** optional subtask progress badge (e.g. `2/5`) when the task has subtasks.
-- **Reopen completed task:** subtask titles are copied; all subtasks start unchecked.
+- **Collapsed**
+  - **Checkbox** (48×48 dp touch target): toggles completion (`ToggleTaskCompletion`); separate ink splash from the body.
+  - **Body tap:** expands/collapses the tile (title, description preview, badges).
+  - Badges: priority, due date, postpone-based overdue label, **linked subtasks** (`2/5` + tree icon), **checklist** progress (`fact_check`), non-checklist attachment count.
+- **Expanded**
+  - **Linked tasks** section (`TaskChildTasksSection`) — “Связанные задачи”, separate from attachments.
+  - **Attachments** (`TaskAttachmentsSection`) — checklist subsection (`fact_check`) vs other types; dividers use `ColorScheme.outlineVariant`.
+  - Full description, detail lines, **Tomorrow** / **Postpone** actions (see postpone flow below).
+- **Reopen completed task:** attachment payloads copied; linked subtasks are new unchecked copies.
 - **FAB (+):** create task sheet; default due date = selected dashboard day.
 - After postpone: snackbar with the new due date; task may leave the list if the new due date is outside the selected day.
 - Empty state copy depends on selected day.
@@ -177,3 +184,4 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 | 2026-05 | Local `TaskAttachment` types (contact, image, URL, location, note, checklist) |
 | 2026-05 | Attachment UX: device contacts, OSM place search, map-app chooser (coords only), image preview, compact URL tile |
 | 2026-05 | Checklist as attachment only (removed embedded subtasks on `Task`) |
+| 2026-05 | Overdue panel, week activity dots, tile tap zones, linked vs checklist UI, location place names (Nominatim) |

@@ -9,7 +9,8 @@
 The app uses a **feature-driven** layout. Each feature owns its logic, UI, and data contracts to keep scaling and testing manageable.
 
 **Package root:** `smart_planner/`  
-**Entry point:** `lib/main.dart` → `AppInitializer` → `SmartPlannerApp`
+**Entry point:** `lib/main.dart` → `AppInitializer` → `SmartPlannerApp`  
+**Git:** [github.com/flexxer/SmartPlanner](https://github.com/flexxer/SmartPlanner)
 
 ---
 
@@ -26,7 +27,7 @@ smart_planner/lib/
 │   ├── theme/app_theme.dart           # Light + dark Material 3 themes
 │   ├── database/isar_database.dart    # Isar singleton (Task, TaskCategory)
 │   ├── network/google_calendar_api_client.dart  # OAuth stub (future)
-│   └── utils/app_date_utils.dart      # startOfDay, calendar day helpers
+│   └── utils/app_date_utils.dart      # startOfDay, startOfWeek, dayKeyMs, strip ranges
 │
 ├── features/
 │   │
@@ -53,7 +54,7 @@ smart_planner/lib/
 │   │   │   │   ├── attachment_launcher_service.dart   # tel, sms, mailto, URL, geo fallback
 │   │   │   │   ├── device_contact_picker.dart         # System contact pick + full reload
 │   │   │   │   ├── map_app_launcher_service.dart      # Installed map apps (coords only)
-│   │   │   │   └── osm_place_search_service.dart      # Nominatim forward geocoding
+│   │   │   │   └── osm_place_search_service.dart      # Nominatim search + reverse geocode
 │   │   │   └── task_bootstrap.dart
 │   │   ├── domain/
 │   │   │   ├── entities/          # Task, TaskAttachment, payloads (+ .g.dart)
@@ -81,6 +82,7 @@ smart_planner/lib/
 │   │           ├── add_attachment_sheet.dart
 │   │           ├── task_attachments_section.dart
 │   │           ├── task_badge.dart
+│   │           ├── task_section_header.dart
 │   │           └── task_priority_ui.dart
 │   │
 │   ├── notifications/
@@ -104,7 +106,12 @@ smart_planner/lib/
     └── ios_widget_bridge.dart
 
 smart_planner/test/
+├── dashboard_day_markers_builder_test.dart
+├── task_attachment_checklist_test.dart
+├── task_attachment_codec_test.dart
 ├── task_date_visibility_test.dart
+├── task_hierarchy_test.dart
+├── task_overdue_selection_test.dart
 ├── task_reopen_test.dart
 └── widget_test.dart
 ```
@@ -127,8 +134,10 @@ smart_planner/test/
 
 | Component | Role |
 |-----------|------|
-| `DashboardBloc` | Tasks/events for `selectedDate`; `dayMarkers` for date strip; complete, postpone |
+| `DashboardBloc` | Tasks/events for `selectedDate`; `overdueTasks` (today); `dayMarkers` for week strip |
 | `DashboardDayMarkersRepository` | One Isar + one calendar fetch per week range (cached) |
+| `DashboardWeekDateStrip` | Horizontal 21-day strip; activity dots per day |
+| `DayActivityMarker` | `hasCalendarEvents`, `hasLocalTasks`, optional calendar color |
 | `CompletedTasksBloc` | Completed task list; reopen flow |
 | `TodoRepository` | Isar CRUD; `getUncompletedTasksForDate`, `getOverdueUncompletedTasks`, `getCompletedTasks`, `reopenFromCompleted` |
 | `DeviceCalendarService` | Permissions, calendars, `getEventsForDay` / `getEventsForToday` |
@@ -137,7 +146,10 @@ smart_planner/test/
 | `TaskDateVisibility` | Filter uncompleted tasks for a calendar day |
 | `TaskOverdueSelection` | Overdue due-date rules; dashboard overdue list only on “today” |
 | `TaskReopen` | Build new `Task` from a completed one |
-| `TaskExpandableTile` | Dashboard task UI (tiles, badges, expand, postpone actions) |
+| `TaskExpandableTile` | Dashboard tile: 48dp checkbox vs body expand; badges; sections |
+| `TaskTileSectionHeader` | Section titles in expanded tile (linked tasks / attachments / checklist) |
+| `OsmPlaceSearchService` | Nominatim `search` + `reverseGeocode` → `display_name` |
+| `LocationAttachmentPayload` | `placeName` (OSM), optional user `label` override |
 | `PostponeTaskSheet` | Bottom sheet to postpone to tomorrow or a chosen date |
 | `AddAttachmentSheet` | Pick attachment type; forms per type (contact auto-opens picker) |
 | `TaskAttachmentsSection` | Renders attachments in expanded tile |
@@ -150,7 +162,7 @@ smart_planner/test/
 
 | Event | Effect |
 |-------|--------|
-| `LoadDashboardData` | Load tasks + events; optional `selectedDate`, `selectedCalendarIds` |
+| `LoadDashboardData` | Load tasks, events, overdue (if today), week `dayMarkers`; optional `selectedDate`, `selectedCalendarIds` |
 | `SelectDashboardDate` | Change day and reload |
 | `ToggleTaskCompletion` | Mark task completed; refresh list for current day |
 | `PostponeTaskToNextDay` | `Task.postponeToNextDay(referenceDate: selectedDate)` + save |
@@ -235,7 +247,7 @@ From `smart_planner/`:
 flutter test
 ```
 
-Domain unit tests: `task_date_visibility_test.dart`, `task_overdue_selection_test.dart`, `task_reopen_test.dart`, `task_hierarchy_test.dart`, `task_attachment_codec_test.dart`, `task_attachment_checklist_test.dart`.
+Domain unit tests: `task_date_visibility_test.dart`, `task_overdue_selection_test.dart`, `task_reopen_test.dart`, `task_hierarchy_test.dart`, `task_attachment_codec_test.dart`, `task_attachment_checklist_test.dart`, `dashboard_day_markers_builder_test.dart`.
 
 ---
 
@@ -265,3 +277,4 @@ Example prompt:
 | 2026-05 | Linked child tasks (`parentTaskId`, `LinkTaskSheet`, root-only dashboard list) |
 | 2026-05 | `TaskAttachment` feature: repositories, widgets, codec, file store, launcher services |
 | 2026-05 | OSM search, `map_launcher`, `flutter_contacts`; Android compileSdk 36 |
+| 2026-05 | Overdue tasks block, week strip markers, tile tap zones, subtask/checklist UX, location `placeName` |

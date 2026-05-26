@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Smart Planner</string>
+	<string>DayLinx</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,6 +24,17 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>daylinx</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>daylinx</string>
+			</array>
+		</dict>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
@@ -60,9 +71,9 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSCalendarsUsageDescription</key>
-	<string>Smart Planner отображает события из ваших календарей.</string>
+	<string>DayLinx отображает события из ваших календарей.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Smart Planner читает события из выбранных календарей.</string>
+	<string>DayLinx читает события из выбранных календарей.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Доступ к контактам нужен для участников событий календаря.</string>
 	<key>UIBackgroundModes</key>

@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_priority.dart';
 
-/// Подписи и цвета бейджа приоритета.
+/// Priority badge labels and colors.
 abstract final class TaskPriorityUi {
   static String label(TaskPriority priority) {
-    return switch (priority) {
-      TaskPriority.low => 'Низкий',
-      TaskPriority.medium => 'Средний',
-      TaskPriority.high => 'Высокий',
-      TaskPriority.urgent => 'Срочный',
-    };
+    return L10n.priorityLabel(priority);
   }
 
   static Color backgroundColor(TaskPriority priority, ColorScheme colors) {

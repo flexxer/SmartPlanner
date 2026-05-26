@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -176,7 +177,7 @@ class _LocationMapPickerSheetState extends State<LocationMapPickerSheet> {
     final LatLng? point = _selected;
     if (point == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Нажмите на карту, чтобы выбрать точку')),
+        SnackBar(content: Text('location_picker_tap_snackbar'.tr())),
       );
       return;
     }
@@ -203,14 +204,14 @@ class _LocationMapPickerSheetState extends State<LocationMapPickerSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
-                'Выбор точки на карте',
+                'location_picker_title'.tr(),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'Поиск места (OpenStreetMap)',
+                  hintText: 'location_picker_search_hint'.tr(),
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _searching
                       ? const Padding(
@@ -258,7 +259,7 @@ class _LocationMapPickerSheetState extends State<LocationMapPickerSheet> {
                 ),
               const SizedBox(height: 8),
               Text(
-                'Нажмите на карту, чтобы поставить метку',
+                'location_picker_tap_hint'.tr(),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 8),
@@ -316,7 +317,7 @@ class _LocationMapPickerSheetState extends State<LocationMapPickerSheet> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Определяем адрес…',
+                        'location_picker_resolving'.tr(),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context)
                                   .colorScheme
@@ -344,7 +345,7 @@ class _LocationMapPickerSheetState extends State<LocationMapPickerSheet> {
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: _confirm,
-                child: const Text('Выбрать эту точку'),
+                child: Text('location_picker_confirm'.tr()),
               ),
             ],
           ),

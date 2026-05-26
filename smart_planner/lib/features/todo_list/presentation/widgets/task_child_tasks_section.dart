@@ -1,6 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
-import 'package:intl/intl.dart';
+import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_section_header.dart';
@@ -20,20 +21,19 @@ class TaskChildTasksSection extends StatelessWidget {
   final void Function(Id childTaskId) onDetachChild;
   final VoidCallback onLinkExistingTask;
 
-  static final DateFormat _dueFormat = DateFormat('d MMM', 'ru');
-
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colors = theme.colorScheme;
     final List<Task> children = bundle.activeChildren;
+    final DateFormat dueFormat = L10n.dateFormat('d MMM', context: context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         TaskTileSectionHeader(
           icon: Icons.account_tree,
-          title: 'Связанные задачи',
+          title: 'child_tasks_title'.tr(),
           trailing: bundle.hasChildren
               ? '${bundle.completedCount}/${bundle.totalCount}'
               : null,
@@ -43,8 +43,8 @@ class TaskChildTasksSection extends StatelessWidget {
         if (children.isEmpty)
           Text(
             bundle.allCompleted
-                ? 'Все подзадачи выполнены'
-                : 'Нет привязанных задач',
+                ? 'child_tasks_all_done'.tr()
+                : 'child_tasks_empty'.tr(),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colors.onSurfaceVariant,
               fontStyle: FontStyle.italic,
@@ -54,7 +54,7 @@ class TaskChildTasksSection extends StatelessWidget {
           ...children.map(
             (Task child) => _ChildTaskRow(
               child: child,
-              dueFormat: _dueFormat,
+              dueFormat: dueFormat,
               onToggleComplete: () => onToggleChildComplete(child.id),
               onDetach: () => onDetachChild(child.id),
             ),
@@ -63,7 +63,7 @@ class TaskChildTasksSection extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: onLinkExistingTask,
           icon: const Icon(Icons.link, size: 18),
-          label: const Text('Привязать задачу'),
+          label: Text('child_tasks_link'.tr()),
         ),
       ],
     );
@@ -119,7 +119,9 @@ class _ChildTaskRow extends StatelessWidget {
                 ),
                 if (dueLabel != null)
                   Text(
-                    'Срок: $dueLabel',
+                    'due_label'.tr(
+                      namedArgs: <String, String>{'date': dueLabel},
+                    ),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
@@ -136,7 +138,7 @@ class _ChildTaskRow extends StatelessWidget {
             ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            tooltip: 'Отвязать от родительской задачи',
+            tooltip: 'child_detach_parent_tooltip'.tr(),
           ),
         ],
       ),

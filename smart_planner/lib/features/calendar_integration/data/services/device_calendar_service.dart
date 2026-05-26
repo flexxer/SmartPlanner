@@ -1,4 +1,5 @@
 import 'package:device_calendar/device_calendar.dart';
+import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
@@ -59,7 +60,11 @@ class DeviceCalendarService {
       return <CalendarEvent>[];
     }
     if (from.isAfter(to)) {
-      throw ArgumentError.value(from, 'from', 'Дата начала позже даты окончания');
+      throw ArgumentError.value(
+        from,
+        L10n.tr('calendar_argument_from'),
+        L10n.tr('calendar_date_range_invalid'),
+      );
     }
     if (!await ensurePermissions()) {
       throw CalendarPermissionDeniedException();
@@ -169,9 +174,9 @@ class DeviceCalendarService {
     }
 
     final String title = event.title?.trim() ?? '';
-    return CalendarEvent(
-      id: eventId,
-      title: title.isEmpty ? 'Без названия' : title,
+    return CalendarEvent.fromDevice(
+      deviceEventId: eventId,
+      title: title.isEmpty ? L10n.tr('calendar_untitled_event') : title,
       start: start,
       end: end,
       calendarId: calendarId,
@@ -204,7 +209,7 @@ class DeviceCalendarService {
     }
 
     final String details = result.errors.isEmpty
-        ? 'Неизвестная ошибка'
+        ? L10n.tr('calendar_unknown_error')
         : result.errors.map((Object e) => e.toString()).join('; ');
     throw CalendarServiceException(operation, details);
   }

@@ -1,6 +1,6 @@
-# Smart Planner (Smart Time & Task Linker)
+# DayLinx
 
-Mobile planner: **device calendars** + **local tasks** (day view, overdue block, week activity dots, attachments, postpone, completed archive). Flutter app lives in [`smart_planner/`](smart_planner/).
+**DayLinx** combines **device calendars** and **local tasks** in one day view (overdue block, week activity dots, attachments, postpone, deep links). Flutter app package lives in [`smart_planner/`](smart_planner/) (legacy folder name).
 
 **Source repository:** [github.com/flexxer/SmartPlanner](https://github.com/flexxer/SmartPlanner)
 

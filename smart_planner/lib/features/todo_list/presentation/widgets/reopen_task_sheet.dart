@@ -1,9 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
-import 'package:smart_planner/features/todo_list/domain/entities/task_priority.dart';
 
-/// Выбор нового срока для копии выполненной задачи.
+/// Pick a new due date when reopening a completed task.
 class ReopenTaskSheet extends StatefulWidget {
   const ReopenTaskSheet({
     required this.sourceTask,
@@ -25,6 +26,10 @@ class _ReopenTaskSheetState extends State<ReopenTaskSheet> {
     _dueDate = AppDateUtils.startOfDay(DateTime.now());
   }
 
+  String _formatDate(DateTime date) {
+    return L10n.dateFormat('dd.MM.yyyy', context: context).format(date);
+  }
+
   Future<void> _pickDueDate() async {
     final DateTime now = DateTime.now();
     final DateTime? picked = await showDatePicker(
@@ -32,7 +37,7 @@ class _ReopenTaskSheetState extends State<ReopenTaskSheet> {
       initialDate: _dueDate,
       firstDate: now.subtract(const Duration(days: 365)),
       lastDate: now.add(const Duration(days: 365 * 2)),
-      locale: const Locale('ru'),
+      locale: context.locale,
     );
     if (picked != null) {
       setState(() => _dueDate = AppDateUtils.startOfDay(picked));
@@ -54,13 +59,12 @@ class _ReopenTaskSheetState extends State<ReopenTaskSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
-                'Переоткрыть задачу',
+                'reopen_sheet_title'.tr(),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               Text(
-                'Будет создана новая задача с тем же названием. '
-                'Выполненная запись останется в архиве.',
+                'reopen_sheet_body'.tr(),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -76,7 +80,7 @@ class _ReopenTaskSheetState extends State<ReopenTaskSheet> {
                         task.description!.isNotEmpty
                     ? Text(task.description!)
                     : Text(
-                        _priorityLabel(task.priority),
+                        L10n.priorityLabelWithSuffix(task.priority),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
               ),
@@ -84,33 +88,22 @@ class _ReopenTaskSheetState extends State<ReopenTaskSheet> {
               OutlinedButton.icon(
                 onPressed: _pickDueDate,
                 icon: const Icon(Icons.event),
-                label: Text('Новый срок: ${_formatDate(_dueDate)}'),
+                label: Text(
+                  'reopen_new_due'.tr(
+                    namedArgs: <String, String>{'date': _formatDate(_dueDate)},
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: () => Navigator.of(context).pop(_dueDate),
                 icon: const Icon(Icons.replay),
-                label: const Text('Создать снова'),
+                label: Text('reopen_create_again'.tr()),
               ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  static String _priorityLabel(TaskPriority priority) {
-    return switch (priority) {
-      TaskPriority.low => 'Низкий приоритет',
-      TaskPriority.medium => 'Средний приоритет',
-      TaskPriority.high => 'Высокий приоритет',
-      TaskPriority.urgent => 'Срочный приоритет',
-    };
-  }
-
-  static String _formatDate(DateTime date) {
-    final String d = date.day.toString().padLeft(2, '0');
-    final String m = date.month.toString().padLeft(2, '0');
-    return '$d.$m.${date.year}';
   }
 }

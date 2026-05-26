@@ -1,14 +1,13 @@
 import 'package:isar/isar.dart';
-import 'package:smart_planner/features/todo_list/domain/entities/task_category.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_priority.dart';
 import 'package:smart_planner/features/todo_list/domain/task_overdue_rules.dart';
 
 part 'task.g.dart';
 
-/// Задача To-Do Engine (PRD §3.2).
+/// To-Do task (PRD §3.2).
 ///
-/// [overdueCount] — накопительное число календарных дней переноса срока;
-/// обновляется через [postponeDueDate] / [TaskOverdueRules].
+/// Context list is [calendarId] (device calendar from app settings).
+/// Overdue duration is computed via [dynamicOverdueDays], not stored in Isar.
 @collection
 class Task {
   Id id = Isar.autoIncrement;
@@ -26,18 +25,30 @@ class Task {
   @Index()
   late DateTime createDate;
 
-  /// Сколько календарных дней задача переносилась с предыдущего срока.
-  int overdueCount = 0;
-
   @Enumerated(EnumType.ordinal)
   @Index()
   TaskPriority priority = TaskPriority.medium;
 
-  final IsarLink<TaskCategory> category = IsarLink<TaskCategory>();
-
   /// When set, this task is a subtask of another [Task] and is hidden from the root dashboard list.
   @Index()
   int? parentTaskId;
+
+  /// Order among siblings sharing the same [parentTaskId] (lower = higher in lists).
+  int sortOrder = 0;
+
+  /// Device calendar id (context list: Work, Personal, etc.).
+  @Index()
+  late String calendarId;
+
+  /// Future Google Tasks sync id.
+  String? googleTaskId;
+
+  /// Local [CalendarEvent.id] when the task belongs to a meeting or recurrence instance.
+  @Index()
+  int? linkedEventId;
+
+  /// Last mutation time for future sync conflict resolution.
+  DateTime? updatedAt;
 
   Task();
 
@@ -49,14 +60,29 @@ class Task {
     this.isCompleted = false,
     this.priority = TaskPriority.medium,
     this.parentTaskId,
-  }) : createDate = createDate ?? DateTime.now();
+    this.sortOrder = 0,
+    this.calendarId = '',
+    this.googleTaskId,
+    this.linkedEventId,
+  }) : createDate = createDate ?? DateTime.now() {
+    markUpdated();
+  }
 
-  /// Переносит срок и увеличивает [overdueCount] на разницу в календарных днях.
+  /// Calendar days past [dueDate] relative to now (see [TaskOverdueRules]).
+  @ignore
+  int get dynamicOverdueDays => TaskOverdueRules.dynamicOverdueDays(this);
+
+  /// Sets [updatedAt] to now. Call after in-memory field changes before persisting.
+  void markUpdated() {
+    updatedAt = DateTime.now();
+  }
+
+  /// Moves the due date; overdue duration is recalculated automatically.
   void postponeDueDate(DateTime newDueDate) {
     TaskOverdueRules.recordPostpone(this, newDueDate);
   }
 
-  /// Перенос на следующий календарный день (+1 день к [overdueCount] при наличии срока).
+  /// Postpones to the next calendar day after [referenceDate].
   void postponeToNextDay({DateTime? referenceDate}) {
     TaskOverdueRules.postponeToNextDay(this, referenceDate: referenceDate);
   }

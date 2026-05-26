@@ -13,8 +13,6 @@ void main() {
       priority: TaskPriority.high,
       isCompleted: true,
     );
-    source.overdueCount = 3;
-
     final DateTime newDue = DateTime(2026, 5, 25, 14, 30);
     final Task reopened = TaskReopen.fromCompleted(source, dueDate: newDue);
 
@@ -22,7 +20,7 @@ void main() {
     expect(reopened.description, 'Q1');
     expect(reopened.priority, TaskPriority.high);
     expect(reopened.isCompleted, isFalse);
-    expect(reopened.overdueCount, 0);
+    expect(reopened.dynamicOverdueDays, 0);
     expect(
       reopened.dueDate,
       AppDateUtils.startOfDay(newDue),

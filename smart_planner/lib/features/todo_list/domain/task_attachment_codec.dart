@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_payloads.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment_type.dart';
@@ -45,7 +46,7 @@ class TaskAttachmentCodec {
     return switch (attachment.type) {
       TaskAttachmentType.contact =>
         TaskAttachmentCodec.contact(attachment).displayName,
-      TaskAttachmentType.image => 'Фото',
+      TaskAttachmentType.image => L10n.tr('attachment_summary_photo'),
       TaskAttachmentType.url => _urlDisplayLabel(
           TaskAttachmentCodec.url(attachment),
         ),
@@ -83,7 +84,7 @@ class TaskAttachmentCodec {
     if (title != null && title.isNotEmpty) {
       return title;
     }
-    return 'Чеклист';
+    return L10n.tr('attachment_summary_checklist');
   }
 
   static String locationDisplayTitle(
@@ -94,13 +95,13 @@ class TaskAttachmentCodec {
     if (fromAttachment != null && fromAttachment.isNotEmpty) {
       return fromAttachment;
     }
-    return payload.resolvedPlaceTitle ?? 'Место на карте';
+    return payload.resolvedPlaceTitle ?? L10n.tr('attachment_summary_place');
   }
 
   static String _notePreview(String body) {
     final String trimmed = body.trim();
     if (trimmed.isEmpty) {
-      return 'Заметка';
+      return L10n.tr('attachment_summary_note');
     }
     if (trimmed.length <= 48) {
       return trimmed;

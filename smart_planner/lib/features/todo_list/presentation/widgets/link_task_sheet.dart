@@ -1,5 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
+import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/todo_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 
@@ -65,11 +67,13 @@ class _LinkTaskSheetState extends State<LinkTaskSheet> {
       Navigator.of(context).pop(true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Не удалось привязать задачу'),
-        ),
+        SnackBar(content: Text('link_task_failed'.tr())),
       );
     }
+  }
+
+  String _formatDue(DateTime due) {
+    return L10n.dateFormat('dd.MM.yyyy', context: context).format(due);
   }
 
   @override
@@ -86,26 +90,22 @@ class _LinkTaskSheetState extends State<LinkTaskSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
-                'Привязать к задаче',
+                'link_subtask_sheet_title'.tr(
+                  namedArgs: <String, String>{'title': widget.parentTitle},
+                ),
                 style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                widget.parentTitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
               ),
               const SizedBox(height: 16),
               if (_loading)
                 const Center(child: CircularProgressIndicator())
               else if (_error != null)
-                Text('Ошибка: $_error')
-              else if (_candidates.isEmpty)
-                const Text(
-                  'Нет доступных задач. Создайте задачу без родителя '
-                  'или отвяжите её от другой.',
+                Text(
+                  'common_error_with_details'.tr(
+                    namedArgs: <String, String>{'details': _error!},
+                  ),
                 )
+              else if (_candidates.isEmpty)
+                Text('link_subtask_empty'.tr())
               else
                 Flexible(
                   child: ListView.builder(
@@ -118,11 +118,13 @@ class _LinkTaskSheetState extends State<LinkTaskSheet> {
                         title: Text(task.title),
                         subtitle: task.dueDate != null
                             ? Text(
-                                'Срок: ${task.dueDate!.day}.'
-                                '${task.dueDate!.month}.'
-                                '${task.dueDate!.year}',
+                                'due_label'.tr(
+                                  namedArgs: <String, String>{
+                                    'date': _formatDue(task.dueDate!),
+                                  },
+                                ),
                               )
-                            : const Text('Без срока'),
+                            : Text('no_due_date'.tr()),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _link(task),
                       );

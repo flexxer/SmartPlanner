@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:isar/isar.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
@@ -11,18 +13,30 @@ import 'package:smart_planner/features/todo_list/domain/entities/task_attachment
 import 'package:smart_planner/features/todo_list/domain/task_attachment_checklist.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.dart';
 import 'package:smart_planner/features/todo_list/data/services/osm_place_search_service.dart';
+import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
+import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/location_map_picker_sheet.dart';
 
-/// Add a local [TaskAttachment] to a task.
+/// Add or edit a local [TaskAttachment] on a task.
 class AddAttachmentSheet extends StatefulWidget {
   const AddAttachmentSheet({
     required this.repository,
     required this.taskId,
+    this.attachmentToEdit,
+    this.dashboardBloc,
     super.key,
   });
 
   final TaskAttachmentRepository repository;
   final Id taskId;
+
+  /// When set, the sheet opens in edit mode with fields prefilled.
+  final TaskAttachment? attachmentToEdit;
+
+  /// When set, save dispatches [UpdateTaskAttachment] on this bloc.
+  final DashboardBloc? dashboardBloc;
+
+  bool get isEditing => attachmentToEdit != null;
 
   @override
   State<AddAttachmentSheet> createState() => _AddAttachmentSheetState();
@@ -37,8 +51,6 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   final TextEditingController _urlTitleController = TextEditingController();
   final TextEditingController _urlController = TextEditingController();
   final TextEditingController _locationLabelController = TextEditingController();
-  final TextEditingController _latController = TextEditingController();
-  final TextEditingController _lngController = TextEditingController();
   final TextEditingController _noteTitleController = TextEditingController();
   final TextEditingController _noteBodyController = TextEditingController();
   final TextEditingController _checklistTitleController = TextEditingController();
@@ -46,17 +58,102 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   final List<ChecklistItemPayload> _checklistItems = <ChecklistItemPayload>[];
 
   String? _imageRelativePath;
+  double? _latitude;
+  double? _longitude;
 
   /// Nominatim [display_name] from the last map pick or reverse geocode.
   String? _pickedPlaceName;
+
+  @override
+  void initState() {
+    super.initState();
+    final TaskAttachment? existing = widget.attachmentToEdit;
+    if (existing != null) {
+      _prefillFromAttachment(existing);
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _tryReadClipboardUrl();
+      });
+    }
+  }
+
+  void _prefillFromAttachment(TaskAttachment attachment) {
+    _selectedType = attachment.type;
+    switch (attachment.type) {
+      case TaskAttachmentType.contact:
+        _pickedContact = TaskAttachmentCodec.contact(attachment);
+      case TaskAttachmentType.image:
+        _imageRelativePath = TaskAttachmentCodec.image(attachment).relativePath;
+      case TaskAttachmentType.url:
+        final UrlAttachmentPayload url = TaskAttachmentCodec.url(attachment);
+        _urlController.text = url.url;
+        final String label = (url.label ?? '').trim();
+        if (label.isNotEmpty && label != url.url) {
+          _urlTitleController.text = label;
+        }
+      case TaskAttachmentType.location:
+        final LocationAttachmentPayload location =
+            TaskAttachmentCodec.location(attachment);
+        _latitude = location.latitude;
+        _longitude = location.longitude;
+        _pickedPlaceName = location.placeName;
+        final String customLabel = location.label?.trim() ?? '';
+        if (customLabel.isNotEmpty) {
+          _locationLabelController.text = customLabel;
+        } else if (location.placeName != null &&
+            location.placeName!.trim().isNotEmpty) {
+          _locationLabelController.text = location.placeName!.trim();
+        }
+      case TaskAttachmentType.note:
+        final NoteAttachmentPayload note = TaskAttachmentCodec.note(attachment);
+        final String? title = note.title?.trim();
+        if (title != null && title.isNotEmpty) {
+          _noteTitleController.text = title;
+        }
+        _noteBodyController.text = note.body;
+      case TaskAttachmentType.checklist:
+        final ChecklistAttachmentPayload checklist =
+            TaskAttachmentCodec.checklist(attachment);
+        final String? title = checklist.title?.trim();
+        if (title != null && title.isNotEmpty) {
+          _checklistTitleController.text = title;
+        }
+        _checklistItems.addAll(checklist.items);
+    }
+  }
+
+  Future<void> _tryReadClipboardUrl() async {
+    final ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
+    final String? text = data?.text?.trim();
+    if (text == null || text.isEmpty || !mounted) {
+      return;
+    }
+    if (_isValidUrl(text)) {
+      setState(() => _urlController.text = text);
+    }
+  }
+
+  static bool _isValidUrl(String value) {
+    final Uri? uri = Uri.tryParse(value);
+    return uri != null &&
+        uri.hasScheme &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
+  }
+
+  static String? _domainFromUrl(String url) {
+    final Uri? uri = Uri.tryParse(url);
+    if (uri == null || uri.host.isEmpty) {
+      return null;
+    }
+    return uri.host;
+  }
 
   @override
   void dispose() {
     _urlTitleController.dispose();
     _urlController.dispose();
     _locationLabelController.dispose();
-    _latController.dispose();
-    _lngController.dispose();
     _noteTitleController.dispose();
     _noteBodyController.dispose();
     _checklistTitleController.dispose();
@@ -66,9 +163,14 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
 
   Future<void> _pickImage() async {
     final String? path = await widget.repository.fileStore.pickAndStoreImage();
-    if (path != null && mounted) {
-      setState(() => _imageRelativePath = path);
+    if (path == null || !mounted) {
+      return;
     }
+    setState(() {
+      _selectedType = TaskAttachmentType.image;
+      _imageRelativePath = path;
+    });
+    await _save();
   }
 
   Future<void> _pickContactSystem() async {
@@ -85,11 +187,15 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
         case DeviceContactPickOutcome.picked:
           setState(() => _pickedContact = result.payload);
         case DeviceContactPickOutcome.failed:
-          _showError('Не удалось открыть контакты');
+          _showError('attachment_contacts_failed'.tr());
       }
     } catch (e) {
       if (mounted) {
-        _showError('Ошибка: $e');
+        _showError(
+          'common_error_with_details'.tr(
+            namedArgs: <String, String>{'details': '$e'},
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -101,7 +207,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   Future<void> _useCurrentLocation() async {
     final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      _showError('Службы геолокации выключены');
+      _showError('attachment_location_disabled'.tr());
       return;
     }
     LocationPermission permission = await Geolocator.checkPermission();
@@ -110,7 +216,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
     }
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
-      _showError('Нет разрешения на геолокацию');
+      _showError('attachment_location_denied'.tr());
       return;
     }
     final Position position = await Geolocator.getCurrentPosition();
@@ -122,8 +228,8 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
       return;
     }
     setState(() {
-      _latController.text = position.latitude.toStringAsFixed(6);
-      _lngController.text = position.longitude.toStringAsFixed(6);
+      _latitude = position.latitude;
+      _longitude = position.longitude;
       _pickedPlaceName = placeName;
       if (placeName != null &&
           placeName.isNotEmpty &&
@@ -134,28 +240,40 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   }
 
   Future<void> _pickOnMap() async {
-    final double? lat = double.tryParse(_latController.text.trim());
-    final double? lng = double.tryParse(_lngController.text.trim());
     final LocationPickResult? result = await showModalBottomSheet<LocationPickResult>(
       context: context,
       isScrollControlled: true,
       builder: (_) => LocationMapPickerSheet(
-        initialLatitude: lat,
-        initialLongitude: lng,
+        initialLatitude: _latitude,
+        initialLongitude: _longitude,
       ),
     );
-    if (result != null && mounted) {
-      setState(() {
-        _latController.text = result.latitude.toStringAsFixed(6);
-        _lngController.text = result.longitude.toStringAsFixed(6);
-        _pickedPlaceName = result.placeName;
-        if (_locationLabelController.text.trim().isEmpty &&
-            result.placeName != null &&
-            result.placeName!.trim().isNotEmpty) {
-          _locationLabelController.text = result.placeName!.trim();
-        }
-      });
+    if (result == null || !mounted) {
+      return;
     }
+
+    String? placeName = result.placeName?.trim();
+    if (placeName == null || placeName.isEmpty) {
+      placeName = await OsmPlaceSearchService.reverseGeocode(
+        latitude: result.latitude,
+        longitude: result.longitude,
+      );
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _latitude = result.latitude;
+      _longitude = result.longitude;
+      _pickedPlaceName = placeName;
+      if (_locationLabelController.text.trim().isEmpty &&
+          placeName != null &&
+          placeName.isNotEmpty) {
+        _locationLabelController.text = placeName;
+      }
+    });
   }
 
   void _showError(String message) {
@@ -198,7 +316,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   Future<void> _save() async {
     final TaskAttachmentType? type = _selectedType;
     if (type == null) {
-      _showError('Выберите тип вложения');
+      _showError('attachment_select_type'.tr());
       return;
     }
 
@@ -217,25 +335,50 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
 
     setState(() => _saving = true);
     try {
-      final int sortOrder = await widget.repository.nextSortOrder(widget.taskId);
-      final String? attachmentLabel = type == TaskAttachmentType.location
-          ? _locationAttachmentLabel()
-          : null;
-      await widget.repository.save(
-        TaskAttachment.create(
-          taskId: widget.taskId,
-          type: type,
-          payloadJson: payloadJson,
-          label: attachmentLabel,
-          sortOrder: sortOrder,
-        ),
-      );
+      final String? attachmentLabel = switch (type) {
+        TaskAttachmentType.location => _locationAttachmentLabel(),
+        TaskAttachmentType.url => _urlAttachmentLabel(),
+        TaskAttachmentType.note => _noteAttachmentLabel(),
+        TaskAttachmentType.checklist =>
+          _checklistTitleController.text.trim().isEmpty
+              ? null
+              : _checklistTitleController.text.trim(),
+        _ => null,
+      };
+
+      if (widget.isEditing) {
+        final TaskAttachment attachment = widget.attachmentToEdit!
+          ..payloadJson = payloadJson
+          ..label = attachmentLabel;
+        final DashboardBloc? bloc = widget.dashboardBloc;
+        if (bloc != null) {
+          bloc.add(UpdateTaskAttachment(attachment));
+        } else {
+          await widget.repository.update(attachment);
+        }
+      } else {
+        final int sortOrder =
+            await widget.repository.nextSortOrder(widget.taskId);
+        await widget.repository.save(
+          TaskAttachment.create(
+            taskId: widget.taskId,
+            type: type,
+            payloadJson: payloadJson,
+            label: attachmentLabel,
+            sortOrder: sortOrder,
+          ),
+        );
+      }
       if (mounted) {
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
-        _showError('Ошибка: $e');
+        _showError(
+          'common_error_with_details'.tr(
+            namedArgs: <String, String>{'details': '$e'},
+          ),
+        );
         setState(() => _saving = false);
       }
     }
@@ -244,7 +387,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   String? _encodeContact() {
     final ContactAttachmentPayload? contact = _pickedContact;
     if (contact == null) {
-      _showError('Выберите контакт');
+      _showError('attachment_select_contact'.tr());
       return null;
     }
     return TaskAttachmentCodec.encodeMap(contact.toJson());
@@ -252,7 +395,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
 
   String? _encodeImage() {
     if (_imageRelativePath == null) {
-      _showError('Выберите изображение');
+      _showError('attachment_select_image'.tr());
       return null;
     }
     return TaskAttachmentCodec.encodeMap(
@@ -263,23 +406,33 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   String? _encodeUrl() {
     final String url = _urlController.text.trim();
     if (url.isEmpty) {
-      _showError('Укажите URL');
+      _showError('attachment_enter_url'.tr());
       return null;
     }
     final String title = _urlTitleController.text.trim();
+    final String label = title.isEmpty ? (_domainFromUrl(url) ?? url) : title;
     return TaskAttachmentCodec.encodeMap(
       UrlAttachmentPayload(
         url: url,
-        label: title.isEmpty ? null : title,
+        label: label,
       ).toJson(),
     );
   }
 
+  String? _urlAttachmentLabel() {
+    final String url = _urlController.text.trim();
+    if (url.isEmpty) {
+      return null;
+    }
+    final String title = _urlTitleController.text.trim();
+    return title.isEmpty ? (_domainFromUrl(url) ?? url) : title;
+  }
+
   String? _encodeLocation() {
-    final double? lat = double.tryParse(_latController.text.trim());
-    final double? lng = double.tryParse(_lngController.text.trim());
+    final double? lat = _latitude;
+    final double? lng = _longitude;
     if (lat == null || lng == null) {
-      _showError('Укажите координаты или выберите точку на карте');
+      _showError('attachment_select_map_point'.tr());
       return null;
     }
     final String customLabel = _locationLabelController.text.trim();
@@ -310,22 +463,37 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   String? _encodeNote() {
     final String body = _noteBodyController.text.trim();
     if (body.isEmpty) {
-      _showError('Введите текст заметки');
+      _showError('attachment_enter_note'.tr());
       return null;
     }
     final String title = _noteTitleController.text.trim();
+    final String resolvedTitle = title.isEmpty
+        ? (body.length > 25 ? '${body.substring(0, 25)}...' : body)
+        : title;
     return TaskAttachmentCodec.encodeMap(
       NoteAttachmentPayload(
-        title: title.isEmpty ? null : title,
+        title: resolvedTitle,
         body: body,
       ).toJson(),
     );
   }
 
+  String? _noteAttachmentLabel() {
+    final String body = _noteBodyController.text.trim();
+    if (body.isEmpty) {
+      return null;
+    }
+    final String title = _noteTitleController.text.trim();
+    if (title.isNotEmpty) {
+      return title;
+    }
+    return body.length > 25 ? '${body.substring(0, 25)}...' : body;
+  }
+
   String? _encodeChecklist() {
     final List<ChecklistItemPayload> items = _checklistItemsForSave();
     if (items.isEmpty) {
-      _showError('Добавьте хотя бы один пункт');
+      _showError('attachment_add_checklist_item'.tr());
       return null;
     }
     final String title = _checklistTitleController.text.trim();
@@ -351,11 +519,16 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                'Новое вложение',
+                widget.isEditing
+                    ? 'attachment_edit_title'.tr()
+                    : 'attachment_new'.tr(),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
-              if (_selectedType == null) ..._typePicker() else ..._formForType(),
+              if (_selectedType == null)
+                ..._typePicker()
+              else
+                ..._formForType(),
               const SizedBox(height: 16),
               if (_selectedType != null)
                 FilledButton(
@@ -366,7 +539,11 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Сохранить'),
+                      : Text(
+                          widget.isEditing
+                              ? 'task_save_changes'.tr()
+                              : 'common_save'.tr(),
+                        ),
                 ),
             ],
           ),
@@ -377,12 +554,32 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
 
   List<Widget> _typePicker() {
     return <Widget>[
-      _typeTile('Контакт', Icons.contact_phone_outlined, TaskAttachmentType.contact),
-      _typeTile('Фото', Icons.image_outlined, TaskAttachmentType.image),
-      _typeTile('Ссылка', Icons.link, TaskAttachmentType.url),
-      _typeTile('Место', Icons.place_outlined, TaskAttachmentType.location),
-      _typeTile('Заметка', Icons.sticky_note_2_outlined, TaskAttachmentType.note),
-      _typeTile('Чеклист', Icons.checklist, TaskAttachmentType.checklist),
+      _typeTile(
+        'attachment_type_contact'.tr(),
+        Icons.contact_phone_outlined,
+        TaskAttachmentType.contact,
+      ),
+      _typeTile(
+        'attachment_type_photo'.tr(),
+        Icons.image_outlined,
+        TaskAttachmentType.image,
+      ),
+      _typeTile('attachment_type_url'.tr(), Icons.link, TaskAttachmentType.url),
+      _typeTile(
+        'attachment_type_location'.tr(),
+        Icons.place_outlined,
+        TaskAttachmentType.location,
+      ),
+      _typeTile(
+        'attachment_type_note'.tr(),
+        Icons.sticky_note_2_outlined,
+        TaskAttachmentType.note,
+      ),
+      _typeTile(
+        'attachment_type_checklist'.tr(),
+        Icons.checklist,
+        TaskAttachmentType.checklist,
+      ),
     ];
   }
 
@@ -408,13 +605,14 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
     return <Widget>[
       Row(
         children: <Widget>[
-          IconButton(
-            onPressed: () => setState(() {
-              _selectedType = null;
-              _pickedContact = null;
-            }),
-            icon: const Icon(Icons.arrow_back),
-          ),
+          if (!widget.isEditing)
+            IconButton(
+              onPressed: () => setState(() {
+                _selectedType = null;
+                _pickedContact = null;
+              }),
+              icon: const Icon(Icons.arrow_back),
+            ),
           Expanded(
             child: Text(
               _typeTitle(type),
@@ -437,12 +635,12 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
 
   String _typeTitle(TaskAttachmentType type) {
     return switch (type) {
-      TaskAttachmentType.contact => 'Контакт',
-      TaskAttachmentType.image => 'Фото',
-      TaskAttachmentType.url => 'Ссылка',
-      TaskAttachmentType.location => 'Геопозиция',
-      TaskAttachmentType.note => 'Заметка',
-      TaskAttachmentType.checklist => 'Чеклист',
+      TaskAttachmentType.contact => 'attachment_type_contact'.tr(),
+      TaskAttachmentType.image => 'attachment_type_photo'.tr(),
+      TaskAttachmentType.url => 'attachment_type_url'.tr(),
+      TaskAttachmentType.location => 'attachment_type_location'.tr(),
+      TaskAttachmentType.note => 'attachment_type_note'.tr(),
+      TaskAttachmentType.checklist => 'attachment_type_checklist'.tr(),
     };
   }
 
@@ -458,7 +656,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
         OutlinedButton.icon(
           onPressed: _pickContactSystem,
           icon: const Icon(Icons.contacts_outlined),
-          label: const Text('Выбрать контакт'),
+          label: Text('attachment_pick_contact'.tr()),
         ),
       if (contact != null) ...<Widget>[
         const SizedBox(height: 12),
@@ -472,7 +670,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
         const SizedBox(height: 8),
         TextButton(
           onPressed: _pickContactSystem,
-          child: const Text('Выбрать другой контакт'),
+          child: Text('attachment_pick_other_contact'.tr()),
         ),
       ],
     ];
@@ -506,8 +704,8 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
           icon: const Icon(Icons.photo_library_outlined),
           label: Text(
             _imageRelativePath != null
-                ? 'Выбрать другое фото'
-                : 'Выбрать из галереи',
+                ? 'attachment_pick_other_photo'.tr()
+                : 'attachment_pick_gallery'.tr(),
           ),
         ),
       ];
@@ -515,9 +713,9 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   List<Widget> _urlForm() => <Widget>[
         TextField(
           controller: _urlTitleController,
-          decoration: const InputDecoration(
-            labelText: 'Название',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: 'attachment_field_title_optional'.tr(),
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 8),
@@ -534,72 +732,41 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   List<Widget> _locationForm() => <Widget>[
         TextField(
           controller: _locationLabelController,
-          decoration: const InputDecoration(
-            labelText: 'Название места (необязательно)',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: 'attachment_field_place_name'.tr(),
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _pickOnMap,
           icon: const Icon(Icons.map_outlined),
-          label: const Text('Выбрать на карте'),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: TextField(
-                controller: _latController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Широта',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _lngController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Долгота',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-          ],
+          label: Text('attachment_pick_on_map'.tr()),
         ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _useCurrentLocation,
           icon: const Icon(Icons.my_location),
-          label: const Text('Текущее местоположение'),
+          label: Text('attachment_current_location'.tr()),
         ),
       ];
 
   List<Widget> _noteForm() => <Widget>[
         TextField(
           controller: _noteTitleController,
-          decoration: const InputDecoration(
-            labelText: 'Название',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: 'attachment_field_title_optional'.tr(),
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _noteBodyController,
+          autofocus: true,
           maxLines: 4,
-          decoration: const InputDecoration(
-            labelText: 'Текст',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: 'attachment_field_text'.tr(),
+            border: const OutlineInputBorder(),
           ),
         ),
       ];
@@ -607,24 +774,21 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   List<Widget> _checklistForm() => <Widget>[
         TextField(
           controller: _checklistTitleController,
-          decoration: const InputDecoration(
-            labelText: 'Название',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: 'attachment_field_name'.tr(),
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 8),
-        ..._checklistItems.map(
-          (ChecklistItemPayload item) => Text('• ${item.text}'),
-        ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Expanded(
               child: TextField(
                 controller: _checklistItemController,
-                decoration: const InputDecoration(
-                  hintText: 'Пункт чеклиста',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: 'attachment_checklist_item_hint'.tr(),
+                  border: const OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.done,
                 onSubmitted: _commitChecklistLine,
@@ -633,9 +797,30 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
             IconButton(
               onPressed: () => _commitChecklistLine(_checklistItemController.text),
               icon: const Icon(Icons.add),
-              tooltip: 'Добавить пункт',
+              tooltip: 'attachment_add_item_tooltip'.tr(),
             ),
           ],
         ),
+        if (_checklistItems.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 8),
+          ...List<Widget>.generate(_checklistItems.length, (int index) {
+            final ChecklistItemPayload item = _checklistItems[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: <Widget>[
+                  Expanded(child: Text(item.text)),
+                  IconButton(
+                    onPressed: () {
+                      setState(() => _checklistItems.removeAt(index));
+                    },
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'attachment_remove_item_tooltip'.tr(),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
       ];
 }

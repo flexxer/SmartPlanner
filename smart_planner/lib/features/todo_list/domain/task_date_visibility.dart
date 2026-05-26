@@ -6,19 +6,44 @@ import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
 class TaskDateVisibility {
   TaskDateVisibility._();
 
-  /// Задача без срока видна только на «сегодня»; со сроком — в день срока
-  /// и на каждый последующий день до выполнения (перенос просрочки).
+  /// Undated tasks are shown in the dashboard «Без срока» section, not per day.
+  /// Dated tasks appear on the due day and every following day until completed.
+  /// Completed root tasks shown at the bottom of the dashboard day list.
+  static bool isCompletedVisibleOnDate(Task task, DateTime selectedDate) {
+    if (!task.isCompleted) {
+      return false;
+    }
+
+    final DateTime day = AppDateUtils.startOfDay(selectedDate);
+    final DateTime? due = task.dueDate;
+
+    if (due == null) {
+      final DateTime? updated = task.updatedAt;
+      if (updated == null) {
+        return AppDateUtils.isSameCalendarDay(
+          day,
+          AppDateUtils.startOfDay(DateTime.now()),
+        );
+      }
+      return AppDateUtils.isSameCalendarDay(
+        AppDateUtils.startOfDay(updated),
+        day,
+      );
+    }
+
+    return AppDateUtils.isSameCalendarDay(AppDateUtils.startOfDay(due), day);
+  }
+
   static bool isVisibleOnDate(Task task, DateTime selectedDate) {
     if (task.isCompleted) {
       return false;
     }
 
     final DateTime day = AppDateUtils.startOfDay(selectedDate);
-    final DateTime today = AppDateUtils.startOfDay(DateTime.now());
     final DateTime? due = task.dueDate;
 
     if (due == null) {
-      return AppDateUtils.isSameCalendarDay(day, today);
+      return false;
     }
 
     final DateTime dueDay = AppDateUtils.startOfDay(due);

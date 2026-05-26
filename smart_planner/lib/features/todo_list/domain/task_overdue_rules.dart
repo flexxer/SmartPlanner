@@ -1,34 +1,42 @@
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 
-/// Бизнес-правила просрочки и переноса задач (PRD §3.2).
+/// Overdue-day calculation and due-date postpone helpers (PRD §3.2).
 class TaskOverdueRules {
   TaskOverdueRules._();
 
-  /// Учитывает перенос срока: увеличивает [Task.overdueCount] на число
-  /// календарных дней между прежним и новым [Task.dueDate].
-  ///
-  /// Первое назначение [Task.dueDate] (когда срока ещё не было) счётчик не меняет.
+  /// Calendar days past [Task.dueDate] relative to [now] (start-of-day).
+  /// Returns `0` when completed, undated, or not yet overdue.
+  static int dynamicOverdueDays(Task task, {DateTime? now}) {
+    if (task.isCompleted) {
+      return 0;
+    }
+
+    final DateTime? due = task.dueDate;
+    if (due == null) {
+      return 0;
+    }
+
+    final DateTime today = AppDateUtils.startOfDay(now ?? DateTime.now());
+    final DateTime dueDay = AppDateUtils.startOfDay(due);
+    if (!dueDay.isBefore(today)) {
+      return 0;
+    }
+
+    return AppDateUtils.calendarDaysBetween(dueDay, today);
+  }
+
+  /// Sets [Task.dueDate] to [newDueDate]; overdue days are derived on read.
   static void recordPostpone(Task task, DateTime newDueDate) {
     if (task.isCompleted) {
       return;
     }
 
-    final DateTime? previousDue = task.dueDate;
-    if (previousDue != null) {
-      final int daysShift = AppDateUtils.calendarDaysBetween(
-        previousDue,
-        newDueDate,
-      );
-      if (daysShift > 0) {
-        task.overdueCount += daysShift;
-      }
-    }
-
-    task.dueDate = newDueDate;
+    task.dueDate = AppDateUtils.startOfDay(newDueDate);
+    task.markUpdated();
   }
 
-  /// Сценарий «перенести на завтра»: срок = следующий день от [referenceDate].
+  /// Due date = day after [referenceDate] (start-of-day).
   static void postponeToNextDay(
     Task task, {
     DateTime? referenceDate,

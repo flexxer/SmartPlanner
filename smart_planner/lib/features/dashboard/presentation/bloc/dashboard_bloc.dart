@@ -1,9 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:isar/isar.dart';
+import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/data/calendar_preferences_repository.dart';
+import 'package:smart_planner/features/calendar_integration/data/linked_calendars_loader.dart';
+import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
+import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
+import 'package:smart_planner/features/calendar_integration/domain/recurrence_evaluator.dart';
 import 'package:smart_planner/features/calendar_integration/domain/exceptions/calendar_exceptions.dart';
 import 'package:smart_planner/features/dashboard/data/dashboard_day_markers_repository.dart';
 import 'package:smart_planner/features/dashboard/domain/day_activity_marker.dart';
@@ -15,6 +22,7 @@ import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
 import 'package:smart_planner/features/todo_list/domain/task_overdue_selection.dart';
+import 'package:smart_planner/features/notifications/data/day_status_notification_controller.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_checklist.dart';
 
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
@@ -24,34 +32,51 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     CalendarPreferencesRepository? calendarPreferences,
     TaskAttachmentRepository? attachmentRepository,
     DashboardDayMarkersRepository? dayMarkersRepository,
+    LocalCalendarEventRepository? localCalendarEventRepository,
+    DayStatusNotificationController? dayStatusNotifications,
   })  : _todoRepository = todoRepository,
         _attachmentRepository =
             attachmentRepository ?? TaskAttachmentRepository(),
         _calendarService = calendarService,
         _calendarPreferences =
             calendarPreferences ?? CalendarPreferencesRepository(),
+        _localCalendarEvents = localCalendarEventRepository ??
+            LocalCalendarEventRepository(),
         _dayMarkersRepository = dayMarkersRepository ??
             DashboardDayMarkersRepository(
               todoRepository: todoRepository,
               calendarService: calendarService,
             ),
+        _dayStatusNotifications = dayStatusNotifications,
         super(const DashboardInitial()) {
     on<LoadDashboardData>(_onLoadDashboardData);
     on<SelectDashboardDate>(_onSelectDashboardDate);
     on<ToggleTaskCompletion>(_onToggleTaskCompletion);
     on<PostponeTaskToNextDay>(_onPostponeTaskToNextDay);
     on<PostponeTask>(_onPostponeTask);
+    on<ReorderChildTasks>(_onReorderChildTasks);
     on<LinkTaskAsChild>(_onLinkTaskAsChild);
     on<DetachTaskFromParent>(_onDetachTaskFromParent);
     on<DeleteTaskAttachment>(_onDeleteTaskAttachment);
+    on<RestoreTaskAttachment>(_onRestoreTaskAttachment);
+    on<UpdateTaskAttachment>(_onUpdateTaskAttachment);
     on<ToggleAttachmentChecklistItem>(_onToggleAttachmentChecklistItem);
+    on<LinkTaskToCalendarEvent>(_onLinkTaskToCalendarEvent);
+    on<UnlinkTaskFromCalendarEvent>(_onUnlinkTaskFromCalendarEvent);
+    on<UpdateTask>(_onUpdateTask);
+    on<DeleteTask>(_onDeleteTask);
+    on<DeleteCalendarEvent>(_onDeleteCalendarEvent);
+    on<ExpandDashboardTask>(_onExpandDashboardTask);
+    on<ClearExpandedDashboardTask>(_onClearExpandedDashboardTask);
   }
 
   final TodoRepository _todoRepository;
   final TaskAttachmentRepository _attachmentRepository;
   final CalendarService _calendarService;
   final CalendarPreferencesRepository _calendarPreferences;
+  final LocalCalendarEventRepository _localCalendarEvents;
   final DashboardDayMarkersRepository _dayMarkersRepository;
+  final DayStatusNotificationController? _dayStatusNotifications;
 
   List<String> _selectedCalendarIds = <String>[];
   DateTime _selectedDate = AppDateUtils.startOfDay(DateTime.now());
@@ -73,11 +98,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       final List<Object> parallel = await Future.wait<Object>(
         <Future<Object>>[
           _todoRepository.getUncompletedTasksForDate(_selectedDate),
+          _todoRepository.getCompletedTasksForDate(_selectedDate),
           _loadOverdueTasksForSelectedDay(_selectedDate),
-          _loadEventsForDay(
-            day: _selectedDate,
-            resolvedCalendarIds: calendarIds,
-          ),
+          _todoRepository.getUndatedTasks(),
           _dayMarkersRepository.loadForRange(
             rangeStart: markerRange.start,
             rangeEnd: markerRange.end,
@@ -87,12 +110,28 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       );
 
       final List<Task> tasks = parallel[0] as List<Task>;
-      final List<Task> overdueTasks = parallel[1] as List<Task>;
-      final _DayEventsResult eventsResult = parallel[2] as _DayEventsResult;
+      final List<Task> completedTasks = parallel[1] as List<Task>;
+      final List<Task> overdueTasks = parallel[2] as List<Task>;
+      final List<Task> undatedTasks = parallel[3] as List<Task>;
       final Map<int, DayActivityMarker> dayMarkers =
-          parallel[3] as Map<int, DayActivityMarker>;
+          parallel[4] as Map<int, DayActivityMarker>;
 
-      final List<Id> taskIds = _parentTaskIdsForDashboard(tasks, overdueTasks);
+      // Device events are upserted into Isar first; then local strip reads them.
+      final _DayEventsResult eventsResult = await _loadEventsForDay(
+        day: _selectedDate,
+        resolvedCalendarIds: calendarIds,
+      );
+      final _LocalCalendarSnapshot localSnapshot =
+          await _loadLocalCalendarSnapshot(_selectedDate);
+      final Map<String, DeviceCalendarInfo> linkedCalendarsById =
+          await _loadLinkedCalendarsById(calendarIds);
+
+      final List<Id> taskIds = _parentTaskIdsForDashboard(
+        tasks,
+        completedTasks,
+        overdueTasks,
+        undatedTasks,
+      );
       final Map<Id, ChildTasksBundle> childBundles =
           await _todoRepository.getChildTasksBundlesForParents(taskIds);
       final Map<Id, List<TaskAttachment>> attachments =
@@ -101,19 +140,39 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       emit(
         DashboardLoaded(
           tasks: tasks,
+          completedTasks: completedTasks,
           overdueTasks: overdueTasks,
+          undatedTasks: undatedTasks,
           events: eventsResult.events,
+          calendarEvents: localSnapshot.visibleOnSelectedDay,
           selectedDate: _selectedDate,
           selectedCalendarIds: _selectedCalendarIds,
           calendarMessage: eventsResult.message,
+          localCalendarEventById: localSnapshot.byId,
           childTasksByParentId: childBundles,
           attachmentsByTaskId: attachments,
           dayMarkers: dayMarkers,
+          linkedCalendarsById: linkedCalendarsById,
         ),
       );
+      _syncDayStatusNotification();
     } catch (error) {
       emit(DashboardError(error.toString()));
     }
+  }
+
+  Future<Map<String, DeviceCalendarInfo>> _loadLinkedCalendarsById(
+    List<String> calendarIds,
+  ) async {
+    final LinkedCalendarsLoadResult result = await LinkedCalendarsLoader(
+      calendarService: _calendarService,
+      preferences: _calendarPreferences,
+    ).load(selectedCalendarIds: calendarIds);
+    return Map<String, DeviceCalendarInfo>.fromEntries(
+      result.calendars.map(
+        (DeviceCalendarInfo c) => MapEntry<String, DeviceCalendarInfo>(c.id, c),
+      ),
+    );
   }
 
   Future<void> _onSelectDashboardDate(
@@ -165,6 +224,26 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       task.postponeDueDate(event.newDueDate);
       await _todoRepository.updateTask(task);
 
+      await _emitReloadedTasks(current, emit);
+    } catch (error) {
+      emit(DashboardError(error.toString()));
+    }
+  }
+
+  Future<void> _onReorderChildTasks(
+    ReorderChildTasks event,
+    Emitter<DashboardState> emit,
+  ) async {
+    final DashboardState current = state;
+    if (current is! DashboardLoaded) {
+      return;
+    }
+
+    try {
+      await _todoRepository.reorderChildTasks(
+        parentTaskId: event.parentTaskId,
+        orderedChildIds: event.orderedChildIds,
+      );
       await _emitReloadedTasks(current, emit);
     } catch (error) {
       emit(DashboardError(error.toString()));
@@ -228,6 +307,40 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     }
   }
 
+  Future<void> _onRestoreTaskAttachment(
+    RestoreTaskAttachment event,
+    Emitter<DashboardState> emit,
+  ) async {
+    final DashboardState current = state;
+    if (current is! DashboardLoaded) {
+      return;
+    }
+
+    try {
+      await _attachmentRepository.save(event.attachment);
+      await _emitReloadedTasks(current, emit);
+    } catch (error) {
+      emit(DashboardError(error.toString()));
+    }
+  }
+
+  Future<void> _onUpdateTaskAttachment(
+    UpdateTaskAttachment event,
+    Emitter<DashboardState> emit,
+  ) async {
+    final DashboardState current = state;
+    if (current is! DashboardLoaded) {
+      return;
+    }
+
+    try {
+      await _attachmentRepository.update(event.attachment);
+      await _emitReloadedTasks(current, emit);
+    } catch (error) {
+      emit(DashboardError(error.toString()));
+    }
+  }
+
   Future<void> _onToggleAttachmentChecklistItem(
     ToggleAttachmentChecklistItem event,
     Emitter<DashboardState> emit,
@@ -256,17 +369,163 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     }
   }
 
+  Future<void> _onLinkTaskToCalendarEvent(
+    LinkTaskToCalendarEvent event,
+    Emitter<DashboardState> emit,
+  ) async {
+    final DashboardState current = state;
+    if (current is! DashboardLoaded) {
+      return;
+    }
+
+    try {
+      await _localCalendarEvents.linkTask(
+        eventId: event.eventId,
+        taskId: event.taskId,
+      );
+      await _emitReloadedTasks(current, emit);
+    } catch (error) {
+      emit(DashboardError(error.toString()));
+    }
+  }
+
+  Future<void> _onUnlinkTaskFromCalendarEvent(
+    UnlinkTaskFromCalendarEvent event,
+    Emitter<DashboardState> emit,
+  ) async {
+    final DashboardState current = state;
+    if (current is! DashboardLoaded) {
+      return;
+    }
+
+    try {
+      await _localCalendarEvents.unlinkTask(event.taskId);
+      await _emitReloadedTasks(current, emit);
+    } catch (error) {
+      emit(DashboardError(error.toString()));
+    }
+  }
+
+  Future<void> _onDeleteTask(
+    DeleteTask event,
+    Emitter<DashboardState> emit,
+  ) async {
+    final DashboardState current = state;
+    if (current is! DashboardLoaded) {
+      return;
+    }
+
+    try {
+      await _localCalendarEvents.unlinkTask(event.taskId);
+      await _attachmentRepository.deleteAllForTask(event.taskId);
+
+      final List<Task> children =
+          await _todoRepository.getAllChildTasks(event.taskId);
+      for (final Task child in children) {
+        TaskHierarchy.detach(child);
+        await _todoRepository.updateTask(child);
+      }
+
+      await _todoRepository.deleteTask(event.taskId);
+      await _emitReloadedTasks(current, emit);
+    } catch (error) {
+      emit(DashboardError(error.toString()));
+    }
+  }
+
+  Future<void> _onDeleteCalendarEvent(
+    DeleteCalendarEvent event,
+    Emitter<DashboardState> emit,
+  ) async {
+    final DashboardState current = state;
+    if (current is! DashboardLoaded) {
+      return;
+    }
+
+    try {
+      await _localCalendarEvents.deleteLocalEvent(event.eventId);
+      await _emitReloadedTasks(current, emit);
+    } catch (error) {
+      emit(DashboardError(error.toString()));
+    }
+  }
+
+  Future<void> _onUpdateTask(
+    UpdateTask event,
+    Emitter<DashboardState> emit,
+  ) async {
+    final DashboardState current = state;
+    if (current is! DashboardLoaded) {
+      return;
+    }
+
+    try {
+      final Task? existing = await _todoRepository.getTaskById(event.task.id);
+      if (existing == null) {
+        return;
+      }
+
+      existing
+        ..title = event.task.title
+        ..description = event.task.description
+        ..dueDate = event.task.dueDate
+        ..priority = event.task.priority
+        ..calendarId = event.task.calendarId
+        ..updatedAt = event.task.updatedAt;
+      await _todoRepository.updateTask(existing);
+      await _emitReloadedTasks(current, emit);
+    } catch (error) {
+      emit(DashboardError(error.toString()));
+    }
+  }
+
+  void _onExpandDashboardTask(
+    ExpandDashboardTask event,
+    Emitter<DashboardState> emit,
+  ) {
+    final DashboardState current = state;
+    if (current is! DashboardLoaded) {
+      return;
+    }
+    emit(current.copyWith(expandedTaskId: event.taskId));
+  }
+
+  void _onClearExpandedDashboardTask(
+    ClearExpandedDashboardTask event,
+    Emitter<DashboardState> emit,
+  ) {
+    final DashboardState current = state;
+    if (current is! DashboardLoaded) {
+      return;
+    }
+    if (current.expandedTaskId == null) {
+      return;
+    }
+    emit(current.copyWith(clearExpandedTaskId: true));
+  }
+
   Future<void> _emitReloadedTasks(
     DashboardLoaded current,
     Emitter<DashboardState> emit,
   ) async {
-    final List<Task> tasks = await _todoRepository.getUncompletedTasksForDate(
-      current.selectedDate,
+    final List<Object> parallel = await Future.wait<Object>(
+      <Future<Object>>[
+        _todoRepository.getUncompletedTasksForDate(current.selectedDate),
+        _todoRepository.getCompletedTasksForDate(current.selectedDate),
+        _loadOverdueTasksForSelectedDay(current.selectedDate),
+        _todoRepository.getUndatedTasks(),
+      ],
     );
-    final List<Task> overdueTasks = await _loadOverdueTasksForSelectedDay(
-      current.selectedDate,
+    final List<Task> tasks = parallel[0] as List<Task>;
+    final List<Task> completedTasks = parallel[1] as List<Task>;
+    final List<Task> overdueTasks = parallel[2] as List<Task>;
+    final List<Task> undatedTasks = parallel[3] as List<Task>;
+    final List<Id> taskIds = _parentTaskIdsForDashboard(
+      tasks,
+      completedTasks,
+      overdueTasks,
+      undatedTasks,
     );
-    final List<Id> taskIds = _parentTaskIdsForDashboard(tasks, overdueTasks);
     final Map<Id, ChildTasksBundle> childBundles =
         await _todoRepository.getChildTasksBundlesForParents(taskIds);
     final Map<Id, List<TaskAttachment>> attachments =
@@ -280,24 +539,43 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       rangeEnd: markerRange.end,
       calendarIds: current.selectedCalendarIds,
     );
+    final _LocalCalendarSnapshot localSnapshot =
+        await _loadLocalCalendarSnapshot(current.selectedDate);
     emit(
       current.copyWith(
         tasks: tasks,
+        completedTasks: completedTasks,
         overdueTasks: overdueTasks,
+        undatedTasks: undatedTasks,
+        calendarEvents: localSnapshot.visibleOnSelectedDay,
+        localCalendarEventById: localSnapshot.byId,
         childTasksByParentId: childBundles,
         attachmentsByTaskId: attachments,
         dayMarkers: dayMarkers,
       ),
     );
+    _syncDayStatusNotification();
+  }
+
+  void _syncDayStatusNotification() {
+    final DayStatusNotificationController? controller = _dayStatusNotifications;
+    if (controller == null) {
+      return;
+    }
+    unawaited(controller.syncTodayStatus());
   }
 
   static List<Id> _parentTaskIdsForDashboard(
     List<Task> tasks,
+    List<Task> completedTasks,
     List<Task> overdueTasks,
+    List<Task> undatedTasks,
   ) {
     final Set<Id> ids = <Id>{
       for (final Task t in tasks) t.id,
+      for (final Task t in completedTasks) t.id,
       for (final Task t in overdueTasks) t.id,
+      for (final Task t in undatedTasks) t.id,
     };
     return ids.toList(growable: false);
   }
@@ -360,11 +638,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
           );
 
       if (calendarIds.isEmpty) {
-        return const _DayEventsResult(
+        return _DayEventsResult(
           events: <CalendarEvent>[],
-          message:
-              'Нет доступа к календарю или календари не выбраны. '
-              'Откройте «Календари» в меню и включите Google-календарь.',
+          message: L10n.tr('calendar_events_error_no_access'),
         );
       }
 
@@ -373,13 +649,13 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         day: day,
       );
 
+      await _localCalendarEvents.upsertDeviceEvents(events);
+
       return _DayEventsResult(events: events);
     } on CalendarPermissionDeniedException {
-      return const _DayEventsResult(
+      return _DayEventsResult(
         events: <CalendarEvent>[],
-        message:
-            'Разрешите доступ к календарю в настройках Android '
-            '(Настройки → Приложения → Smart Planner → Разрешения).',
+        message: L10n.tr('calendar_events_error_android_permission'),
       );
     } on CalendarServiceException catch (e) {
       return _DayEventsResult(
@@ -415,6 +691,41 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     }
     return _selectedCalendarIds;
   }
+
+  Future<_LocalCalendarSnapshot> _loadLocalCalendarSnapshot(
+    DateTime selectedDay,
+  ) async {
+    final List<CalendarEvent> allStored =
+        await _localCalendarEvents.getAll();
+    final List<CalendarEvent> visible = allStored
+        .where(
+          (CalendarEvent event) =>
+              RecurrenceEvaluator.shouldShowEventOnDate(event, selectedDay),
+        )
+        .toList(growable: false)
+      ..sort(
+        (CalendarEvent a, CalendarEvent b) => a.start.compareTo(b.start),
+      );
+
+    final Map<Id, CalendarEvent> byId = <Id, CalendarEvent>{
+      for (final CalendarEvent event in allStored) event.id: event,
+    };
+
+    return _LocalCalendarSnapshot(
+      visibleOnSelectedDay: visible,
+      byId: byId,
+    );
+  }
+}
+
+class _LocalCalendarSnapshot {
+  const _LocalCalendarSnapshot({
+    required this.visibleOnSelectedDay,
+    required this.byId,
+  });
+
+  final List<CalendarEvent> visibleOnSelectedDay;
+  final Map<Id, CalendarEvent> byId;
 }
 
 class _DayEventsResult {

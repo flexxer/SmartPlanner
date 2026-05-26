@@ -1,9 +1,13 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/todo_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/presentation/bloc/completed_tasks_event.dart';
 import 'package:smart_planner/features/todo_list/presentation/bloc/completed_tasks_state.dart';
 
+@Deprecated(
+  'Only used by [CompletedTasksPage], which is no longer linked from the app.',
+)
 class CompletedTasksBloc
     extends Bloc<CompletedTasksEvent, CompletedTasksState> {
   CompletedTasksBloc({required TodoRepository repository})
@@ -42,7 +46,7 @@ class CompletedTasksBloc
     try {
       final Task? source = await _repository.getTaskById(event.sourceTaskId);
       if (source == null || !source.isCompleted) {
-        emit(const CompletedTasksError('Задача не найдена'));
+        emit(CompletedTasksError('completed_task_not_found'.tr()));
         add(const LoadCompletedTasks());
         return;
       }

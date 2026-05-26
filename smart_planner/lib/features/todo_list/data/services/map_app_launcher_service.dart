@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:map_launcher/map_launcher.dart';
 
@@ -39,7 +40,7 @@ class MapAppLauncherService {
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Открыть в',
+                  'attachment_open_in'.tr(),
                   style: Theme.of(sheetContext).textTheme.titleMedium,
                 ),
               ),

@@ -7,10 +7,8 @@ import 'package:smart_planner/features/todo_list/domain/entities/attachment_payl
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment_type.dart';
-import 'package:smart_planner/features/todo_list/domain/entities/task_category.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_priority.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.dart';
-import 'package:smart_planner/features/todo_list/domain/task_overdue_rules.dart';
 
 /// Первичное наполнение БД демо-задачами (один раз после установки).
 class TaskBootstrap {
@@ -32,19 +30,6 @@ class TaskBootstrap {
 
     final TaskAttachmentRepository attachments = TaskAttachmentRepository();
 
-    final TaskCategory work = TaskCategory.create(
-      name: 'Работа',
-      colorHex: '#5C6BC0',
-      iconName: 'work',
-    );
-    final TaskCategory home = TaskCategory.create(
-      name: 'Дом',
-      colorHex: '#66BB6A',
-      iconName: 'home',
-    );
-    await repository.saveCategory(work);
-    await repository.saveCategory(home);
-
     final DateTime today = AppDateUtils.startOfDay(DateTime.now());
 
     final Task urgent = Task.create(
@@ -52,7 +37,7 @@ class TaskBootstrap {
       dueDate: today,
       priority: TaskPriority.high,
     );
-    final Id urgentId = await repository.saveTask(urgent, category: work);
+    final Id urgentId = await repository.saveTask(urgent);
     await attachments.save(
       TaskAttachment.create(
         taskId: urgentId,
@@ -78,22 +63,21 @@ class TaskBootstrap {
       dueDate: today.subtract(const Duration(days: 2)),
       priority: TaskPriority.medium,
     );
-    TaskOverdueRules.recordPostpone(overdue, today);
-    await repository.saveTask(overdue, category: home);
+    await repository.saveTask(overdue);
 
     final Task birthday = Task.create(
       title: 'Поздравить маму с днём рождения',
       dueDate: today,
       priority: TaskPriority.high,
     );
-    final Id birthdayId = await repository.saveTask(birthday, category: home);
+    final Id birthdayId = await repository.saveTask(birthday);
 
     final Task buyCake = Task.create(
       title: 'Купить торт',
       dueDate: today,
       priority: TaskPriority.medium,
     );
-    final Id buyCakeId = await repository.saveTask(buyCake, category: home);
+    final Id buyCakeId = await repository.saveTask(buyCake);
     await repository.attachTaskToParent(
       childTaskId: buyCakeId,
       parentTaskId: birthdayId,
@@ -104,7 +88,7 @@ class TaskBootstrap {
       dueDate: today.add(const Duration(days: 1)),
       priority: TaskPriority.low,
     );
-    await repository.saveTask(later, category: home);
+    await repository.saveTask(later);
 
     await prefs.setBool(_seededKey, true);
   }

@@ -1,5 +1,6 @@
 import 'package:isar/isar.dart';
-
+import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
+import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 sealed class DashboardEvent {
   const DashboardEvent();
 }
@@ -39,7 +40,7 @@ final class PostponeTaskToNextDay extends DashboardEvent {
   final Id taskId;
 }
 
-/// Перенос срока на [newDueDate] ([TaskOverdueRules.recordPostpone]).
+/// Перенос срока на [newDueDate] (обновляет [Task.dueDate]).
 final class PostponeTask extends DashboardEvent {
   const PostponeTask({
     required this.taskId,
@@ -48,6 +49,17 @@ final class PostponeTask extends DashboardEvent {
 
   final Id taskId;
   final DateTime newDueDate;
+}
+
+/// Update [Task.sortOrder] for children under [parentTaskId].
+final class ReorderChildTasks extends DashboardEvent {
+  const ReorderChildTasks({
+    required this.parentTaskId,
+    required this.orderedChildIds,
+  });
+
+  final Id parentTaskId;
+  final List<Id> orderedChildIds;
 }
 
 /// Привязать существующую задачу как подзадачу.
@@ -75,6 +87,38 @@ final class DeleteTaskAttachment extends DashboardEvent {
   final Id attachmentId;
 }
 
+/// Восстановить [TaskAttachment] после отмены удаления (Undo).
+final class RestoreTaskAttachment extends DashboardEvent {
+  const RestoreTaskAttachment(this.attachment);
+
+  final TaskAttachment attachment;
+}
+
+/// Сохранить изменения вложения и обновить дашборд.
+final class UpdateTaskAttachment extends DashboardEvent {
+  const UpdateTaskAttachment(this.attachment);
+
+  final TaskAttachment attachment;
+}
+
+/// Link a task to a local [CalendarEvent] (Isar).
+final class LinkTaskToCalendarEvent extends DashboardEvent {
+  const LinkTaskToCalendarEvent({
+    required this.taskId,
+    required this.eventId,
+  });
+
+  final Id taskId;
+  final Id eventId;
+}
+
+/// Remove task↔event link.
+final class UnlinkTaskFromCalendarEvent extends DashboardEvent {
+  const UnlinkTaskFromCalendarEvent(this.taskId);
+
+  final Id taskId;
+}
+
 /// Переключить пункт в чеклисте-вложении.
 final class ToggleAttachmentChecklistItem extends DashboardEvent {
   const ToggleAttachmentChecklistItem({
@@ -84,4 +128,37 @@ final class ToggleAttachmentChecklistItem extends DashboardEvent {
 
   final Id attachmentId;
   final int itemLocalId;
+}
+
+/// Persist edited task fields and refresh the dashboard list.
+final class UpdateTask extends DashboardEvent {
+  const UpdateTask(this.task);
+
+  final Task task;
+}
+
+/// Remove a task from Isar and refresh the dashboard.
+final class DeleteTask extends DashboardEvent {
+  const DeleteTask(this.taskId);
+
+  final Id taskId;
+}
+
+/// Remove a local calendar event from Isar and refresh the dashboard.
+final class DeleteCalendarEvent extends DashboardEvent {
+  const DeleteCalendarEvent(this.eventId);
+
+  final Id eventId;
+}
+
+/// Expand a task tile on the dashboard (e.g. after navigating from a sheet).
+final class ExpandDashboardTask extends DashboardEvent {
+  const ExpandDashboardTask(this.taskId);
+
+  final Id taskId;
+}
+
+/// Clear forced expansion after the tile has opened.
+final class ClearExpandedDashboardTask extends DashboardEvent {
+  const ClearExpandedDashboardTask();
 }

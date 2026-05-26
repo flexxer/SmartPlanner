@@ -1,5 +1,6 @@
 import 'package:isar/isar.dart';
 
+@Deprecated('Only used by deprecated [CompletedTasksBloc].')
 sealed class CompletedTasksEvent {
   const CompletedTasksEvent();
 }

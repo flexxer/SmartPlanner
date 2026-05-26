@@ -1,5 +1,8 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:smart_planner/core/localization/language_picker_section.dart';
+import 'package:smart_planner/features/notifications/presentation/widgets/day_status_bar_settings_section.dart';
 import 'package:smart_planner/features/calendar_integration/data/calendar_preferences_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/device_calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
@@ -7,7 +10,7 @@ import 'package:smart_planner/features/calendar_integration/domain/exceptions/ca
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
 
-/// Выбор календарей устройства (в т.ч. Google, синхронизированных в Android).
+/// Device calendar selection (including Google synced on Android).
 class CalendarSettingsPage extends StatefulWidget {
   const CalendarSettingsPage({super.key});
 
@@ -42,7 +45,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
       if (!granted) {
         setState(() {
           _loading = false;
-          _error = 'Нужен доступ к календарю устройства';
+          _error = 'calendar_settings_permission_needed'.tr();
         });
         return;
       }
@@ -66,7 +69,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
     } on CalendarPermissionDeniedException {
       setState(() {
         _loading = false;
-        _error = 'Доступ к календарю не предоставлен';
+        _error = 'calendar_settings_permission_denied'.tr();
       });
     } catch (e) {
       setState(() {
@@ -91,11 +94,11 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Календари'),
+        title: Text('calendar_settings_title'.tr()),
         actions: <Widget>[
           TextButton(
             onPressed: _selectedIds.isEmpty ? null : _save,
-            child: const Text('Готово'),
+            child: Text('common_done'.tr()),
           ),
         ],
       ),
@@ -109,46 +112,67 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
     }
 
     if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _load,
-                child: const Text('Запросить доступ'),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const LanguagePickerSection(),
+          const DayStatusBarSettingsSection(),
+          const Divider(height: 1),
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(_error!, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: _load,
+                      child: Text('calendar_settings_request_access'.tr()),
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       );
     }
 
     if (_calendars.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'Календари не найдены. Добавьте аккаунт Google в приложении '
-            '«Календарь» на телефоне и включите синхронизацию.',
-            textAlign: TextAlign.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LanguagePickerSection(),
+        const DayStatusBarSettingsSection(),
+        const Divider(height: 1),
+        Expanded(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'calendar_settings_empty'.tr(),
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
         ),
-      );
+      ],
+    );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+        const LanguagePickerSection(),
+        const DayStatusBarSettingsSection(),
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Text(
-            'События читаются из календарей Android (включая Google, '
-            'если они синхронизированы на устройстве). OAuth Google API — позже.',
-            style: TextStyle(fontSize: 13),
+            'calendar_settings_hint'.tr(),
+            style: const TextStyle(fontSize: 13),
           ),
         ),
         Expanded(

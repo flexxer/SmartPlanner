@@ -28,7 +28,7 @@ class OsmPlaceSearchService {
   OsmPlaceSearchService._();
 
   static const String _userAgent =
-      'SmartPlanner/1.0 (com.aliakseipcholkin.smart_planner)';
+      'DayLinx/1.0 (com.aliakseipcholkin.smart_planner)';
 
   static Future<List<OsmPlaceResult>> search(String query) async {
     final String trimmed = query.trim();

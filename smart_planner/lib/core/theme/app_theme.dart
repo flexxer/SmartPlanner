@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Глобальная тема приложения Smart Planner.
+/// Global Material 3 theme for DayLinx.
 class AppTheme {
   AppTheme._();
 

@@ -1,6 +1,6 @@
-# Product Requirements Document (PRD) — Smart Time & Task Linker
+# Product Requirements Document (PRD) — DayLinx
 
-> **Documentation language:** All project documentation (PRD, architecture, README, inline specs, and AI context files) must be written and maintained in **English**. User-facing app strings may be localized separately (e.g. Russian UI).
+> **Documentation language:** All project documentation (PRD, architecture, README, inline specs, and AI context files) must be written and maintained in **English**. User-facing app strings are localized via **easy_localization** (`en`, `ru`, `es`); see §4 and §5.
 
 ---
 
@@ -8,7 +8,7 @@
 
 A mobile app that aggregates multiple calendars and provides flexible task lists, with a focus on informative home-screen widgets and smart reminders.
 
-**Working name:** Smart Planner / Smart Time & Task Linker  
+**Product name:** DayLinx (repository folder: `smart_planner/`)  
 **Repository layout:** Flutter app in `smart_planner/`  
 **Source:** [github.com/flexxer/SmartPlanner](https://github.com/flexxer/SmartPlanner)
 
@@ -29,52 +29,59 @@ Professionals, freelancers, and people with high cognitive load who juggle multi
 | Read device calendars (Google accounts synced to Android Calendar) | **Implemented** | `device_calendar` + calendar picker |
 | Google Calendar via OAuth 2.0 | **Planned** | Stub: `GoogleCalendarApiClient` |
 | Show events from multiple accounts (Personal, Work, Projects) | **Partial** | User selects calendars in settings |
-| Color-code events by calendar source | **Implemented** | `CalendarEvent.colorValue` on dashboard |
-| Events for a user-selected day | **Implemented** | `DeviceCalendarService.getEventsForDay` |
+| Color-code events by calendar source | **Implemented** | `CalendarContextColors` + accent bar on strip cards |
+| Events for a user-selected day | **Implemented** | Device fetch → Isar upsert → `DashboardLocalEventsStrip` for selected day |
+| Local calendar events CRUD + task linking | **Implemented** | `LocalCalendarEventRepository`; link/unlink tasks; create/edit sheets |
+| Live “now” timeline on today’s event strip | **Implemented** | Pulsing indicator + auto-scroll to current/upcoming event |
 
 ### 3.2 To-Do engine
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| Tasks without strict time binding | **Implemented** | Optional `dueDate`; undated tasks appear only on “today” |
-| Roll unfinished tasks with overdue indicator | **Partial** | Dedicated **overdue panel** on today; badge via `overdueCount` on postpone; automatic midnight roll not yet wired (`background_service` TODO) |
-| Tasks filtered by selected calendar day | **Implemented** | Dashboard date bar; default = today |
-| Postpone task (tomorrow or pick date) | **Implemented** | Expanded tile + `PostponeTaskSheet`; `PostponeTask` / `PostponeTaskToNextDay` |
-| Categories: Work, Home, Hobby, Rest, Finance | **Partial** | `TaskCategory` model; demo seed uses Work/Home |
+| Tasks without strict time binding | **Implemented** | Optional `dueDate` (`null` = no deadline); **Undated** collapsible section on every selected day (`undated_section`) |
+| Roll unfinished tasks with overdue indicator | **Partial** | Dedicated **overdue panel** on today; badge via `Task.dynamicOverdueDays` (calendar days past `dueDate`); automatic midnight roll not yet wired (`background_service` TODO) |
+| Tasks filtered by selected calendar day | **Implemented** | Dated tasks via `getUncompletedTasksForDate`; undated via `getUndatedTasks` |
+| Postpone task (tomorrow or pick date) | **Implemented** | `TaskDetailScreen` + `PostponeTaskSheet`; `PostponeTask` / `PostponeTaskToNextDay` |
+| Context calendars (device lists) | **Implemented** | `Task.calendarId` (device calendar id); `TaskLinkedCalendarsField` in `TaskFormSheet`; context badge on tiles via `CalendarContextColors` |
+| Create / edit / delete task or event | **Implemented** | `TaskFormSheet` / `EventFormSheet`; delete with confirmation in edit mode (`DeleteTask`, `DeleteCalendarEvent`) |
 | Recurring tasks (bills, stand-ups) | **Planned** | Not in schema yet |
 | Local CRUD + priority sorting | **Implemented** | Isar + `TodoRepository` |
-| Completed tasks archive | **Implemented** | `CompletedTasksPage` |
+| Completed tasks on selected day | **Implemented** | Active tasks on top; collapsible **Completed** section at bottom (dimmed, strikethrough); toggle moves task between lists |
+| Completed tasks archive screen | **Deprecated** | `CompletedTasksPage` — no AppBar route; reopen still via `TodoRepository.reopenFromCompleted` if re-wired |
 | Reopen completed task (new copy, new due date) | **Implemented** | `TaskReopen` + `reopenFromCompleted`; original stays completed |
-| Expandable task tiles with badges | **Implemented** | `TaskExpandableTile`: priority, due date, overdue |
-| Linked subtasks (existing task under a parent task) | **Implemented** | `Task.parentTaskId`; child hidden from root list; link via picker; detach; progress badge on parent |
+| Task list tiles with badges | **Implemented** | Compact dashboard tile; tap → `TaskDetailScreen`; `TaskBadge` row (priority, due, linked event, subtasks, checklist, files) |
+| Task / event detail screens | **Implemented** | `TaskDetailScreen`, `EventDetailScreen`; AppBar edit; full attachments + reorderable subtasks on task detail |
+| Templates module (AppBar) | **Planned** | AppBar placeholder (`Icons.layers_outlined`) — snackbar stub only |
+| Linked subtasks (existing task under a parent task) | **Implemented** | `Task.parentTaskId` + `Task.sortOrder`; manual reorder on `TaskDetailScreen`; link via picker; detach; progress badge on parent |
 | Task attachments (local) | **Implemented** | `TaskAttachment`: contact, image, URL, location, note, checklist; multiple per task (see §3.2.1) |
 
 **Important distinction:** **Calendar events** (meetings) come from the device calendar. **Tasks** are stored locally in Isar—they are not Google Calendar tasks unless a future sync feature is added.
 
 **Subtasks vs checklist:** **Linked subtasks** are separate `Task` rows (`parentTaskId`). A **checklist** is a `TaskAttachment` of type `checklist` (plain items inside the attachment payload, not separate tasks).
 
-#### Overdue badge (“Dragging for N days”)
+#### Overdue badge (localized, e.g. “Overdue by N days”)
 
-Shown on a task tile when **all** of the following hold:
+Shown on a task tile when `Task.dynamicOverdueDays > 0` (key `overdue_days`, ICU plural per locale):
 
-1. `Task.overdueCount > 0` (increments when the user **postpones** the due date forward via `TaskOverdueRules.recordPostpone`).
-2. `Task.dueDate` is set.
-3. The task’s due date is **not** the same calendar day as the **dashboard selected day**.
+- `0` if the task is completed or has no `dueDate`.
+- Otherwise calendar days from `dueDate` (start of day) to today (start of day) when the due day is strictly before today.
 
-`N` is `overdueCount`, not “days since deadline.” The counter does **not** increase automatically each night without a postpone action.
+Postponing only updates `dueDate`; overdue days are recalculated on read (`TaskOverdueRules.dynamicOverdueDays`).
 
 #### 3.2.1 Task attachments (local)
 
 Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `label`, `sortOrder`). Multiple attachments per task. Images are copied into app documents (`AttachmentFileStore`).
 
-| Type | Add flow | View / interact |
-|------|----------|-----------------|
-| **Contact** | Choosing type opens the **device contact picker** immediately; full contact re-fetched after pick (`flutter_contacts`) | Name in header; tap phone (call), SMS, or email |
-| **Image** | Gallery pick; **preview** in add sheet | Tap thumbnail → full-screen viewer |
-| **URL** | Title + URL fields | **Clickable title** in tile header (opens browser); compact single-row layout |
-| **Location** | Optional place name; **OSM map picker** with **Nominatim search** and reverse geocode on map tap; lat/lng fields; current location | **Place title** from Nominatim `display_name` (`placeName` in payload); coords in small text; **«Open in maps»** button (`map_launcher`, coords only) |
-| **Note** | Title + body | Title in header; body in tile |
-| **Checklist** | Title; items with **+** next to input; pending line saved on Save without pressing + | Checkboxes in tile; progress badge on parent when applicable |
+| Type | Add flow | View / interact (detail screen) |
+|------|----------|-------------------------------|
+| **Contact** | Choosing type opens the **device contact picker** immediately; full contact re-fetched after pick (`flutter_contacts`) | Tap card → action sheet → **Open** (call / SMS / email via `AttachmentLauncherService`) |
+| **Image** | Gallery pick; **preview** in add/edit sheet | **Open** → full-screen viewer |
+| **URL** | Title + URL fields | **Open** → browser; title shown in card header |
+| **Location** | Optional place name; **OSM map picker** with **Nominatim search** and reverse geocode; current location | **Open** → map app chooser (`map_launcher`) or geo fallback |
+| **Note** | Title + body | **Open** → full-text dialog |
+| **Checklist** | Title; items with **+** next to input; pending line saved on Save without pressing + | Checkboxes inline (toggle without opening sheet); progress badge on parent tile |
+
+**Attachment actions (all types):** tap attachment card → bottom sheet — **Open / View**, **Edit** (`AddAttachmentSheet` with `attachmentToEdit`), **Delete** (SnackBar **Undo** / `RestoreTaskAttachment`). Edit save → `UpdateTaskAttachment` in `DashboardBloc`.
 
 **Location note:** External map apps (Google Maps, Yandex, etc.) cannot return a picked point to third-party apps without Google Places SDK and an API key. Coordinates are saved via the in-app OpenStreetMap picker.
 
@@ -84,8 +91,10 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 |-------------|--------|-------|
 | Push: meeting reminders (15/30 min before) | **Planned** | Channels defined; scheduling TBD |
 | Push: morning/evening task digest | **Planned** | |
+| Android ongoing **day-status** notification (foreground service) | **Implemented** | Opt-in on **Calendars** settings; `DayStatusNotificationController` + `flutter_local_notifications` FGS (`specialUse`); title = today’s task progress, body = current/next event; synced from `DashboardBloc`; default **off** |
 | Android home widget: day schedule + focus tasks + complete from widget | **Planned** | Stubs: `android_widget_provider.dart` |
 | Background check for overdue tasks | **Partial** | `workmanager` registered; postpone/notify logic TODO |
+| Custom URL scheme deep links (`daylinx://create`) | **Implemented** | `app_links`; opens dashboard + `TaskFormSheet` / `EventFormSheet` with prefilled `title`, `priority`, `start` |
 
 ---
 
@@ -94,12 +103,13 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 | Area | Choice |
 |------|--------|
 | Cross-platform | Flutter (primary target: Android; iOS structure prepared) |
-| Local storage | **Isar** (offline-first tasks and categories) |
+| Local storage | **Isar** (offline-first tasks, attachments, local calendar events) |
 | State management | **flutter_bloc** |
 | Architecture | Feature-driven Clean Architecture (`data` / `domain` / `presentation`) |
 | Calendar on device | `device_calendar` |
 | Local notifications | `flutter_local_notifications` + `timezone` |
 | Theming | **System light/dark** — `ThemeMode.system`, Material 3 light + dark (`AppTheme`) |
+| Localization | **easy_localization** — `assets/translations/en.json`, `ru.json`, `es.json`; default = device locale; manual override on **Calendars** settings screen |
 | Future AI modules | Keep domain layer free of UI/framework deps where possible |
 
 **Platform note:** Isar does **not** support Web. Run on Android/iOS/desktop, not Chrome.
@@ -117,46 +127,82 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 - **Default day:** today.
 - **Calendar events** and **tasks** both respect the selected day.
 
-### Calendar events
+### Local calendar events (`DashboardLocalEventsSection` + `DashboardLocalEventsStrip`)
 
-- Horizontal scroll cards for the selected day.
-- Section title reflects the day (e.g. “Events today” vs dated label).
-- Banner when permissions or calendar selection is missing.
+- Single source for day events (legacy “events on date” text block removed).
+- Section header: day label and **Create** event (calendar selection is AppBar only).
+- **Horizontal strip** (~116 dp): compressed layout — adjacent event cards, compact gap markers for long idle periods (≥90 min).
+- **Event card:** accent bar, **start–end time** (no decorative calendar icon), title, optional recurrence icon, linked-tasks badge.
+- **Today only:** past / current / future styling; pulsing **Now** chip on current event (`events_now_chip`); live **now** vertical indicator (updates every minute); auto-scroll to current or next event.
+- **Tap** card → **`EventDetailScreen`** (linked tasks, add task, AppBar edit).
+- **Long-press** card → `EventFormSheet` (edit mode).
+- Device events are upserted into Isar; strip reads local `calendarEvents` filtered by `RecurrenceEvaluator`.
 
 ### Tasks
 
-- **Overdue section (today only):** collapsible **“Просрочено (N)”** panel above the main list; uses `DashboardLoaded.overdueTasks` (root tasks with `dueDate` strictly before today). Hidden on other days.
-- **One full-width tile per row** (`TaskExpandableTile`).
-- **Collapsed**
-  - **Checkbox** (48×48 dp touch target): toggles completion (`ToggleTaskCompletion`); separate ink splash from the body.
-  - **Body tap:** expands/collapses the tile (title, description preview, badges).
-  - Badges: priority, due date, postpone-based overdue label, **linked subtasks** (`2/5` + tree icon), **checklist** progress (`fact_check`), non-checklist attachment count.
-- **Expanded**
-  - **Linked tasks** section (`TaskChildTasksSection`) — “Связанные задачи”, separate from attachments.
-  - **Attachments** (`TaskAttachmentsSection`) — checklist subsection (`fact_check`) vs other types; dividers use `ColorScheme.outlineVariant`.
-  - Full description, detail lines, **Tomorrow** / **Postpone** actions (see postpone flow below).
-- **Reopen completed task:** attachment payloads copied; linked subtasks are new unchecked copies.
-- **FAB (+):** create task sheet; default due date = selected dashboard day.
-- After postpone: snackbar with the new due date; task may leave the list if the new due date is outside the selected day.
-- Empty state copy depends on selected day.
+- **Overdue section (today only):** collapsible **Overdue (N)** above the main list (`overdue_section`; `DashboardLoaded.overdueTasks`). Hidden on other days.
+- **Active tasks:** root uncompleted **dated** tasks for `selectedDate` (`getUncompletedTasksForDate`; excludes `dueDate == null`).
+- **Undated tasks:** collapsible **No due date (N)** above completed section (`undated_section`); all days; from `getUndatedTasks` (`dueDate == null`, uncompleted).
+- **Completed tasks (same day):** collapsible **Completed (N)** at the bottom (`completed_section`); tiles at **50% opacity**, **strikethrough** title; unchecking returns task to the active list immediately (`ToggleTaskCompletion`).
+- **One full-width compact tile per row** (`TaskExpandableTile`).
+  - **Checkbox** (48×48 dp): `ToggleTaskCompletion`; separate splash from body.
+  - **Body tap** → **`TaskDetailScreen`** (`Navigator.push`).
+  - **Title** + optional **description** (up to two lines, ellipsis).
+  - **Badge row** (`TaskBadge`, `Wrap`): context calendar, priority, due, overdue, linked event, subtasks, checklist, attachments; tappable badges can open detail or event screen.
+  - Chevron indicates navigation (no in-place expand).
+- **FAB (+):** `TaskFormSheet` (create mode); no default due date — user may leave deadline empty.
+- Empty state when both active and completed lists are empty.
+
+### Task detail (`TaskDetailScreen`)
+
+- **AppBar:** back, title **Task** (`task_title`), **edit** (`Icons.edit_outlined`) → `TaskFormSheet`.
+- **Header:** `headlineMedium` title, full description, badge row, due / overdue / created metadata.
+- **Actions:** Tomorrow / Postpone (if not completed); unlink linked event.
+- **Linked subtasks:** `ReorderableListView` (`TaskDetailChildTasksSection`); drag handle; persists `Task.sortOrder` via `ReorderChildTasks`; completed children listed below; link existing task; tap child → nested `TaskDetailScreen`.
+- **Attachments:** full `TaskAttachmentsSection` with action sheet + edit/delete flows.
+- Pull-to-refresh; listens to `DashboardBloc` for live updates.
+
+### Event detail (`EventDetailScreen`)
+
+- **AppBar:** back, title **Event** (`event_title`), **edit** → `EventFormSheet`.
+- Calendar chip, date/time, recurrence chip when applicable.
+- Linked tasks list (toggle completion, tap → `TaskDetailScreen`).
+- **Add task to event** button (create + link).
 
 ### App bar
 
 | Action | Purpose |
 |--------|---------|
-| Completed tasks (✓) | Archive of completed tasks; reopen as new task |
-| Calendars | Select device calendars |
-| Refresh | Reload dashboard data |
+| Templates (`layers_outlined`) | Opens `TemplatesPage` (create/apply UI templates) |
+| Calendars | Device calendar selection + **language** dropdown (system / en / ru / es) |
+| Refresh | `LoadDashboardData` |
 
-### Completed tasks screen
+### Create / edit forms
 
-- List of completed tasks (newest first by `createDate`).
-- **Reopen:** creates a **new** uncompleted task (same title, description, priority, category) with a user-chosen due date; completed record unchanged.
-- Returning to dashboard refreshes the task list if any task was reopened.
+| Sheet | Create | Edit | Delete |
+|-------|--------|------|--------|
+| `TaskFormSheet` | Title **New task** (`task_new`); optional `dueDate`; calendar chips | Prefilled fields; `UpdateTask` via BLoC | `DeleteTask` + confirm dialog (`delete_dialog_*`) |
+| `EventFormSheet` | Title **New event** (`event_new`); default 10:00–11:00 on `initialDay` | Recurrence + times; `LoadDashboardData` after save | `DeleteCalendarEvent` + confirm dialog |
+| `AddAttachmentSheet` | Pick type + form | `attachmentToEdit` prefills fields; `UpdateTaskAttachment` | — (delete via attachment action sheet) |
+
+Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `EditCalendarEventSheet` were removed in favor of the unified sheets. In-dashboard tile expansion was removed in favor of detail screens.
+
+### Deprecated: standalone completed archive
+
+- `CompletedTasksPage` / `CompletedTasksBloc` remain in the repo but are **not** routed from the AppBar.
+- Reopen-from-archive UX can be restored later; domain helper `TaskReopen` / `reopenFromCompleted` unchanged.
 
 ### Appearance
 
 - Follows **device theme** (light / dark / system setting).
+
+### Localization
+
+- **Default:** app language follows the **device locale** when it matches `en`, `ru`, or `es`; otherwise **English** fallback.
+- **Override:** **Calendars** screen → **Language** dropdown (System default / English / Russian / Spanish); persisted in SharedPreferences; UI updates immediately without restart.
+- **Day-status notification (Android):** same settings screen → **Show status bar in notifications**; persisted as `day_status_bar_enabled`; requires notification permission on Android 13+.
+- **Implementation:** all presentation strings use translation keys in `assets/translations/*.json`; helpers in `lib/core/localization/l10n.dart` for plurals, priorities, and `DateFormat`.
+- **Not localized:** demo seed tasks in `task_bootstrap.dart`; calendar-name heuristics in `calendar_context_colors.dart` (matching only).
 
 ---
 
@@ -166,7 +212,7 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 - Full Google Calendar OAuth write access
 - Cloud sync / multi-device backup
 - AI scheduling assistant
-- In-app manual theme override (system only for now)
+- In-app manual theme override (system only for now; language override is in scope)
 - Automatic nightly task rollover without user action (planned via background job)
 
 ---
@@ -178,10 +224,17 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 | 2026-05 | Initial PRD (Russian) |
 | 2026-05 | Translated to English; aligned with implemented MVP |
 | 2026-05 | Dashboard date filter, completed/reopen, expandable tiles, system theme |
-| 2026-05 | Manual postpone UI; overdue badge rules documented |
+| 2026-05 | Manual postpone UI; dynamic overdue-day badge (`dynamicOverdueDays`) |
 | 2026-05 | Embedded subtasks on tasks (checklist, dashboard + create flow) |
 | 2026-05 | Link existing tasks as child subtasks via `parentTaskId` |
 | 2026-05 | Local `TaskAttachment` types (contact, image, URL, location, note, checklist) |
 | 2026-05 | Attachment UX: device contacts, OSM place search, map-app chooser (coords only), image preview, compact URL tile |
 | 2026-05 | Checklist as attachment only (removed embedded subtasks on `Task`) |
 | 2026-05 | Overdue panel, week activity dots, tile tap zones, linked vs checklist UI, location place names (Nominatim) |
+| 2026-05 | Local events strip (compressed timeline, now indicator); dashboard completed section; compact `TaskExpandableTile` + interactive badges; AppBar templates stub |
+| 2026-05 | Undated tasks section; `TaskFormSheet` / `EventFormSheet`; `Task.calendarId` (removed `TaskCategory`); `DeleteTask` / `DeleteCalendarEvent` |
+| 2026-05 | `TaskDetailScreen` / `EventDetailScreen`; compact dashboard tiles; attachment action sheet; `Task.sortOrder` + `ReorderChildTasks`; `UpdateTaskAttachment` / `RestoreTaskAttachment` |
+| 2026-05 | **easy_localization** (`en` / `ru` / `es`); language picker on Calendars settings; PRD/structure docs use English; UI via JSON keys |
+| 2026-05 | Android day-status foreground notification (ongoing FGS, dashboard sync, settings toggle) |
+| 2026-05 | Deep links: `daylinx://create?type=task\|event` → prefilled create sheets |
+| 2026-05 | Product name **DayLinx** (Dayline unavailable); `daylinx://`; `DayLinxApp` root widget |

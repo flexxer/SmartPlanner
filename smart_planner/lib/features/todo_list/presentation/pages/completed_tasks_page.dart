@@ -1,6 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
+import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/todo_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/presentation/bloc/completed_tasks_bloc.dart';
@@ -8,11 +9,17 @@ import 'package:smart_planner/features/todo_list/presentation/bloc/completed_tas
 import 'package:smart_planner/features/todo_list/presentation/bloc/completed_tasks_state.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/reopen_task_sheet.dart';
 
-/// Архив выполненных задач с переоткрытием (новая копия с другим сроком).
+/// Archive of completed tasks with reopen flow.
+///
+/// No longer linked from the dashboard AppBar; completed tasks for the
+/// selected day appear in the dashboard list. Kept for a possible dedicated
+/// archive or reopen entry point later.
+@Deprecated(
+  'Not routed from the dashboard. Use the dashboard completed section or '
+  'reopen via TodoRepository.reopenFromCompleted when a new entry is added.',
+)
 class CompletedTasksPage extends StatelessWidget {
   const CompletedTasksPage({super.key});
-
-  static final DateFormat _dateFormat = DateFormat('d MMM yyyy', 'ru');
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +54,7 @@ class _CompletedTasksViewState extends State<_CompletedTasksView> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Выполненные'),
+          title: Text('completed_page_title'.tr()),
         ),
         body: BlocConsumer<CompletedTasksBloc, CompletedTasksState>(
         listenWhen: (CompletedTasksState prev, CompletedTasksState next) =>
@@ -60,9 +67,7 @@ class _CompletedTasksViewState extends State<_CompletedTasksView> {
               state.lastReopenedTaskId != null) {
             setState(() => _reopenedDuringVisit = true);
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Новая задача создана'),
-              ),
+              SnackBar(content: Text('completed_task_created'.tr())),
             );
           }
         },
@@ -103,12 +108,11 @@ class _CompletedTasksList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (tasks.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Text(
-            'Выполненных задач пока нет.\n'
-            'Отметьте задачу на главном экране, чтобы она появилась здесь.',
+            'completed_empty_body'.tr(),
             textAlign: TextAlign.center,
           ),
         ),
@@ -181,7 +185,7 @@ class _CompletedTaskTile extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colors = theme.colorScheme;
     final String? dueLabel = task.dueDate != null
-        ? CompletedTasksPage._dateFormat.format(task.dueDate!)
+        ? L10n.dateFormat('d MMM yyyy', context: context).format(task.dueDate!)
         : null;
 
     return ListTile(
@@ -197,11 +201,15 @@ class _CompletedTaskTile extends StatelessWidget {
         ),
       ),
       subtitle: dueLabel != null
-          ? Text('Срок был: $dueLabel')
-          : const Text('Без срока'),
+          ? Text(
+              'due_was_label'.tr(
+                namedArgs: <String, String>{'date': dueLabel},
+              ),
+            )
+          : Text('no_due_date'.tr()),
       trailing: IconButton(
         icon: const Icon(Icons.replay),
-        tooltip: 'Переоткрыть',
+        tooltip: 'completed_reopen_tooltip'.tr(),
         onPressed: onReopen,
       ),
       onTap: onReopen,
@@ -230,7 +238,7 @@ class _ErrorBody extends StatelessWidget {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: onRetry,
-              child: const Text('Повторить'),
+              child: Text('common_retry'.tr()),
             ),
           ],
         ),

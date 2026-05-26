@@ -5,7 +5,6 @@ export 'entities/attachment_payloads.dart';
 export 'entities/task.dart';
 export 'entities/task_attachment.dart';
 export 'entities/task_attachment_type.dart';
-export 'entities/task_category.dart';
 export 'entities/task_priority.dart';
 export 'task_overdue_rules.dart';
 export 'task_overdue_selection.dart';

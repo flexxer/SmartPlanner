@@ -1,14 +1,15 @@
-/// Пользователь не выдал доступ к календарю.
+/// User denied calendar access.
 class CalendarPermissionDeniedException implements Exception {
-  CalendarPermissionDeniedException([this.message = 'Доступ к календарю не предоставлен']);
+  CalendarPermissionDeniedException([this.message]);
 
-  final String message;
+  final String? message;
 
   @override
-  String toString() => 'CalendarPermissionDeniedException: $message';
+  String toString() =>
+      'CalendarPermissionDeniedException${message != null ? ': $message' : ''}';
 }
 
-/// Ошибка при обращении к device_calendar.
+/// Error from device_calendar plugin.
 class CalendarServiceException implements Exception {
   CalendarServiceException(this.operation, this.details);
 
@@ -16,6 +17,5 @@ class CalendarServiceException implements Exception {
   final String details;
 
   @override
-  String toString() =>
-      'CalendarServiceException($operation): $details';
+  String toString() => 'CalendarServiceException($operation): $details';
 }

@@ -1,9 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:smart_planner/features/notifications/notification_channels.dart';
 import 'package:timezone/timezone.dart' as tz;
 
-/// Инициализация и планирование локальных push-уведомлений.
+/// Initializes and schedules local push notifications.
 class NotificationHelper {
   NotificationHelper._();
 
@@ -59,32 +60,42 @@ class NotificationHelper {
     }
 
     await android.createNotificationChannel(
-      const AndroidNotificationChannel(
+      AndroidNotificationChannel(
         NotificationChannels.meetings,
-        'Напоминания о встречах',
-        description: 'За 15 или 30 минут до события календаря',
+        'notification_meetings_channel'.tr(),
+        description: 'notification_meetings_channel_desc'.tr(),
         importance: Importance.high,
       ),
     );
     await android.createNotificationChannel(
-      const AndroidNotificationChannel(
+      AndroidNotificationChannel(
         NotificationChannels.taskDigest,
-        'Дайджест задач',
-        description: 'Утренний и вечерний обзор задач на день',
+        'notification_digest_channel'.tr(),
+        description: 'notification_digest_channel_desc'.tr(),
         importance: Importance.defaultImportance,
       ),
     );
     await android.createNotificationChannel(
-      const AndroidNotificationChannel(
+      AndroidNotificationChannel(
         NotificationChannels.overdueTasks,
-        'Просроченные задачи',
-        description: 'Невыполненные задачи, перенесённые на новый день',
+        'notification_overdue_channel'.tr(),
+        description: 'notification_overdue_channel_desc'.tr(),
         importance: Importance.high,
+      ),
+    );
+    await android.createNotificationChannel(
+      AndroidNotificationChannel(
+        NotificationChannels.dayStatus,
+        'notification_day_status_channel'.tr(),
+        description: 'notification_day_status_channel_desc'.tr(),
+        importance: Importance.low,
+        playSound: false,
+        enableVibration: false,
       ),
     );
   }
 
-  /// Планирует одноразовое уведомление (встреча, дайджест и т.д.).
+  /// Schedules a one-shot notification (meeting, digest, etc.).
   static Future<void> scheduleNotification({
     required int id,
     required String title,
@@ -92,17 +103,17 @@ class NotificationHelper {
     required tz.TZDateTime scheduledDate,
     required String channelId,
   }) async {
-    const AndroidNotificationDetails androidDetails =
+    final AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       NotificationChannels.meetings,
-      'Напоминания',
+      'notification_reminders_group'.tr(),
       importance: Importance.high,
       priority: Priority.high,
     );
 
-    const NotificationDetails details = NotificationDetails(
+    final NotificationDetails details = NotificationDetails(
       android: androidDetails,
-      iOS: DarwinNotificationDetails(),
+      iOS: const DarwinNotificationDetails(),
     );
 
     await _plugin.zonedSchedule(

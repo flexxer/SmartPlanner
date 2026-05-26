@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
+import 'package:smart_planner/features/todo_list/domain/task_overdue_rules.dart';
 import 'package:smart_planner/features/todo_list/domain/task_overdue_selection.dart';
 
 void main() {
@@ -14,6 +15,10 @@ void main() {
       expect(
         TaskOverdueSelection.isOverdueRelativeToDay(task, today),
         isTrue,
+      );
+      expect(
+        TaskOverdueRules.dynamicOverdueDays(task, now: today),
+        1,
       );
     });
 

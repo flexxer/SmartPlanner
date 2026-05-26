@@ -1,9 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 
-/// Выбор нового срока при переносе задачи.
+/// Pick a new due date when postponing a task.
 class PostponeTaskSheet extends StatefulWidget {
   const PostponeTaskSheet({
     required this.task,
@@ -13,7 +14,7 @@ class PostponeTaskSheet extends StatefulWidget {
 
   final Task task;
 
-  /// День, относительно которого считается «завтра» (выбранный день на дашборде).
+  /// Reference day for «tomorrow» (selected dashboard day).
   final DateTime referenceDate;
 
   @override
@@ -21,8 +22,6 @@ class PostponeTaskSheet extends StatefulWidget {
 }
 
 class _PostponeTaskSheetState extends State<PostponeTaskSheet> {
-  static final DateFormat _dateFormat = DateFormat('d MMM yyyy', 'ru');
-
   late DateTime _pickedDate;
 
   DateTime get _tomorrow => AppDateUtils.startOfDay(widget.referenceDate).add(
@@ -35,6 +34,10 @@ class _PostponeTaskSheetState extends State<PostponeTaskSheet> {
     _pickedDate = _tomorrow;
   }
 
+  String _formatDate(DateTime date) {
+    return L10n.dateFormat('d MMM yyyy', context: context).format(date);
+  }
+
   Future<void> _pickDate() async {
     final DateTime now = DateTime.now();
     final DateTime? date = await showDatePicker(
@@ -42,7 +45,7 @@ class _PostponeTaskSheetState extends State<PostponeTaskSheet> {
       initialDate: _pickedDate,
       firstDate: now.subtract(const Duration(days: 365)),
       lastDate: now.add(const Duration(days: 365 * 2)),
-      locale: const Locale('ru'),
+      locale: context.locale,
     );
     if (date != null) {
       setState(() => _pickedDate = AppDateUtils.startOfDay(date));
@@ -55,7 +58,7 @@ class _PostponeTaskSheetState extends State<PostponeTaskSheet> {
     final ThemeData theme = Theme.of(context);
     final EdgeInsets viewInsets = MediaQuery.viewInsetsOf(context);
     final String? currentDue = task.dueDate != null
-        ? _dateFormat.format(task.dueDate!)
+        ? _formatDate(task.dueDate!)
         : null;
 
     return Padding(
@@ -68,7 +71,7 @@ class _PostponeTaskSheetState extends State<PostponeTaskSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
-                'Перенести задачу',
+                'postpone_sheet_title'.tr(),
                 style: theme.textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
@@ -81,7 +84,9 @@ class _PostponeTaskSheetState extends State<PostponeTaskSheet> {
               if (currentDue != null) ...<Widget>[
                 const SizedBox(height: 4),
                 Text(
-                  'Текущий срок: $currentDue',
+                  'current_due_label'.tr(
+                    namedArgs: <String, String>{'date': currentDue},
+                  ),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -91,18 +96,30 @@ class _PostponeTaskSheetState extends State<PostponeTaskSheet> {
               FilledButton.icon(
                 onPressed: () => Navigator.of(context).pop(_tomorrow),
                 icon: const Icon(Icons.today_outlined),
-                label: Text('На завтра (${_dateFormat.format(_tomorrow)})'),
+                label: Text(
+                  'postpone_tomorrow'.tr(
+                    namedArgs: <String, String>{
+                      'date': _formatDate(_tomorrow),
+                    },
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: _pickDate,
                 icon: const Icon(Icons.event),
-                label: Text('Другая дата: ${_dateFormat.format(_pickedDate)}'),
+                label: Text(
+                  'postpone_other_date'.tr(
+                    namedArgs: <String, String>{
+                      'date': _formatDate(_pickedDate),
+                    },
+                  ),
+                ),
               ),
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(_pickedDate),
-                child: const Text('Перенести'),
+                child: Text('postpone_confirm'.tr()),
               ),
             ],
           ),

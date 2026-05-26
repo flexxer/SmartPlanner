@@ -1,5 +1,6 @@
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 
+@Deprecated('Only used by deprecated [CompletedTasksBloc].')
 sealed class CompletedTasksState {
   const CompletedTasksState();
 }

@@ -11,6 +11,7 @@ class TaskReopen {
       dueDate: dueDate == null ? null : AppDateUtils.startOfDay(dueDate),
       priority: source.priority,
       parentTaskId: null,
+      calendarId: source.calendarId,
     );
   }
 }

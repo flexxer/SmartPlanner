@@ -17,8 +17,8 @@ void main() {
       rangeEnd: monday.add(const Duration(days: 2)),
       taskDayKeys: <int>{tuesdayKey},
       events: <CalendarEvent>[
-        CalendarEvent(
-          id: 'e1',
+        CalendarEvent.fromDevice(
+          deviceEventId: 'e1',
           title: 'Meeting',
           start: monday.add(const Duration(hours: 10)),
           end: monday.add(const Duration(hours: 11)),

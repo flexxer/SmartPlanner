@@ -27,9 +27,9 @@ void main() {
     expect(TaskDateVisibility.isVisibleOnDate(task, today), isTrue);
   });
 
-  test('task without due date is visible only on today', () {
+  test('task without due date is not shown on a calendar day', () {
     final Task task = Task.create(title: 'Inbox');
-    expect(TaskDateVisibility.isVisibleOnDate(task, today), isTrue);
+    expect(TaskDateVisibility.isVisibleOnDate(task, today), isFalse);
     expect(
       TaskDateVisibility.isVisibleOnDate(
         task,

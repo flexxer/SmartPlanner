@@ -1,7 +1,6 @@
 import 'package:isar/isar.dart';
 import 'package:smart_planner/core/database/isar_database.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
-import 'package:smart_planner/features/todo_list/domain/entities/task_category.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_priority.dart';
 import 'package:smart_planner/features/todo_list/domain/task_date_visibility.dart';
@@ -10,7 +9,7 @@ import 'package:smart_planner/features/todo_list/data/repositories/task_attachme
 import 'package:smart_planner/features/todo_list/domain/task_overdue_selection.dart';
 import 'package:smart_planner/features/todo_list/domain/task_reopen.dart';
 
-/// CRUD задач и категорий в локальной БД Isar.
+/// CRUD задач в локальной БД Isar.
 class TodoRepository {
   TodoRepository({
     this._isar,
@@ -29,7 +28,7 @@ class TodoRepository {
 
   Future<Task?> getTaskById(Id id) => _db.tasks.get(id);
 
-  /// Невыполненные задачи: сначала выше [Task.priority], затем [Task.overdueCount],
+  /// Невыполненные задачи: сначала выше [Task.priority], затем [Task.dynamicOverdueDays],
   /// затем ближайший [Task.dueDate] (без срока — в конце).
   Future<List<Task>> getUncompletedTasks() async {
     final List<Task> tasks = await _db.tasks
@@ -56,13 +55,11 @@ class TodoRepository {
 
   /// Копия выполненной задачи с новым сроком; исходная остаётся выполненной.
   Future<Task> reopenFromCompleted(Task source, DateTime newDueDate) async {
-    await loadTaskCategory(source);
-    final TaskCategory? category = source.category.value;
     final Task reopened = TaskReopen.fromCompleted(
       source,
       dueDate: newDueDate,
     );
-    await saveTask(reopened, category: category);
+    await saveTask(reopened);
     await _attachmentRepository.copyAttachmentsToTask(
       fromTaskId: source.id,
       toTaskId: reopened.id,
@@ -84,6 +81,7 @@ class TodoRepository {
   }
 
   /// Невыполненные задачи на календарный день [date] (включая перенесённые просроченные).
+  /// Tasks without [Task.dueDate] are excluded; use [getUndatedTasks].
   Future<List<Task>> getUncompletedTasksForDate(DateTime date) async {
     final List<Task> tasks = await getUncompletedTasks();
     final DateTime day = AppDateUtils.startOfDay(date);
@@ -91,7 +89,29 @@ class TodoRepository {
         .where(
           (Task t) =>
               TaskHierarchy.isRoot(t) &&
+              t.dueDate != null &&
               TaskDateVisibility.isVisibleOnDate(t, day),
+        )
+        .toList(growable: false);
+  }
+
+  /// Root uncompleted tasks with no [Task.dueDate] (dashboard «Без срока» section).
+  Future<List<Task>> getUndatedTasks() async {
+    final List<Task> tasks = await getUncompletedTasks();
+    return tasks
+        .where((Task t) => TaskHierarchy.isRoot(t) && t.dueDate == null)
+        .toList(growable: false);
+  }
+
+  /// Completed root tasks for [date] (due on that day, or undated by [Task.updatedAt]).
+  Future<List<Task>> getCompletedTasksForDate(DateTime date) async {
+    final List<Task> tasks = await getCompletedTasks();
+    final DateTime day = AppDateUtils.startOfDay(date);
+    return tasks
+        .where(
+          (Task t) =>
+              TaskHierarchy.isRoot(t) &&
+              TaskDateVisibility.isCompletedVisibleOnDate(t, day),
         )
         .toList(growable: false);
   }
@@ -107,7 +127,7 @@ class TodoRepository {
     final List<Task> activeChildren = allChildren
         .where((Task t) => !t.isCompleted)
         .toList(growable: false);
-    activeChildren.sort(_compareTasksByPriority);
+    activeChildren.sort(compareChildTasks);
     final int completedCount =
         allChildren.where((Task t) => t.isCompleted).length;
     return ChildTasksBundle(
@@ -159,8 +179,41 @@ class TodoRepository {
     )) {
       return false;
     }
+    child.sortOrder = await _nextChildSortOrder(parentTaskId);
     await updateTask(child);
     return true;
+  }
+
+  /// Persists manual child order under [parentTaskId] ([Task.sortOrder] = list index).
+  Future<void> reorderChildTasks({
+    required Id parentTaskId,
+    required List<Id> orderedChildIds,
+  }) async {
+    await _db.writeTxn(() async {
+      for (int index = 0; index < orderedChildIds.length; index++) {
+        final Task? child = await _db.tasks.get(orderedChildIds[index]);
+        if (child == null || child.parentTaskId != parentTaskId) {
+          continue;
+        }
+        child.sortOrder = index;
+        child.markUpdated();
+        await _db.tasks.put(child);
+      }
+    });
+  }
+
+  Future<int> _nextChildSortOrder(Id parentTaskId) async {
+    final List<Task> siblings = await getAllChildTasks(parentTaskId);
+    if (siblings.isEmpty) {
+      return 0;
+    }
+    int maxOrder = siblings.first.sortOrder;
+    for (final Task sibling in siblings) {
+      if (sibling.sortOrder > maxOrder) {
+        maxOrder = sibling.sortOrder;
+      }
+    }
+    return maxOrder + 1;
   }
 
   Future<void> detachTaskFromParent(Id childTaskId) async {
@@ -172,48 +225,27 @@ class TodoRepository {
     await updateTask(child);
   }
 
-  Future<Id> saveTask(Task task, {TaskCategory? category}) async {
-    return _db.writeTxn(() async {
-      final Id id = await _db.tasks.put(task);
-      if (category != null) {
-        task.category.value = category;
-        await task.category.save();
-      }
-      return id;
-    });
+  Future<Id> saveTask(Task task) async {
+    task.markUpdated();
+    return _db.writeTxn(() => _db.tasks.put(task));
   }
 
-  Future<void> updateTask(Task task, {TaskCategory? category}) async {
-    await _db.writeTxn(() async {
-      await _db.tasks.put(task);
-      if (category != null) {
-        task.category.value = category;
-        await task.category.save();
-      }
-    });
+  Future<void> updateTask(Task task) async {
+    task.markUpdated();
+    await _db.writeTxn(() => _db.tasks.put(task));
   }
 
   Future<bool> deleteTask(Id id) =>
       _db.writeTxn(() => _db.tasks.delete(id));
 
-  Future<void> loadTaskCategory(Task task) => task.category.load();
-
-  // ——— Categories ———
-
-  Future<List<TaskCategory>> getAllCategories() =>
-      _db.taskCategorys.where().sortByName().findAll();
-
-  Future<TaskCategory?> getCategoryById(Id id) => _db.taskCategorys.get(id);
-
-  Future<Id> saveCategory(TaskCategory category) =>
-      _db.writeTxn(() => _db.taskCategorys.put(category));
-
-  Future<void> updateCategory(TaskCategory category) async {
-    await _db.writeTxn(() => _db.taskCategorys.put(category));
+  /// Sort key for sibling tasks under one parent ([Task.sortOrder] first).
+  static int compareChildTasks(Task a, Task b) {
+    final int byOrder = a.sortOrder.compareTo(b.sortOrder);
+    if (byOrder != 0) {
+      return byOrder;
+    }
+    return _compareTasksByPriority(a, b);
   }
-
-  Future<bool> deleteCategory(Id id) =>
-      _db.writeTxn(() => _db.taskCategorys.delete(id));
 
   static int _compareTasksByPriority(Task a, Task b) {
     final int byPriority =
@@ -222,7 +254,8 @@ class TodoRepository {
       return byPriority;
     }
 
-    final int byOverdue = b.overdueCount.compareTo(a.overdueCount);
+    final int byOverdue =
+        b.dynamicOverdueDays.compareTo(a.dynamicOverdueDays);
     if (byOverdue != 0) {
       return byOverdue;
     }

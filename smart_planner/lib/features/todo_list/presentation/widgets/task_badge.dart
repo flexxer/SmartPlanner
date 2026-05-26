@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Компактный бейдж для списка задач.
+/// Compact badge for task list metadata (priority, links, progress).
 class TaskBadge extends StatelessWidget {
   const TaskBadge({
     required this.label,
     required this.backgroundColor,
     required this.foregroundColor,
     this.icon,
+    this.onTap,
     super.key,
   });
 
@@ -14,11 +15,12 @@ class TaskBadge extends StatelessWidget {
   final Color backgroundColor;
   final Color foregroundColor;
   final IconData? icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    final Widget content = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(8),
@@ -38,6 +40,19 @@ class TaskBadge extends StatelessWidget {
                 ),
           ),
         ],
+      ),
+    );
+
+    if (onTap == null) {
+      return content;
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: content,
       ),
     );
   }

@@ -60,6 +60,14 @@ class TaskAttachmentRepository {
     await _db.writeTxn(() => _db.taskAttachments.put(attachment));
   }
 
+  /// Removes all attachments (and image files) for [taskId].
+  Future<void> deleteAllForTask(Id taskId) async {
+    final List<TaskAttachment> attachments = await getAttachmentsForTask(taskId);
+    for (final TaskAttachment attachment in attachments) {
+      await delete(attachment.id);
+    }
+  }
+
   Future<void> delete(Id attachmentId) async {
     final TaskAttachment? attachment = await _db.taskAttachments.get(attachmentId);
     if (attachment == null) {

@@ -1,16 +1,16 @@
 import 'dart:io';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'package:smart_planner/features/todo_list/data/attachment_file_store.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
-import 'package:smart_planner/features/todo_list/data/services/attachment_launcher_service.dart';
-import 'package:smart_planner/features/todo_list/data/services/map_app_launcher_service.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_payloads.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment_type.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_checklist.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.dart';
+import 'package:smart_planner/features/todo_list/presentation/widgets/attachment_action_sheet.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_section_header.dart';
 
 /// Attachments block in an expanded task tile.
@@ -18,6 +18,7 @@ class TaskAttachmentsSection extends StatelessWidget {
   const TaskAttachmentsSection({
     required this.attachments,
     required this.attachmentRepository,
+    required this.onEditAttachment,
     required this.onDeleteAttachment,
     required this.onToggleChecklistItem,
     required this.onAddAttachment,
@@ -26,7 +27,8 @@ class TaskAttachmentsSection extends StatelessWidget {
 
   final List<TaskAttachment> attachments;
   final TaskAttachmentRepository attachmentRepository;
-  final void Function(Id attachmentId) onDeleteAttachment;
+  final void Function(TaskAttachment attachment) onEditAttachment;
+  final void Function(TaskAttachment attachment) onDeleteAttachment;
   final void Function(Id attachmentId, int itemLocalId) onToggleChecklistItem;
   final VoidCallback onAddAttachment;
 
@@ -46,14 +48,14 @@ class TaskAttachmentsSection extends StatelessWidget {
       children: <Widget>[
         TaskTileSectionHeader(
           icon: Icons.attach_file,
-          title: 'Вложения',
+          title: 'attachments_title'.tr(),
           trailing: attachments.isEmpty ? null : '${attachments.length}',
           iconColor: colors.primary,
         ),
         const SizedBox(height: 8),
         if (attachments.isEmpty)
           Text(
-            'Нет вложений',
+            'attachments_empty'.tr(),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colors.onSurfaceVariant,
               fontStyle: FontStyle.italic,
@@ -63,7 +65,7 @@ class TaskAttachmentsSection extends StatelessWidget {
           if (checklists.isNotEmpty) ...<Widget>[
             TaskTileSectionHeader(
               icon: Icons.fact_check,
-              title: 'Чеклист',
+              title: 'attachments_checklist'.tr(),
               trailing: _checklistSectionTrailing(checklists),
               iconColor: colors.secondary,
             ),
@@ -72,7 +74,8 @@ class TaskAttachmentsSection extends StatelessWidget {
               (TaskAttachment attachment) => _AttachmentTile(
                 attachment: attachment,
                 attachmentRepository: attachmentRepository,
-                onDelete: () => onDeleteAttachment(attachment.id),
+                onEditAttachment: () => onEditAttachment(attachment),
+                onDeleteAttachment: () => onDeleteAttachment(attachment),
                 onToggleNoteItem: (int localId) =>
                     onToggleChecklistItem(attachment.id, localId),
               ),
@@ -87,7 +90,7 @@ class TaskAttachmentsSection extends StatelessWidget {
             if (checklists.isNotEmpty)
               TaskTileSectionHeader(
                 icon: Icons.layers_outlined,
-                title: 'Другие вложения',
+                title: 'attachments_other'.tr(),
                 trailing: '${otherAttachments.length}',
                 iconColor: colors.onSurfaceVariant,
               ),
@@ -96,7 +99,8 @@ class TaskAttachmentsSection extends StatelessWidget {
               (TaskAttachment attachment) => _AttachmentTile(
                 attachment: attachment,
                 attachmentRepository: attachmentRepository,
-                onDelete: () => onDeleteAttachment(attachment.id),
+                onEditAttachment: () => onEditAttachment(attachment),
+                onDeleteAttachment: () => onDeleteAttachment(attachment),
                 onToggleNoteItem: (int localId) =>
                     onToggleChecklistItem(attachment.id, localId),
               ),
@@ -107,7 +111,7 @@ class TaskAttachmentsSection extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: onAddAttachment,
           icon: const Icon(Icons.attach_file, size: 18),
-          label: const Text('Добавить вложение'),
+          label: Text('attachments_add'.tr()),
         ),
       ],
     );
@@ -131,14 +135,26 @@ class _AttachmentTile extends StatelessWidget {
   const _AttachmentTile({
     required this.attachment,
     required this.attachmentRepository,
-    required this.onDelete,
+    required this.onEditAttachment,
+    required this.onDeleteAttachment,
     required this.onToggleNoteItem,
   });
 
   final TaskAttachment attachment;
   final TaskAttachmentRepository attachmentRepository;
-  final VoidCallback onDelete;
+  final VoidCallback onEditAttachment;
+  final VoidCallback onDeleteAttachment;
   final void Function(int localId) onToggleNoteItem;
+
+  Future<void> _showActions(BuildContext context) async {
+    await showAttachmentActionSheet(
+      context,
+      attachment: attachment,
+      attachmentRepository: attachmentRepository,
+      onEdit: onEditAttachment,
+      onDelete: (_) => onDeleteAttachment(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,8 +162,8 @@ class _AttachmentTile extends StatelessWidget {
     final ColorScheme colors = theme.colorScheme;
     final String title = TaskAttachmentCodec.summaryLabel(attachment);
     final bool urlInHeader = attachment.type == TaskAttachmentType.url;
-    final Widget? headerTitle = urlInHeader
-        ? _UrlHeaderLink(attachment: attachment)
+    final Widget headerTitle = urlInHeader
+        ? _UrlHeaderTitle(attachment: attachment)
         : Text(
             title,
             style: theme.textTheme.titleSmall?.copyWith(
@@ -169,35 +185,38 @@ class _AttachmentTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 0,
       color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(12, urlInHeader ? 4 : 8, 4, body == null ? 4 : 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                Icon(_iconForType(attachment.type), size: 20),
-                const SizedBox(width: 8),
-                Expanded(child: headerTitle!),
-                IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  tooltip: 'Удалить вложение',
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _showActions(context),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            12,
+            urlInHeader ? 8 : 8,
+            12,
+            body == null ? 8 : 8,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Icon(_iconForType(attachment.type), size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(child: headerTitle),
+                  Icon(
+                    Icons.more_horiz,
+                    size: 20,
+                    color: colors.onSurfaceVariant,
                   ),
-                ),
+                ],
+              ),
+              if (body != null) ...<Widget>[
+                const SizedBox(height: 4),
+                body,
               ],
-            ),
-            if (body != null) ...<Widget>[
-              const SizedBox(height: 4),
-              body,
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -262,39 +281,15 @@ class _ContactBody extends StatelessWidget {
 
     final TextStyle? linkStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: Theme.of(context).colorScheme.primary,
-          decoration: TextDecoration.underline,
         );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
+        if (phone != null) Text(phone, style: linkStyle),
         if (phone != null)
-          InkWell(
-            onTap: () => _launchOrSnack(
-              context,
-              AttachmentLauncherService.dialPhone(phone),
-              'Не удалось открыть звонок',
-            ),
-            child: Text(phone, style: linkStyle),
-          ),
-        if (phone != null)
-          InkWell(
-            onTap: () => _launchOrSnack(
-              context,
-              AttachmentLauncherService.sendSms(phone),
-              'Не удалось открыть SMS',
-            ),
-            child: Text('SMS', style: linkStyle),
-          ),
-        if (email != null)
-          InkWell(
-            onTap: () => _launchOrSnack(
-              context,
-              AttachmentLauncherService.sendEmail(email),
-              'Не удалось открыть почту',
-            ),
-            child: Text(email, style: linkStyle),
-          ),
+          Text('SMS', style: linkStyle?.copyWith(fontSize: 12)),
+        if (email != null) Text(email, style: linkStyle),
       ],
     );
   }
@@ -317,23 +312,15 @@ class _ImageBody extends StatelessWidget {
       future: fileStore.resolveFile(payload.relativePath),
       builder: (BuildContext context, AsyncSnapshot<File> snapshot) {
         if (!snapshot.hasData || !snapshot.data!.existsSync()) {
-          return const Text('Файл изображения не найден');
+          return Text('attachment_image_missing'.tr());
         }
-        final File file = snapshot.data!;
         return ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: InkWell(
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => _ImageViewerPage(file: file),
-              ),
-            ),
-            child: Image.file(
-              file,
-              height: 120,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+          child: Image.file(
+            snapshot.data!,
+            height: 120,
+            width: double.infinity,
+            fit: BoxFit.cover,
           ),
         );
       },
@@ -341,26 +328,8 @@ class _ImageBody extends StatelessWidget {
   }
 }
 
-class _ImageViewerPage extends StatelessWidget {
-  const _ImageViewerPage({required this.file});
-
-  final File file;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: Center(
-        child: InteractiveViewer(
-          child: Image.file(file),
-        ),
-      ),
-    );
-  }
-}
-
-class _UrlHeaderLink extends StatelessWidget {
-  const _UrlHeaderLink({required this.attachment});
+class _UrlHeaderTitle extends StatelessWidget {
+  const _UrlHeaderTitle({required this.attachment});
 
   final TaskAttachment attachment;
 
@@ -370,22 +339,14 @@ class _UrlHeaderLink extends StatelessWidget {
     final String linkText = urlAttachmentLinkLabel(payload);
     final TextStyle linkStyle = Theme.of(context).textTheme.titleSmall!.copyWith(
           color: Theme.of(context).colorScheme.primary,
-          decoration: TextDecoration.underline,
           fontWeight: FontWeight.w600,
         );
 
-    return InkWell(
-      onTap: () => _launchOrSnack(
-        context,
-        AttachmentLauncherService.openUrl(payload.url),
-        'Не удалось открыть ссылку',
-      ),
-      child: Text(
-        linkText,
-        style: linkStyle,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
+    return Text(
+      linkText,
+      style: linkStyle,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }
@@ -424,41 +385,8 @@ class _LocationBody extends StatelessWidget {
             color: colors.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FilledButton.tonalIcon(
-            onPressed: () => _openInMaps(context, payload),
-            icon: const Icon(Icons.navigation_outlined, size: 18),
-            label: const Text('Открыть в картах'),
-          ),
-        ),
       ],
     );
-  }
-
-  static Future<void> _openInMaps(
-    BuildContext context,
-    LocationAttachmentPayload payload,
-  ) async {
-    final bool ok = await MapAppLauncherService.showAtCoordinate(
-      context: context,
-      latitude: payload.latitude,
-      longitude: payload.longitude,
-    );
-    if (!context.mounted) {
-      return;
-    }
-    if (!ok) {
-      await _launchOrSnack(
-        context,
-        AttachmentLauncherService.openMaps(
-          latitude: payload.latitude,
-          longitude: payload.longitude,
-        ),
-        'Не удалось открыть карты',
-      );
-    }
   }
 }
 
@@ -472,15 +400,11 @@ class _NoteBody extends StatelessWidget {
     final NoteAttachmentPayload note = TaskAttachmentCodec.note(attachment);
     if (note.body.trim().isEmpty) {
       return Text(
-        'Пустая заметка',
+        'attachment_empty_note'.tr(),
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontStyle: FontStyle.italic,
             ),
       );
-    }
-    final String? title = note.title?.trim();
-    if (title != null && title.isNotEmpty) {
-      return Text(note.body, style: Theme.of(context).textTheme.bodyMedium);
     }
     return Text(note.body, style: Theme.of(context).textTheme.bodyMedium);
   }
@@ -504,7 +428,7 @@ class _ChecklistBody extends StatelessWidget {
 
     if (checklist.items.isEmpty) {
       return Text(
-        'Нет пунктов',
+        'attachment_no_checklist_items'.tr(),
         style: theme.textTheme.bodyMedium?.copyWith(
           fontStyle: FontStyle.italic,
         ),
@@ -541,22 +465,6 @@ class _ChecklistBody extends StatelessWidget {
           ],
         ),
       ).toList(),
-    );
-  }
-}
-
-Future<void> _launchOrSnack(
-  BuildContext context,
-  Future<bool> launchFuture,
-  String errorMessage,
-) async {
-  final bool ok = await launchFuture;
-  if (!context.mounted) {
-    return;
-  }
-  if (!ok) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(errorMessage)),
     );
   }
 }

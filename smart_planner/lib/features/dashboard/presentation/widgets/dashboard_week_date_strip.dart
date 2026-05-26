@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/dashboard/domain/day_activity_marker.dart';
+import 'package:smart_planner/features/dashboard/presentation/widgets/day_marker_dots.dart';
 
 /// Horizontally scrollable week days with activity dots under each date.
 class DashboardWeekDateStrip extends StatefulWidget {
@@ -24,7 +25,6 @@ class DashboardWeekDateStrip extends StatefulWidget {
 }
 
 class _DashboardWeekDateStripState extends State<DashboardWeekDateStrip> {
-  static final DateFormat _weekdayFormat = DateFormat.E('ru');
   final ScrollController _scrollController = ScrollController();
   int? _lastCenteredIndex;
 
@@ -80,6 +80,7 @@ class _DashboardWeekDateStripState extends State<DashboardWeekDateStrip> {
   Widget build(BuildContext context) {
     final List<DateTime> days = AppDateUtils.dateStripDays(widget.selectedDate);
     final ColorScheme colors = Theme.of(context).colorScheme;
+    final weekdayFormat = L10n.dateFormat('E', context: context);
 
     return SizedBox(
       height: 72,
@@ -102,7 +103,7 @@ class _DashboardWeekDateStripState extends State<DashboardWeekDateStrip> {
 
           return _DayCell(
             day: day,
-            weekdayLabel: _weekdayFormat.format(day),
+            weekdayLabel: weekdayFormat.format(day),
             isSelected: isSelected,
             isToday: isToday,
             marker: marker,
@@ -175,89 +176,13 @@ class _DayCell extends StatelessWidget {
               const SizedBox(height: 2),
               Text('${day.day}', style: dayStyle),
               const SizedBox(height: 4),
-              _DayMarkerDots(
+              DayMarkerDots(
                 marker: marker,
-                colors: colors,
                 dotSize: dotSize,
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _DayMarkerDots extends StatelessWidget {
-  const _DayMarkerDots({
-    required this.marker,
-    required this.colors,
-    required this.dotSize,
-  });
-
-  final DayActivityMarker marker;
-  final ColorScheme colors;
-  final double dotSize;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!marker.hasAnyIndicator) {
-      return SizedBox(height: dotSize);
-    }
-
-    final List<Widget> dots = <Widget>[];
-    if (marker.hasCalendarEvents) {
-      dots.add(_MarkerDot(
-        color: _calendarDotColor(marker.calendarColorValue, colors),
-        size: dotSize,
-      ));
-    }
-    if (marker.hasLocalTasks) {
-      dots.add(_MarkerDot(
-        color: colors.secondary,
-        size: dotSize,
-      ));
-    }
-
-    return SizedBox(
-      height: dotSize,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          for (int i = 0; i < dots.length; i++) ...<Widget>[
-            if (i > 0) const SizedBox(width: 3),
-            dots[i],
-          ],
-        ],
-      ),
-    );
-  }
-
-  static Color _calendarDotColor(int? colorValue, ColorScheme colors) {
-    if (colorValue == null) {
-      return colors.primary;
-    }
-    if (colorValue > 0xFFFFFF) {
-      return Color(colorValue);
-    }
-    return Color(0xFF000000 | colorValue);
-  }
-}
-
-class _MarkerDot extends StatelessWidget {
-  const _MarkerDot({required this.color, required this.size});
-
-  final Color color;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
       ),
     );
   }

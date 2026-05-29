@@ -22,7 +22,6 @@ import 'package:smart_planner/features/todo_list/data/repositories/task_attachme
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_snapshot.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/add_attachment_sheet.dart';
-import 'package:smart_planner/features/todo_list/presentation/widgets/link_task_sheet.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/postpone_task_sheet.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_expandable_tile.dart';
 import 'package:smart_planner/features/dashboard/domain/day_activity_marker.dart';
@@ -31,12 +30,13 @@ import 'package:smart_planner/features/calendar_integration/data/linked_calendar
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/device_calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/widgets/event_form_sheet.dart';
+import 'package:smart_planner/features/dashboard/presentation/widgets/dashboard_create_fab.dart';
 import 'package:smart_planner/features/dashboard/presentation/widgets/dashboard_local_events_section.dart';
 import 'package:smart_planner/features/dashboard/presentation/widgets/dashboard_week_date_strip.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/pages/event_detail_screen.dart';
 import 'package:smart_planner/features/dashboard/presentation/widgets/event_linked_tasks_sheet.dart';
 import 'package:smart_planner/features/todo_list/presentation/pages/task_detail_screen.dart';
-import 'package:smart_planner/features/dashboard/presentation/widgets/link_calendar_event_sheet.dart';
+import 'package:smart_planner/features/todo_list/presentation/widgets/task_relation_sheet.dart';
 
 /// Главный экран: события календаря на сегодня и список задач.
 class DashboardScreen extends StatelessWidget {
@@ -63,8 +63,8 @@ class DashboardScreen extends StatelessWidget {
             onPressed: () => _openTemplates(context),
           ),
           IconButton(
-            icon: const Icon(Icons.calendar_month),
-            tooltip: 'dashboard_tooltip_calendars'.tr(),
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'dashboard_tooltip_settings'.tr(),
             onPressed: () => _openCalendarSettings(context),
           ),
           IconButton(
@@ -75,9 +75,13 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openCreateTask(context),
-        child: const Icon(Icons.add),
+      floatingActionButton: Builder(
+        builder: (BuildContext fabContext) {
+          return DashboardCreateFab(
+            onCreateTask: () => _openCreateFromFab(fabContext, createEvent: false),
+            onCreateEvent: () => _openCreateFromFab(fabContext, createEvent: true),
+          );
+        },
       ),
       body: BlocBuilder<DashboardBloc, DashboardState>(
         builder: (BuildContext context, DashboardState state) {
@@ -123,11 +127,6 @@ class DashboardScreen extends StatelessWidget {
                         selectedDate: selectedDate,
                         events: calendarEvents,
                         timeFormat: timeFormat,
-                        onCreateEvent: () => openCreateCalendarEventSheet(
-                          context,
-                          selectedDate: selectedDate,
-                          selectedCalendarIds: selectedCalendarIds,
-                        ),
                         onEventTap: (CalendarEvent event) =>
                             openEventDetail(
                           context,
@@ -175,17 +174,9 @@ class DashboardScreen extends StatelessWidget {
                           linkedCalendarsById: linkedCalendarsById,
                         ),
                       ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        child: Text(
-                          _tasksSectionTitle(context, selectedDate),
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                    ),
-                    _TasksSliver(
-                      tasks: _partitionTasksByCompletion(
+                    ..._buildTaskAreaSlivers(
+                      context: context,
+                      datedTasks: _partitionTasksByCompletion(
                         <Task>[...tasks, ...completedTasks],
                       ),
                       undatedTasks: undatedTasks,
@@ -206,16 +197,102 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  static String _tasksSectionTitle(BuildContext context, DateTime selectedDate) {
+  static String _dueTasksSectionTitle(
+    BuildContext context,
+    DateTime selectedDate,
+  ) {
     if (AppDateUtils.isToday(selectedDate)) {
-      return 'dashboard_tasks_today'.tr();
+      return 'dashboard_due_section_today'.tr();
     }
-    return 'dashboard_tasks_on_date'.tr(
+    return 'dashboard_due_section_on_date'.tr(
       namedArgs: <String, String>{
         'date': L10n.dateFormat('d MMMM', context: context)
             .format(selectedDate),
       },
     );
+  }
+
+  static List<Widget> _buildTaskAreaSlivers({
+    required BuildContext context,
+    required ({List<Task> active, List<Task> completed}) datedTasks,
+    required List<Task> undatedTasks,
+    required DateTime selectedDate,
+    required List<CalendarEvent> calendarEvents,
+    required Map<Id, CalendarEvent> localCalendarEventById,
+    required Map<Id, ChildTasksBundle> childTasksByParentId,
+    required Map<Id, List<TaskAttachment>> attachmentsByTaskId,
+    required Map<String, DeviceCalendarInfo> linkedCalendarsById,
+  }) {
+    final List<Task> activeDated = datedTasks.active;
+    final List<Task> completedDated = datedTasks.completed;
+    final bool noTasksForDay = activeDated.isEmpty &&
+        undatedTasks.isEmpty &&
+        completedDated.isEmpty;
+
+    final _TaskTileContext tileContext = _TaskTileContext(
+      selectedDate: selectedDate,
+      calendarEvents: calendarEvents,
+      localCalendarEventById: localCalendarEventById,
+      childTasksByParentId: childTasksByParentId,
+      attachmentsByTaskId: attachmentsByTaskId,
+      linkedCalendarsById: linkedCalendarsById,
+    );
+
+    return <Widget>[
+      SliverToBoxAdapter(
+        child: _DashboardSectionHeader(
+          title: _dueTasksSectionTitle(context, selectedDate),
+        ),
+      ),
+      if (activeDated.isNotEmpty)
+        SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (BuildContext context, int index) => _DashboardTaskTile(
+              task: activeDated[index],
+              tileContext: tileContext,
+            ),
+            childCount: activeDated.length,
+          ),
+        ),
+      SliverToBoxAdapter(
+        child: _DashboardSectionHeader(
+          title: 'backlog_section'.tr(
+            namedArgs: <String, String>{'count': '${undatedTasks.length}'},
+          ),
+          topPadding: activeDated.isEmpty ? 8 : 16,
+        ),
+      ),
+      if (undatedTasks.isNotEmpty)
+        SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (BuildContext context, int index) => _DashboardTaskTile(
+              task: undatedTasks[index],
+              tileContext: tileContext,
+            ),
+            childCount: undatedTasks.length,
+          ),
+        ),
+      if (completedDated.isNotEmpty)
+        SliverToBoxAdapter(
+          child: _CompletedTasksPanel(
+            completedTasks: completedDated,
+            selectedDate: selectedDate,
+            calendarEvents: calendarEvents,
+            localCalendarEventById: localCalendarEventById,
+            childTasksByParentId: childTasksByParentId,
+            attachmentsByTaskId: attachmentsByTaskId,
+            linkedCalendarsById: linkedCalendarsById,
+          ),
+        ),
+      if (noTasksForDay)
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: _EmptyTasksPlaceholder(selectedDate: selectedDate),
+          ),
+        ),
+    ];
   }
 
   /// Splits dashboard day tasks into active and completed groups for the list UI.
@@ -234,15 +311,31 @@ class DashboardScreen extends StatelessWidget {
     return (active: active, completed: completed);
   }
 
-  static Future<void> _openCreateTask(BuildContext context) async {
+  static Future<void> _openCreateFromFab(
+    BuildContext context, {
+    required bool createEvent,
+  }) async {
     final DashboardState blocState = context.read<DashboardBloc>().state;
+    final DateTime selectedDate = blocState is DashboardLoaded
+        ? blocState.selectedDate
+        : DateTime.now();
     final List<String> selectedCalendarIds = blocState is DashboardLoaded
         ? blocState.selectedCalendarIds
         : const <String>[];
-    await openCreateTaskSheet(
-      context,
-      selectedCalendarIds: selectedCalendarIds,
-    );
+
+    if (createEvent) {
+      await openCreateCalendarEventSheet(
+        context,
+        selectedDate: selectedDate,
+        selectedCalendarIds: selectedCalendarIds,
+      );
+    } else {
+      await openCreateTaskSheet(
+        context,
+        initialDueDate: selectedDate,
+        selectedCalendarIds: selectedCalendarIds,
+      );
+    }
   }
 
   static Future<void> openCreateCalendarEventSheet(
@@ -323,6 +416,7 @@ class DashboardScreen extends StatelessWidget {
     CalendarEvent? linkToEvent,
     List<String> selectedCalendarIds = const <String>[],
     UiTemplate? templateToApply,
+    Id? initialParentTaskId,
   }) async {
     final DashboardBloc dashboardBloc = context.read<DashboardBloc>();
     final bool? saved = await showModalBottomSheet<bool>(
@@ -342,6 +436,7 @@ class DashboardScreen extends StatelessWidget {
         linkedEventTitle: linkToEvent?.title,
         selectedCalendarIds: selectedCalendarIds,
         templateToApply: templateToApply,
+        initialParentTaskId: initialParentTaskId,
         attachmentRepository: sheetContext.read<TaskAttachmentRepository>(),
       ),
     );
@@ -362,31 +457,186 @@ class DashboardScreen extends StatelessWidget {
     required Task task,
     required List<CalendarEvent> dayEvents,
   }) async {
-    final CalendarEvent? picked = await showModalBottomSheet<CalendarEvent>(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext sheetContext) => LinkCalendarEventSheet(
-        events: dayEvents,
-        taskTitle: task.title,
+    await _showTaskRelationSheet(
+      context,
+      target: TaskRelationPickEventTarget(
+        task: task,
+        dayEvents: dayEvents,
       ),
     );
-    if (picked == null || !context.mounted) {
+  }
+
+  static Future<void> openAttachTaskToParentSheet(
+    BuildContext context, {
+    required Task parentTask,
+    required DateTime selectedDate,
+  }) async {
+    await _showTaskRelationSheet(
+      context,
+      target: TaskRelationParentTarget(
+        parentTaskId: parentTask.id,
+        title: parentTask.title,
+        selectedDate: selectedDate,
+      ),
+    );
+  }
+
+  static Future<void> openAttachTaskToEventSheet(
+    BuildContext context, {
+    required CalendarEvent event,
+    required DateTime selectedDate,
+  }) async {
+    await _showTaskRelationSheet(
+      context,
+      target: TaskRelationEventTarget(
+        event: event,
+        selectedDate: selectedDate,
+      ),
+    );
+  }
+
+  static Future<void> _showTaskRelationSheet(
+    BuildContext context, {
+    required TaskRelationTarget target,
+  }) async {
+    final Object? result = await showModalBottomSheet<Object>(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext sheetContext) => TaskRelationSheet(target: target),
+    );
+    if (!context.mounted || result == null) {
       return;
     }
+    await _handleTaskRelationResult(
+      context,
+      target: target,
+      result: result,
+    );
+  }
 
-    context.read<DashboardBloc>().add(
-          LinkTaskToCalendarEvent(taskId: task.id, eventId: picked.id),
+  static Future<void> _handleTaskRelationResult(
+    BuildContext context, {
+    required TaskRelationTarget target,
+    required Object result,
+  }) async {
+    final DashboardBloc bloc = context.read<DashboardBloc>();
+    final DashboardState state = bloc.state;
+    final List<String> selectedCalendarIds = state is DashboardLoaded
+        ? state.selectedCalendarIds
+        : const <String>[];
+
+    switch (result) {
+      case TaskRelationLinkedExistingTask(:final Id taskId):
+        await _applyExistingTaskRelation(
+          context,
+          target: target,
+          taskId: taskId,
         );
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'snackbar_task_linked_event'.tr(
-              namedArgs: <String, String>{'title': picked.title},
+      case TaskRelationPickedEvent(:final CalendarEvent event):
+        if (target case TaskRelationPickEventTarget(:final Task task)) {
+          bloc.add(
+            LinkTaskToCalendarEvent(taskId: task.id, eventId: event.id),
+          );
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'snackbar_task_linked_event'.tr(
+                    namedArgs: <String, String>{'title': event.title},
+                  ),
+                ),
+              ),
+            );
+          }
+        }
+      case TaskRelationCreateTaskRequested(:final UiTemplate? template):
+        await _openCreateTaskFromRelation(
+          context,
+          target: target,
+          template: template,
+          selectedCalendarIds: selectedCalendarIds,
+        );
+    }
+  }
+
+  static Future<void> _applyExistingTaskRelation(
+    BuildContext context, {
+    required TaskRelationTarget target,
+    required Id taskId,
+  }) async {
+    final DashboardBloc bloc = context.read<DashboardBloc>();
+    final TodoRepository repository = context.read<TodoRepository>();
+
+    switch (target) {
+      case TaskRelationParentTarget(:final Id parentTaskId):
+        final bool ok = await repository.attachTaskToParent(
+          childTaskId: taskId,
+          parentTaskId: parentTaskId,
+        );
+        if (!context.mounted) {
+          return;
+        }
+        if (ok) {
+          bloc.add(const LoadDashboardData());
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('snackbar_task_linked_child'.tr())),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('link_task_failed'.tr())),
+          );
+        }
+      case TaskRelationEventTarget(:final CalendarEvent event):
+        bloc.add(
+          LinkTaskToCalendarEvent(taskId: taskId, eventId: event.id),
+        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'snackbar_task_linked_event'.tr(
+                  namedArgs: <String, String>{'title': event.title},
+                ),
+              ),
             ),
-          ),
-        ),
-      );
+          );
+        }
+      case TaskRelationPickEventTarget():
+        break;
+    }
+  }
+
+  static Future<void> _openCreateTaskFromRelation(
+    BuildContext context, {
+    required TaskRelationTarget target,
+    required UiTemplate? template,
+    required List<String> selectedCalendarIds,
+  }) async {
+    switch (target) {
+      case TaskRelationParentTarget(
+          :final Id parentTaskId,
+          :final DateTime selectedDate,
+        ):
+        await openTaskFormSheet(
+          context,
+          initialDueDate: selectedDate,
+          templateToApply: template,
+          selectedCalendarIds: selectedCalendarIds,
+          initialParentTaskId: parentTaskId,
+        );
+      case TaskRelationEventTarget(
+          :final CalendarEvent event,
+          :final DateTime selectedDate,
+        ):
+        await openTaskFormSheet(
+          context,
+          initialDueDate: selectedDate,
+          linkToEvent: event,
+          templateToApply: template,
+          selectedCalendarIds: selectedCalendarIds,
+        );
+      case TaskRelationPickEventTarget():
+        return;
     }
   }
 
@@ -466,16 +716,10 @@ class DashboardScreen extends StatelessWidget {
         localCalendarRepository: localRepo,
         onAddTask: () {
           Navigator.of(sheetContext).pop();
-          openCreateTaskSheet(
+          openAttachTaskToEventSheet(
             context,
-            initialDueDate: selectedDate,
-            linkToEvent: event,
-            selectedCalendarIds: context
-                .read<DashboardBloc>()
-                .state is DashboardLoaded
-                ? (context.read<DashboardBloc>().state as DashboardLoaded)
-                    .selectedCalendarIds
-                : const <String>[],
+            event: event,
+            selectedDate: selectedDate,
           );
         },
         onToggleTaskCompletion: (Id taskId) {
@@ -614,23 +858,13 @@ class DashboardScreen extends StatelessWidget {
   static Future<void> openLinkTaskSheet(
     BuildContext context, {
     required Task parentTask,
+    required DateTime selectedDate,
   }) async {
-    final TodoRepository repository = context.read<TodoRepository>();
-    final bool? linked = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext sheetContext) => LinkTaskSheet(
-        repository: repository,
-        parentTaskId: parentTask.id,
-        parentTitle: parentTask.title,
-      ),
+    await openAttachTaskToParentSheet(
+      context,
+      parentTask: parentTask,
+      selectedDate: selectedDate,
     );
-    if (linked == true && context.mounted) {
-      context.read<DashboardBloc>().add(const LoadDashboardData());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('snackbar_task_linked_child'.tr())),
-      );
-    }
   }
 
   static Future<void> openPostponeTask(
@@ -836,12 +1070,14 @@ class _OverdueTasksPanel extends StatelessWidget {
               for (final Task task in overdueTasks)
                 _DashboardTaskTile(
                   task: task,
-                  selectedDate: selectedDate,
-                  calendarEvents: calendarEvents,
-                  localCalendarEventById: localCalendarEventById,
-                  childTasksByParentId: childTasksByParentId,
-                  attachmentsByTaskId: attachmentsByTaskId,
-                  linkedCalendarsById: linkedCalendarsById,
+                  tileContext: _TaskTileContext(
+                    selectedDate: selectedDate,
+                    calendarEvents: calendarEvents,
+                    localCalendarEventById: localCalendarEventById,
+                    childTasksByParentId: childTasksByParentId,
+                    attachmentsByTaskId: attachmentsByTaskId,
+                    linkedCalendarsById: linkedCalendarsById,
+                  ),
                 ),
             ],
           ),
@@ -854,61 +1090,51 @@ class _OverdueTasksPanel extends StatelessWidget {
 class _DashboardTaskTile extends StatelessWidget {
   const _DashboardTaskTile({
     required this.task,
-    required this.selectedDate,
-    required this.calendarEvents,
-    required this.localCalendarEventById,
-    required this.childTasksByParentId,
-    required this.attachmentsByTaskId,
-    required this.linkedCalendarsById,
+    required this.tileContext,
     this.dimAsCompleted = false,
   });
 
   final Task task;
-  final DateTime selectedDate;
-  final List<CalendarEvent> calendarEvents;
-  final Map<Id, CalendarEvent> localCalendarEventById;
-  final Map<Id, ChildTasksBundle> childTasksByParentId;
-  final Map<Id, List<TaskAttachment>> attachmentsByTaskId;
-  final Map<String, DeviceCalendarInfo> linkedCalendarsById;
+  final _TaskTileContext tileContext;
   final bool dimAsCompleted;
 
   @override
   Widget build(BuildContext context) {
     final ChildTasksBundle childBundle =
-        childTasksByParentId[task.id] ??
+        tileContext.childTasksByParentId[task.id] ??
         const ChildTasksBundle(
           activeChildren: <Task>[],
           completedCount: 0,
           totalCount: 0,
         );
     final List<TaskAttachment> attachments =
-        attachmentsByTaskId[task.id] ?? const <TaskAttachment>[];
+        tileContext.attachmentsByTaskId[task.id] ?? const <TaskAttachment>[];
 
     final CalendarEvent? linkedEvent =
-        localCalendarEventById[task.linkedEventId];
+        tileContext.localCalendarEventById[task.linkedEventId];
 
     final Widget tile = TaskExpandableTile(
       task: task,
-      selectedDate: selectedDate,
-      contextCalendar: linkedCalendarsById[task.calendarId],
+      selectedDate: tileContext.selectedDate,
+      contextCalendar: tileContext.linkedCalendarsById[task.calendarId],
       childTasksBundle: childBundle,
       attachments: attachments,
       linkedEvent: linkedEvent,
       onOpenDetail: () => DashboardScreen.openTaskDetail(
         context,
         taskId: task.id,
-        selectedDate: selectedDate,
+        selectedDate: tileContext.selectedDate,
       ),
       onLinkToCalendarEvent: () => DashboardScreen.openLinkCalendarEventSheet(
         context,
         task: task,
-        dayEvents: calendarEvents,
+        dayEvents: tileContext.calendarEvents,
       ),
       onOpenLinkedEvent: linkedEvent != null
           ? () => DashboardScreen.openEventDetail(
                 context,
                 event: linkedEvent,
-                selectedDate: selectedDate,
+                selectedDate: tileContext.selectedDate,
               )
           : null,
       onToggleComplete: () => context.read<DashboardBloc>().add(
@@ -924,101 +1150,56 @@ class _DashboardTaskTile extends StatelessWidget {
   }
 }
 
-class _TasksSliver extends StatelessWidget {
-  const _TasksSliver({
-    required this.tasks,
-    required this.undatedTasks,
-    required this.selectedDate,
-    required this.calendarEvents,
-    required this.localCalendarEventById,
-    required this.childTasksByParentId,
-    required this.attachmentsByTaskId,
-    required this.linkedCalendarsById,
+class _DashboardSectionHeader extends StatelessWidget {
+  const _DashboardSectionHeader({
+    required this.title,
+    this.topPadding = 16,
   });
 
-  final ({List<Task> active, List<Task> completed}) tasks;
-  final List<Task> undatedTasks;
-  final DateTime selectedDate;
-  final List<CalendarEvent> calendarEvents;
-  final Map<Id, CalendarEvent> localCalendarEventById;
-  final Map<Id, ChildTasksBundle> childTasksByParentId;
-  final Map<Id, List<TaskAttachment>> attachmentsByTaskId;
-  final Map<String, DeviceCalendarInfo> linkedCalendarsById;
+  final String title;
+  final double topPadding;
 
   @override
   Widget build(BuildContext context) {
-    final List<Task> activeTasks = tasks.active;
-    final List<Task> completedTasks = tasks.completed;
-
-    if (activeTasks.isEmpty &&
-        completedTasks.isEmpty &&
-        undatedTasks.isEmpty) {
-      final String hint = AppDateUtils.isToday(selectedDate)
-          ? 'dashboard_empty_today'.tr()
-          : 'dashboard_empty_day'.tr();
-
-      return SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            '$hint\n${'dashboard_empty_local_note'.tr()}',
-          ),
-        ),
-      );
-    }
-
-    return SliverMainAxisGroup(
-      slivers: <Widget>[
-        if (activeTasks.isNotEmpty)
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                final Task task = activeTasks[index];
-                return _DashboardTaskTile(
-                  task: task,
-                  selectedDate: selectedDate,
-                  calendarEvents: calendarEvents,
-                  localCalendarEventById: localCalendarEventById,
-                  childTasksByParentId: childTasksByParentId,
-                  attachmentsByTaskId: attachmentsByTaskId,
-                  linkedCalendarsById: linkedCalendarsById,
-                );
-              },
-              childCount: activeTasks.length,
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, topPadding, 16, 8),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
             ),
-          ),
-        if (undatedTasks.isNotEmpty)
-          SliverToBoxAdapter(
-            child: _UndatedTasksPanel(
-              undatedTasks: undatedTasks,
-              selectedDate: selectedDate,
-              calendarEvents: calendarEvents,
-              localCalendarEventById: localCalendarEventById,
-              childTasksByParentId: childTasksByParentId,
-              attachmentsByTaskId: attachmentsByTaskId,
-              linkedCalendarsById: linkedCalendarsById,
-            ),
-          ),
-        if (completedTasks.isNotEmpty)
-          SliverToBoxAdapter(
-            child: _CompletedTasksPanel(
-              completedTasks: completedTasks,
-              selectedDate: selectedDate,
-              calendarEvents: calendarEvents,
-              localCalendarEventById: localCalendarEventById,
-              childTasksByParentId: childTasksByParentId,
-              attachmentsByTaskId: attachmentsByTaskId,
-              linkedCalendarsById: linkedCalendarsById,
-            ),
-          ),
-      ],
+      ),
     );
   }
 }
 
-class _UndatedTasksPanel extends StatelessWidget {
-  const _UndatedTasksPanel({
-    required this.undatedTasks,
+class _EmptyTasksPlaceholder extends StatelessWidget {
+  const _EmptyTasksPlaceholder({required this.selectedDate});
+
+  final DateTime selectedDate;
+
+  @override
+  Widget build(BuildContext context) {
+    final String hint = AppDateUtils.isToday(selectedDate)
+        ? 'dashboard_empty_today'.tr()
+        : 'dashboard_empty_day'.tr();
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+      child: Text(
+        '$hint\n${'dashboard_empty_local_note'.tr()}',
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
+      ),
+    );
+  }
+}
+
+class _TaskTileContext {
+  const _TaskTileContext({
     required this.selectedDate,
     required this.calendarEvents,
     required this.localCalendarEventById,
@@ -1027,62 +1208,12 @@ class _UndatedTasksPanel extends StatelessWidget {
     required this.linkedCalendarsById,
   });
 
-  final List<Task> undatedTasks;
   final DateTime selectedDate;
   final List<CalendarEvent> calendarEvents;
   final Map<Id, CalendarEvent> localCalendarEventById;
   final Map<Id, ChildTasksBundle> childTasksByParentId;
   final Map<Id, List<TaskAttachment>> attachmentsByTaskId;
   final Map<String, DeviceCalendarInfo> linkedCalendarsById;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colors = theme.colorScheme;
-    final int count = undatedTasks.length;
-    final TextStyle? titleStyle = theme.textTheme.titleMedium?.copyWith(
-      fontWeight: FontWeight.w600,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Material(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        child: Theme(
-          data: theme.copyWith(
-            dividerColor: colors.surfaceContainerHighest,
-          ),
-          child: ExpansionTile(
-            initiallyExpanded: false,
-            tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-            childrenPadding: EdgeInsets.zero,
-            shape: const Border(),
-            collapsedShape: const Border(),
-            title: Text(
-              'undated_section'.tr(namedArgs: <String, String>{
-                'count': '$count',
-              }),
-              style: titleStyle,
-            ),
-            children: <Widget>[
-              for (final Task task in undatedTasks)
-                _DashboardTaskTile(
-                  task: task,
-                  selectedDate: selectedDate,
-                  calendarEvents: calendarEvents,
-                  localCalendarEventById: localCalendarEventById,
-                  childTasksByParentId: childTasksByParentId,
-                  attachmentsByTaskId: attachmentsByTaskId,
-                  linkedCalendarsById: linkedCalendarsById,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _CompletedTasksPanel extends StatelessWidget {
@@ -1142,12 +1273,14 @@ class _CompletedTasksPanel extends StatelessWidget {
               for (final Task task in completedTasks)
                 _DashboardTaskTile(
                   task: task,
-                  selectedDate: selectedDate,
-                  calendarEvents: calendarEvents,
-                  localCalendarEventById: localCalendarEventById,
-                  childTasksByParentId: childTasksByParentId,
-                  attachmentsByTaskId: attachmentsByTaskId,
-                  linkedCalendarsById: linkedCalendarsById,
+                  tileContext: _TaskTileContext(
+                    selectedDate: selectedDate,
+                    calendarEvents: calendarEvents,
+                    localCalendarEventById: localCalendarEventById,
+                    childTasksByParentId: childTasksByParentId,
+                    attachmentsByTaskId: attachmentsByTaskId,
+                    linkedCalendarsById: linkedCalendarsById,
+                  ),
                   dimAsCompleted: true,
                 ),
             ],

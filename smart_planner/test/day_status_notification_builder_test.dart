@@ -52,6 +52,7 @@ void main() {
           DayStatusNotificationBuilder.build(
         activeTasks: <Task>[active],
         completedTasks: <Task>[done, done],
+        backlogTasks: const <Task>[],
         calendarEvents: const <CalendarEvent>[],
         now: DateTime(2026, 5, 25, 12),
       );
@@ -79,6 +80,7 @@ void main() {
           DayStatusNotificationBuilder.build(
         activeTasks: const <Task>[],
         completedTasks: const <Task>[],
+        backlogTasks: const <Task>[],
         calendarEvents: <CalendarEvent>[current, later],
         now: DateTime(2026, 5, 25, 12),
       );
@@ -101,11 +103,47 @@ void main() {
           DayStatusNotificationBuilder.build(
         activeTasks: const <Task>[],
         completedTasks: const <Task>[],
+        backlogTasks: const <Task>[],
         calendarEvents: <CalendarEvent>[next],
         now: DateTime(2026, 5, 25, 12),
       );
 
       expect(content.body, contains('Stand-up'));
+    });
+
+    testWidgets('appends backlog line when undated tasks exist',
+        (WidgetTester tester) async {
+      await pumpLocalizedApp(tester);
+
+      final DayStatusNotificationContent content =
+          DayStatusNotificationBuilder.build(
+        activeTasks: const <Task>[],
+        completedTasks: const <Task>[],
+        backlogTasks: <Task>[Task()..title = 'Someday', Task()..title = 'Later'],
+        calendarEvents: const <CalendarEvent>[],
+        now: DateTime(2026, 5, 25, 12),
+      );
+
+      expect(content.body, contains('2'));
+      expect(content.body, contains('Backlog'));
+    });
+
+    testWidgets('omits task count when there are no tasks',
+        (WidgetTester tester) async {
+      await pumpLocalizedApp(tester);
+
+      final DayStatusNotificationContent content =
+          DayStatusNotificationBuilder.build(
+        activeTasks: const <Task>[],
+        completedTasks: const <Task>[],
+        backlogTasks: const <Task>[],
+        calendarEvents: const <CalendarEvent>[],
+        now: DateTime(2026, 5, 25, 12),
+      );
+
+      expect(content.title, isNot(contains('0')));
+      expect(content.title, isNot(contains('/')));
+      expect(content.body, isNotEmpty);
     });
   });
 }

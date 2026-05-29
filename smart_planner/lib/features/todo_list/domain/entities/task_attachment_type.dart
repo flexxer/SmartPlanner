@@ -6,4 +6,5 @@ enum TaskAttachmentType {
   location,
   note,
   checklist,
+  file,
 }

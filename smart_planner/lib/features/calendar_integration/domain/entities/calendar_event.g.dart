@@ -52,13 +52,18 @@ const CalendarEventSchema = CollectionSchema(
       name: r'recurrenceRuleJson',
       type: IsarType.string,
     ),
-    r'start': PropertySchema(
+    r'reminderMinutesBefore': PropertySchema(
       id: 7,
+      name: r'reminderMinutesBefore',
+      type: IsarType.long,
+    ),
+    r'start': PropertySchema(
+      id: 8,
       name: r'start',
       type: IsarType.dateTime,
     ),
     r'title': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'title',
       type: IsarType.string,
     )
@@ -155,8 +160,9 @@ void _calendarEventSerialize(
   writer.writeString(offsets[4], object.googleEventId);
   writer.writeLongList(offsets[5], object.linkedTaskIds);
   writer.writeString(offsets[6], object.recurrenceRuleJson);
-  writer.writeDateTime(offsets[7], object.start);
-  writer.writeString(offsets[8], object.title);
+  writer.writeLong(offsets[7], object.reminderMinutesBefore);
+  writer.writeDateTime(offsets[8], object.start);
+  writer.writeString(offsets[9], object.title);
 }
 
 CalendarEvent _calendarEventDeserialize(
@@ -174,8 +180,9 @@ CalendarEvent _calendarEventDeserialize(
   object.id = id;
   object.linkedTaskIds = reader.readLongList(offsets[5]) ?? [];
   object.recurrenceRuleJson = reader.readStringOrNull(offsets[6]);
-  object.start = reader.readDateTime(offsets[7]);
-  object.title = reader.readString(offsets[8]);
+  object.reminderMinutesBefore = reader.readLongOrNull(offsets[7]);
+  object.start = reader.readDateTime(offsets[8]);
+  object.title = reader.readString(offsets[9]);
   return object;
 }
 
@@ -201,8 +208,10 @@ P _calendarEventDeserializeProp<P>(
     case 6:
       return (reader.readStringOrNull(offset)) as P;
     case 7:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 8:
+      return (reader.readDateTime(offset)) as P;
+    case 9:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1431,6 +1440,80 @@ extension CalendarEventQueryFilter
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      reminderMinutesBeforeIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'reminderMinutesBefore',
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      reminderMinutesBeforeIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'reminderMinutesBefore',
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      reminderMinutesBeforeEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'reminderMinutesBefore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      reminderMinutesBeforeGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'reminderMinutesBefore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      reminderMinutesBeforeLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'reminderMinutesBefore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      reminderMinutesBeforeBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'reminderMinutesBefore',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
       startEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -1711,6 +1794,20 @@ extension CalendarEventQuerySortBy
     });
   }
 
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
+      sortByReminderMinutesBefore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reminderMinutesBefore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
+      sortByReminderMinutesBeforeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reminderMinutesBefore', Sort.desc);
+    });
+  }
+
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> sortByStart() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'start', Sort.asc);
@@ -1830,6 +1927,20 @@ extension CalendarEventQuerySortThenBy
     });
   }
 
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
+      thenByReminderMinutesBefore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reminderMinutesBefore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
+      thenByReminderMinutesBeforeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reminderMinutesBefore', Sort.desc);
+    });
+  }
+
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> thenByStart() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'start', Sort.asc);
@@ -1907,6 +2018,13 @@ extension CalendarEventQueryWhereDistinct
     });
   }
 
+  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct>
+      distinctByReminderMinutesBefore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'reminderMinutesBefore');
+    });
+  }
+
   QueryBuilder<CalendarEvent, CalendarEvent, QDistinct> distinctByStart() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'start');
@@ -1972,6 +2090,13 @@ extension CalendarEventQueryProperty
       recurrenceRuleJsonProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'recurrenceRuleJson');
+    });
+  }
+
+  QueryBuilder<CalendarEvent, int?, QQueryOperations>
+      reminderMinutesBeforeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'reminderMinutesBefore');
     });
   }
 

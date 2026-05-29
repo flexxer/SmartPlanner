@@ -12,6 +12,7 @@ import 'package:smart_planner/core/theme/app_theme.dart';
 
 import 'package:smart_planner/features/calendar_integration/data/calendar_preferences_repository.dart';
 
+import 'package:smart_planner/features/calendar_integration/data/repositories/event_attachment_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
 
 import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
@@ -21,7 +22,10 @@ import 'package:smart_planner/features/dashboard/data/dashboard_day_markers_repo
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
+import 'package:smart_planner/features/notifications/data/day_status_home_widget_service.dart';
 import 'package:smart_planner/features/notifications/data/day_status_notification_controller.dart';
+import 'package:smart_planner/features/notifications/data/day_status_today_loader.dart';
+import 'package:smart_planner/features/notifications/data/item_reminder_scheduler.dart';
 import 'package:smart_planner/features/notifications/data/notification_preferences_repository.dart';
 import 'package:smart_planner/features/notifications/presentation/widgets/day_status_service_host.dart';
 
@@ -80,6 +84,9 @@ class DayLinxApp extends StatelessWidget {
 
         LocalCalendarEventRepository();
 
+    final EventAttachmentRepository eventAttachmentRepository =
+        EventAttachmentRepository();
+
     final UiTemplateRepository uiTemplateRepository = UiTemplateRepository();
 
     final DashboardDayMarkersRepository dayMarkersRepository =
@@ -90,6 +97,8 @@ class DayLinxApp extends StatelessWidget {
 
       calendarService: calendarService,
 
+      localCalendarEventRepository: localCalendarEventRepository,
+
     );
 
     final NotificationPreferencesRepository notificationPreferences =
@@ -98,23 +107,23 @@ class DayLinxApp extends StatelessWidget {
 
     final DeepLinkService deepLinks = deepLinkService ?? DeepLinkService();
 
-    final DayStatusNotificationController dayStatusNotifications =
-
-        DayStatusNotificationController(
-
+    final DayStatusTodayLoader dayStatusTodayLoader = DayStatusTodayLoader(
       todoRepository: todoRepository,
-
       calendarService: calendarService,
-
-      preferences: notificationPreferences,
-
       calendarPreferences: calendarPreferences,
-
       localCalendarEvents: localCalendarEventRepository,
-
     );
 
+    final DayStatusNotificationController dayStatusNotifications =
+        DayStatusNotificationController(
+      todayLoader: dayStatusTodayLoader,
+      preferences: notificationPreferences,
+    );
 
+    final DayStatusHomeWidgetService dayStatusHomeWidget =
+        DayStatusHomeWidgetService(loader: dayStatusTodayLoader);
+
+    final ItemReminderScheduler itemReminders = ItemReminderScheduler();
 
     return MultiRepositoryProvider(
 
@@ -158,6 +167,10 @@ class DayLinxApp extends StatelessWidget {
 
         ),
 
+        RepositoryProvider<EventAttachmentRepository>.value(
+          value: eventAttachmentRepository,
+        ),
+
         RepositoryProvider<UiTemplateRepository>.value(
 
           value: uiTemplateRepository,
@@ -177,9 +190,14 @@ class DayLinxApp extends StatelessWidget {
         ),
 
         RepositoryProvider<DayStatusNotificationController>.value(
-
           value: dayStatusNotifications,
+        ),
+        RepositoryProvider<DayStatusHomeWidgetService>.value(
+          value: dayStatusHomeWidget,
+        ),
 
+        RepositoryProvider<ItemReminderScheduler>.value(
+          value: itemReminders,
         ),
 
         RepositoryProvider<DeepLinkService>.value(value: deepLinks),
@@ -227,6 +245,9 @@ class DayLinxApp extends StatelessWidget {
             dayMarkersRepository: dayMarkersRepository,
 
             dayStatusNotifications: dayStatusNotifications,
+            dayStatusHomeWidget: dayStatusHomeWidget,
+            itemReminders: itemReminders,
+            eventAttachmentRepository: eventAttachmentRepository,
 
           )..add(const LoadDashboardData()),
 

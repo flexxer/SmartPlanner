@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Today\'s tasks and calendar events</string>
+    <string name="widget_task_done_prefix">✓ </string>
+    <string name="widget_task_todo_prefix">☐ </string>
+</resources>

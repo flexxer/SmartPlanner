@@ -13,6 +13,7 @@ abstract final class DayStatusNotificationBuilder {
   static DayStatusNotificationContent build({
     required List<Task> activeTasks,
     required List<Task> completedTasks,
+    required List<Task> backlogTasks,
     required List<CalendarEvent> calendarEvents,
     DateTime? now,
   }) {
@@ -20,20 +21,39 @@ abstract final class DayStatusNotificationBuilder {
     final int done = completedTasks.length;
     final int total = activeTasks.length + done;
 
-    final String title = L10n.tr(
-      'day_status_notification_title',
-      namedArgs: <String, String>{
-        'done': '$done',
-        'total': '$total',
-      },
-    );
+    final String title = total == 0
+        ? L10n.tr('day_status_notification_title_plain')
+        : L10n.tr(
+            'day_status_notification_title',
+            namedArgs: <String, String>{
+              'done': '$done',
+              'total': '$total',
+            },
+          );
 
-    final String body = _eventLine(
+    final String body = _composeBody(
       events: calendarEvents,
+      backlogCount: backlogTasks.length,
       now: clock,
     );
 
     return DayStatusNotificationContent(title: title, body: body);
+  }
+
+  static String _composeBody({
+    required List<CalendarEvent> events,
+    required int backlogCount,
+    required DateTime now,
+  }) {
+    final String eventLine = _eventLine(events: events, now: now);
+    if (backlogCount == 0) {
+      return eventLine;
+    }
+    final String backlogLine = L10n.tr(
+      'day_status_notification_backlog',
+      namedArgs: <String, String>{'count': '$backlogCount'},
+    );
+    return '$eventLine\n$backlogLine';
   }
 
   static String _eventLine({

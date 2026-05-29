@@ -50,6 +50,9 @@ class Task {
   /// Last mutation time for future sync conflict resolution.
   DateTime? updatedAt;
 
+  /// When to fire a local reminder; `null` = no reminder.
+  DateTime? reminderAt;
+
   Task();
 
   Task.create({
@@ -64,6 +67,7 @@ class Task {
     this.calendarId = '',
     this.googleTaskId,
     this.linkedEventId,
+    this.reminderAt,
   }) : createDate = createDate ?? DateTime.now() {
     markUpdated();
   }

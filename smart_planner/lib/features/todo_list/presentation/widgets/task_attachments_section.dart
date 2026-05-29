@@ -4,8 +4,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'package:smart_planner/features/todo_list/data/attachment_file_store.dart';
-import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
+import 'package:smart_planner/features/todo_list/data/attachment_file_store.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_payloads.dart';
+import 'package:smart_planner/features/todo_list/domain/entities/attachment_ref.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment_type.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_checklist.dart';
@@ -13,11 +14,11 @@ import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.da
 import 'package:smart_planner/features/todo_list/presentation/widgets/attachment_action_sheet.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_section_header.dart';
 
-/// Attachments block in an expanded task tile.
+/// Attachments block on task or event detail screens.
 class TaskAttachmentsSection extends StatelessWidget {
   const TaskAttachmentsSection({
     required this.attachments,
-    required this.attachmentRepository,
+    required this.fileStore,
     required this.onEditAttachment,
     required this.onDeleteAttachment,
     required this.onToggleChecklistItem,
@@ -25,10 +26,10 @@ class TaskAttachmentsSection extends StatelessWidget {
     super.key,
   });
 
-  final List<TaskAttachment> attachments;
-  final TaskAttachmentRepository attachmentRepository;
-  final void Function(TaskAttachment attachment) onEditAttachment;
-  final void Function(TaskAttachment attachment) onDeleteAttachment;
+  final List<AttachmentRef> attachments;
+  final AttachmentFileStore fileStore;
+  final void Function(AttachmentRef attachment) onEditAttachment;
+  final void Function(AttachmentRef attachment) onDeleteAttachment;
   final void Function(Id attachmentId, int itemLocalId) onToggleChecklistItem;
   final VoidCallback onAddAttachment;
 
@@ -36,11 +37,11 @@ class TaskAttachmentsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colors = theme.colorScheme;
-    final List<TaskAttachment> checklists = attachments
-        .where((TaskAttachment a) => a.type == TaskAttachmentType.checklist)
+    final List<AttachmentRef> checklists = attachments
+        .where((AttachmentRef a) => a.type == TaskAttachmentType.checklist)
         .toList(growable: false);
-    final List<TaskAttachment> otherAttachments = attachments
-        .where((TaskAttachment a) => a.type != TaskAttachmentType.checklist)
+    final List<AttachmentRef> otherAttachments = attachments
+        .where((AttachmentRef a) => a.type != TaskAttachmentType.checklist)
         .toList(growable: false);
 
     return Column(
@@ -71,9 +72,9 @@ class TaskAttachmentsSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             ...checklists.map(
-              (TaskAttachment attachment) => _AttachmentTile(
+              (AttachmentRef attachment) => _AttachmentTile(
                 attachment: attachment,
-                attachmentRepository: attachmentRepository,
+                fileStore: fileStore,
                 onEditAttachment: () => onEditAttachment(attachment),
                 onDeleteAttachment: () => onDeleteAttachment(attachment),
                 onToggleNoteItem: (int localId) =>
@@ -96,9 +97,9 @@ class TaskAttachmentsSection extends StatelessWidget {
               ),
             if (checklists.isNotEmpty) const SizedBox(height: 8),
             ...otherAttachments.map(
-              (TaskAttachment attachment) => _AttachmentTile(
+              (AttachmentRef attachment) => _AttachmentTile(
                 attachment: attachment,
-                attachmentRepository: attachmentRepository,
+                fileStore: fileStore,
                 onEditAttachment: () => onEditAttachment(attachment),
                 onDeleteAttachment: () => onDeleteAttachment(attachment),
                 onToggleNoteItem: (int localId) =>
@@ -117,12 +118,12 @@ class TaskAttachmentsSection extends StatelessWidget {
     );
   }
 
-  static String? _checklistSectionTrailing(List<TaskAttachment> checklists) {
+  static String? _checklistSectionTrailing(List<AttachmentRef> checklists) {
     if (checklists.isEmpty) {
       return null;
     }
     final ChecklistProgress progress = TaskAttachmentChecklist.progress(
-      TaskAttachmentCodec.checklist(checklists.first),
+      TaskAttachmentCodec.checklistRef(checklists.first),
     );
     if (!progress.hasItems) {
       return null;
@@ -134,25 +135,25 @@ class TaskAttachmentsSection extends StatelessWidget {
 class _AttachmentTile extends StatelessWidget {
   const _AttachmentTile({
     required this.attachment,
-    required this.attachmentRepository,
+    required this.fileStore,
     required this.onEditAttachment,
     required this.onDeleteAttachment,
     required this.onToggleNoteItem,
   });
 
-  final TaskAttachment attachment;
-  final TaskAttachmentRepository attachmentRepository;
+  final AttachmentRef attachment;
+  final AttachmentFileStore fileStore;
   final VoidCallback onEditAttachment;
   final VoidCallback onDeleteAttachment;
   final void Function(int localId) onToggleNoteItem;
 
   Future<void> _showActions(BuildContext context) async {
-    await showAttachmentActionSheet(
+    await showAttachmentActionSheetRef(
       context,
       attachment: attachment,
-      attachmentRepository: attachmentRepository,
+      fileStore: fileStore,
       onEdit: onEditAttachment,
-      onDelete: (_) => onDeleteAttachment(),
+      onDelete: onDeleteAttachment,
     );
   }
 
@@ -160,7 +161,7 @@ class _AttachmentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colors = theme.colorScheme;
-    final String title = TaskAttachmentCodec.summaryLabel(attachment);
+    final String title = TaskAttachmentCodec.summaryLabelRef(attachment);
     final bool urlInHeader = attachment.type == TaskAttachmentType.url;
     final Widget headerTitle = urlInHeader
         ? _UrlHeaderTitle(attachment: attachment)
@@ -177,7 +178,7 @@ class _AttachmentTile extends StatelessWidget {
         ? null
         : _AttachmentBody(
             attachment: attachment,
-            attachmentRepository: attachmentRepository,
+            fileStore: fileStore,
             onToggleNoteItem: onToggleNoteItem,
           );
 
@@ -230,6 +231,7 @@ class _AttachmentTile extends StatelessWidget {
       TaskAttachmentType.location => Icons.place_outlined,
       TaskAttachmentType.note => Icons.sticky_note_2_outlined,
       TaskAttachmentType.checklist => Icons.fact_check,
+      TaskAttachmentType.file => Icons.insert_drive_file_outlined,
     };
   }
 }
@@ -237,12 +239,12 @@ class _AttachmentTile extends StatelessWidget {
 class _AttachmentBody extends StatelessWidget {
   const _AttachmentBody({
     required this.attachment,
-    required this.attachmentRepository,
+    required this.fileStore,
     required this.onToggleNoteItem,
   });
 
-  final TaskAttachment attachment;
-  final TaskAttachmentRepository attachmentRepository;
+  final AttachmentRef attachment;
+  final AttachmentFileStore fileStore;
   final void Function(int localId) onToggleNoteItem;
 
   @override
@@ -251,8 +253,9 @@ class _AttachmentBody extends StatelessWidget {
       TaskAttachmentType.contact => _ContactBody(attachment: attachment),
       TaskAttachmentType.image => _ImageBody(
           attachment: attachment,
-          fileStore: attachmentRepository.fileStore,
+          fileStore: fileStore,
         ),
+      TaskAttachmentType.file => _FileBody(attachment: attachment),
       TaskAttachmentType.url => const SizedBox.shrink(),
       TaskAttachmentType.location => _LocationBody(attachment: attachment),
       TaskAttachmentType.note => _NoteBody(attachment: attachment),
@@ -264,15 +267,35 @@ class _AttachmentBody extends StatelessWidget {
   }
 }
 
+class _FileBody extends StatelessWidget {
+  const _FileBody({required this.attachment});
+
+  final AttachmentRef attachment;
+
+  @override
+  Widget build(BuildContext context) {
+    final FileAttachmentPayload payload =
+        TaskAttachmentCodec.fileRef(attachment);
+    return Text(
+      payload.fileName,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+}
+
 class _ContactBody extends StatelessWidget {
   const _ContactBody({required this.attachment});
 
-  final TaskAttachment attachment;
+  final AttachmentRef attachment;
 
   @override
   Widget build(BuildContext context) {
     final ContactAttachmentPayload contact =
-        TaskAttachmentCodec.contact(attachment);
+        TaskAttachmentCodec.contactRef(attachment);
     final String? phone = contact.primaryPhone.isNotEmpty
         ? contact.primaryPhone
         : null;
@@ -301,12 +324,13 @@ class _ImageBody extends StatelessWidget {
     required this.fileStore,
   });
 
-  final TaskAttachment attachment;
+  final AttachmentRef attachment;
   final AttachmentFileStore fileStore;
 
   @override
   Widget build(BuildContext context) {
-    final ImageAttachmentPayload payload = TaskAttachmentCodec.image(attachment);
+    final ImageAttachmentPayload payload =
+        TaskAttachmentCodec.imageRef(attachment);
 
     return FutureBuilder<File>(
       future: fileStore.resolveFile(payload.relativePath),
@@ -331,11 +355,11 @@ class _ImageBody extends StatelessWidget {
 class _UrlHeaderTitle extends StatelessWidget {
   const _UrlHeaderTitle({required this.attachment});
 
-  final TaskAttachment attachment;
+  final AttachmentRef attachment;
 
   @override
   Widget build(BuildContext context) {
-    final UrlAttachmentPayload payload = TaskAttachmentCodec.url(attachment);
+    final UrlAttachmentPayload payload = TaskAttachmentCodec.urlRef(attachment);
     final String linkText = urlAttachmentLinkLabel(payload);
     final TextStyle linkStyle = Theme.of(context).textTheme.titleSmall!.copyWith(
           color: Theme.of(context).colorScheme.primary,
@@ -354,14 +378,14 @@ class _UrlHeaderTitle extends StatelessWidget {
 class _LocationBody extends StatelessWidget {
   const _LocationBody({required this.attachment});
 
-  final TaskAttachment attachment;
+  final AttachmentRef attachment;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colors = theme.colorScheme;
     final LocationAttachmentPayload payload =
-        TaskAttachmentCodec.location(attachment);
+        TaskAttachmentCodec.locationRef(attachment);
     final String placeTitle = TaskAttachmentCodec.locationDisplayTitle(
       payload,
       attachmentLabel: attachment.label,
@@ -393,11 +417,11 @@ class _LocationBody extends StatelessWidget {
 class _NoteBody extends StatelessWidget {
   const _NoteBody({required this.attachment});
 
-  final TaskAttachment attachment;
+  final AttachmentRef attachment;
 
   @override
   Widget build(BuildContext context) {
-    final NoteAttachmentPayload note = TaskAttachmentCodec.note(attachment);
+    final NoteAttachmentPayload note = TaskAttachmentCodec.noteRef(attachment);
     if (note.body.trim().isEmpty) {
       return Text(
         'attachment_empty_note'.tr(),
@@ -416,13 +440,13 @@ class _ChecklistBody extends StatelessWidget {
     required this.onToggleItem,
   });
 
-  final TaskAttachment attachment;
+  final AttachmentRef attachment;
   final void Function(int localId) onToggleItem;
 
   @override
   Widget build(BuildContext context) {
     final ChecklistAttachmentPayload checklist =
-        TaskAttachmentCodec.checklist(attachment);
+        TaskAttachmentCodec.checklistRef(attachment);
     final ThemeData theme = Theme.of(context);
     final ColorScheme colors = theme.colorScheme;
 

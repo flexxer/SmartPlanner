@@ -11,7 +11,6 @@ class DashboardLocalEventsSection extends StatelessWidget {
     required this.selectedDate,
     required this.events,
     required this.timeFormat,
-    required this.onCreateEvent,
     required this.onEventTap,
     required this.onEventLongPress,
     super.key,
@@ -20,7 +19,6 @@ class DashboardLocalEventsSection extends StatelessWidget {
   final DateTime selectedDate;
   final List<CalendarEvent> events;
   final DateFormat timeFormat;
-  final VoidCallback onCreateEvent;
   final void Function(CalendarEvent event) onEventTap;
   final void Function(CalendarEvent event) onEventLongPress;
 
@@ -37,24 +35,13 @@ class DashboardLocalEventsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  'events_section_title'.tr(
-                    namedArgs: <String, String>{'day': dayLabel},
-                  ),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: onCreateEvent,
-                icon: const Icon(Icons.add, size: 20),
-                label: Text('events_create'.tr()),
-              ),
-            ],
+          Text(
+            'events_section_title'.tr(
+              namedArgs: <String, String>{'day': dayLabel},
+            ),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
           if (events.isEmpty)
             Padding(

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:smart_planner/features/notifications/data/day_status_home_widget_service.dart';
 import 'package:smart_planner/features/notifications/data/day_status_notification_controller.dart';
 
 /// Restores the day-status foreground service after app start when enabled.
@@ -28,6 +29,7 @@ class _DayStatusServiceHostState extends State<DayStatusServiceHost> {
     unawaited(
       context.read<DayStatusNotificationController>().ensureStartedIfEnabled(),
     );
+    unawaited(context.read<DayStatusHomeWidgetService>().syncToday());
   }
 
   @override

@@ -13,6 +13,9 @@ import 'package:smart_planner/features/calendar_integration/presentation/pages/c
 import 'package:smart_planner/features/calendar_integration/presentation/widgets/device_calendar_picker_field.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
+import 'package:smart_planner/features/notifications/data/item_reminder_scheduler.dart';
+import 'package:smart_planner/features/notifications/data/notification_preferences_repository.dart';
+import 'package:smart_planner/features/notifications/presentation/widgets/reminder_picker_field.dart';
 
 /// Bottom sheet to create or edit a local [CalendarEvent] in Isar.
 class EventFormSheet extends StatefulWidget {
@@ -60,6 +63,8 @@ class _EventFormSheetState extends State<EventFormSheet> {
   late DateTime _end;
   String? _selectedCalendarId;
   RecurrenceFrequency _recurrenceFrequency = RecurrenceFrequency.none;
+  int? _reminderMinutes;
+  bool _reminderLoaded = false;
   bool _saving = false;
   bool _loadingCalendars = true;
   String? _calendarLoadError;
@@ -82,6 +87,8 @@ class _EventFormSheetState extends State<EventFormSheet> {
       _selectedCalendarId = existing.calendarId;
       _recurrenceFrequency =
           existing.recurrenceRule?.frequency ?? RecurrenceFrequency.none;
+      _reminderMinutes = existing.reminderMinutesBefore;
+      _reminderLoaded = true;
     } else {
       _titleController = TextEditingController(
         text: widget.initialTitle ?? '',
@@ -96,7 +103,30 @@ class _EventFormSheetState extends State<EventFormSheet> {
         _end = day.add(const Duration(hours: 11));
       }
     }
+    if (existing == null) {
+      _loadDefaultReminder();
+    }
     _loadLinkedCalendars();
+  }
+
+  Future<void> _loadDefaultReminder() async {
+    final NotificationPreferencesRepository prefs =
+        NotificationPreferencesRepository();
+    final int minutes = await prefs.getDefaultReminderMinutes();
+    if (mounted) {
+      setState(() {
+        _reminderMinutes = minutes;
+        _reminderLoaded = true;
+      });
+    }
+  }
+
+  Future<void> _syncReminderForEvent(CalendarEvent event) async {
+    try {
+      await ItemReminderScheduler().syncEvent(event);
+    } on Object {
+      // Best-effort after save.
+    }
   }
 
   @override
@@ -154,6 +184,31 @@ class _EventFormSheetState extends State<EventFormSheet> {
     if (mounted) {
       await _loadLinkedCalendars();
     }
+  }
+
+  Future<void> _pickDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: AppDateUtils.startOfDay(_start),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    final Duration span = _end.difference(_start);
+    final DateTime newStart = DateTime(
+      picked.year,
+      picked.month,
+      picked.day,
+      _start.hour,
+      _start.minute,
+    );
+    final DateTime newEnd = newStart.add(span);
+    setState(() {
+      _start = newStart;
+      _end = newEnd.isAfter(_start) ? newEnd : _start.add(const Duration(hours: 1));
+    });
   }
 
   Future<void> _pickStart() async {
@@ -321,8 +376,9 @@ class _EventFormSheetState extends State<EventFormSheet> {
       calendarId: calendar.id,
       colorValue: calendar.colorValue,
       recurrenceRule: _buildRecurrenceRule(),
-    );
+    )..reminderMinutesBefore = _reminderMinutes;
     await widget.repository.saveLocalEvent(event);
+    await _syncReminderForEvent(event);
     if (mounted) {
       Navigator.of(context).pop(true);
     }
@@ -338,9 +394,11 @@ class _EventFormSheetState extends State<EventFormSheet> {
       ..end = _end
       ..calendarId = calendar.id
       ..colorValue = calendar.colorValue
-      ..recurrenceRule = _buildRecurrenceRule();
+      ..recurrenceRule = _buildRecurrenceRule()
+      ..reminderMinutesBefore = _reminderMinutes;
 
     await widget.repository.saveLocalEvent(event);
+    await _syncReminderForEvent(event);
 
     widget.dashboardBloc?.add(const LoadDashboardData());
 
@@ -404,6 +462,20 @@ class _EventFormSheetState extends State<EventFormSheet> {
               const SizedBox(height: 12),
               _buildCalendarPicker(context, colors),
               const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'event_field_date'.tr(),
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ),
+              const SizedBox(height: 6),
+              OutlinedButton.icon(
+                onPressed: _pickDate,
+                icon: const Icon(Icons.calendar_today_outlined),
+                label: Text(_formatDate(_start)),
+              ),
+              const SizedBox(height: 8),
               Row(
                 children: <Widget>[
                   Expanded(
@@ -445,6 +517,15 @@ class _EventFormSheetState extends State<EventFormSheet> {
                   }
                 },
               ),
+              if (_reminderLoaded) ...<Widget>[
+                const SizedBox(height: 12),
+                ReminderPickerField(
+                  valueMinutes: _reminderMinutes,
+                  onChanged: (int? minutes) {
+                    setState(() => _reminderMinutes = minutes);
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: _canSave && !_saving ? _save : null,
@@ -527,6 +608,10 @@ class _EventFormSheetState extends State<EventFormSheet> {
         ),
       ],
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return L10n.dateFormat('d MMMM y', context: context).format(date);
   }
 
   static String _formatTime(DateTime date) {

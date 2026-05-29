@@ -6,4 +6,7 @@ abstract class NotificationChannels {
 
   /// Ongoing foreground day-status bar (low importance, no sound).
   static const String dayStatus = 'day_status_bar';
+
+  /// Same feature with higher channel importance so it sorts above other notifications.
+  static const String dayStatusPinned = 'day_status_bar_pinned';
 }

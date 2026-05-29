@@ -30,7 +30,7 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
   - **Active** dated tasks on top
 
-  - **Undated** — tasks with no `dueDate`, collapsible section on any selected day
+  - **Backlog** — tasks with no `dueDate`; always-visible section on any selected day (alongside dated tasks and events)
 
   - **Completed** tasks in a collapsible section at the bottom (dimmed, strikethrough)
 
@@ -54,7 +54,7 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
 - **AppBar:** templates, calendar settings (includes **language** picker), time grid, refresh
 
-- **Android day-status notification** (optional, off by default): ongoing foreground notification with today’s task progress (✓ done / total) and current or next calendar event; updates when the dashboard data changes; toggle under **Calendars** → **Show status bar in notifications**
+- **Android day-status notification** (optional, off by default): ongoing foreground notification with task progress when tasks exist, plus current or next calendar event; optional pin above other notifications; toggles under **Calendars**
 
 - **Light / dark theme** follows system settings
 

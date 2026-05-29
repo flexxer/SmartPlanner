@@ -6,11 +6,12 @@ import 'package:smart_planner/features/todo_list/data/attachment_file_store.dart
 import 'package:smart_planner/features/todo_list/data/services/attachment_launcher_service.dart';
 import 'package:smart_planner/features/todo_list/data/services/map_app_launcher_service.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_payloads.dart';
+import 'package:smart_planner/features/todo_list/domain/entities/attachment_ref.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment_type.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.dart';
 
-/// Default "open / view" behavior for a [TaskAttachment] (previously on direct tap).
+/// Default "open / view" behavior for attachments (tasks and events).
 class AttachmentDefaultAction {
   AttachmentDefaultAction._();
 
@@ -19,11 +20,25 @@ class AttachmentDefaultAction {
     required TaskAttachment attachment,
     required AttachmentFileStore fileStore,
   }) async {
+    await openRef(
+      context,
+      attachment: AttachmentRef.fromTask(attachment),
+      fileStore: fileStore,
+    );
+  }
+
+  static Future<void> openRef(
+    BuildContext context, {
+    required AttachmentRef attachment,
+    required AttachmentFileStore fileStore,
+  }) async {
     switch (attachment.type) {
       case TaskAttachmentType.contact:
         await _openContact(context, attachment);
       case TaskAttachmentType.image:
         await _openImage(context, attachment, fileStore);
+      case TaskAttachmentType.file:
+        await _openFile(context, attachment, fileStore);
       case TaskAttachmentType.url:
         await _openUrl(context, attachment);
       case TaskAttachmentType.location:
@@ -37,10 +52,10 @@ class AttachmentDefaultAction {
 
   static Future<void> _openContact(
     BuildContext context,
-    TaskAttachment attachment,
+    AttachmentRef attachment,
   ) async {
     final ContactAttachmentPayload contact =
-        TaskAttachmentCodec.contact(attachment);
+        TaskAttachmentCodec.contactRef(attachment);
     final String? phone = contact.primaryPhone.isNotEmpty
         ? contact.primaryPhone
         : null;
@@ -71,12 +86,37 @@ class AttachmentDefaultAction {
     );
   }
 
-  static Future<void> _openImage(
+  static Future<void> _openFile(
     BuildContext context,
-    TaskAttachment attachment,
+    AttachmentRef attachment,
     AttachmentFileStore fileStore,
   ) async {
-    final ImageAttachmentPayload payload = TaskAttachmentCodec.image(attachment);
+    final FileAttachmentPayload payload =
+        TaskAttachmentCodec.fileRef(attachment);
+    final File file = await fileStore.resolveFile(payload.relativePath);
+    if (!context.mounted) {
+      return;
+    }
+    if (!file.existsSync()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('attachment_file_missing'.tr())),
+      );
+      return;
+    }
+    await _launchOrSnack(
+      context,
+      AttachmentLauncherService.openLocalFile(file),
+      'attachment_file_open_failed'.tr(),
+    );
+  }
+
+  static Future<void> _openImage(
+    BuildContext context,
+    AttachmentRef attachment,
+    AttachmentFileStore fileStore,
+  ) async {
+    final ImageAttachmentPayload payload =
+        TaskAttachmentCodec.imageRef(attachment);
     final File file = await fileStore.resolveFile(payload.relativePath);
     if (!context.mounted) {
       return;
@@ -96,9 +136,9 @@ class AttachmentDefaultAction {
 
   static Future<void> _openUrl(
     BuildContext context,
-    TaskAttachment attachment,
+    AttachmentRef attachment,
   ) async {
-    final UrlAttachmentPayload payload = TaskAttachmentCodec.url(attachment);
+    final UrlAttachmentPayload payload = TaskAttachmentCodec.urlRef(attachment);
     await _launchOrSnack(
       context,
       AttachmentLauncherService.openUrl(payload.url),
@@ -108,10 +148,10 @@ class AttachmentDefaultAction {
 
   static Future<void> _openLocation(
     BuildContext context,
-    TaskAttachment attachment,
+    AttachmentRef attachment,
   ) async {
     final LocationAttachmentPayload payload =
-        TaskAttachmentCodec.location(attachment);
+        TaskAttachmentCodec.locationRef(attachment);
     final bool ok = await MapAppLauncherService.showAtCoordinate(
       context: context,
       latitude: payload.latitude,
@@ -134,9 +174,9 @@ class AttachmentDefaultAction {
 
   static Future<void> _openNote(
     BuildContext context,
-    TaskAttachment attachment,
+    AttachmentRef attachment,
   ) async {
-    final NoteAttachmentPayload note = TaskAttachmentCodec.note(attachment);
+    final NoteAttachmentPayload note = TaskAttachmentCodec.noteRef(attachment);
     final String body = note.body.trim();
     if (body.isEmpty) {
       if (!context.mounted) {

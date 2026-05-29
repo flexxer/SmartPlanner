@@ -14,6 +14,7 @@ import 'package:smart_planner/features/dashboard/presentation/dashboard_screen.d
 import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/todo_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
+import 'package:smart_planner/features/todo_list/domain/entities/attachment_ref.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_attachments_section.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_badge.dart';
@@ -22,6 +23,7 @@ import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_child_tasks_section.dart';
 import 'package:smart_planner/features/templates/data/repositories/ui_template_repository.dart';
 import 'package:smart_planner/features/templates/domain/ui_template_factory.dart';
+import 'package:smart_planner/features/notifications/presentation/widgets/reminder_detail_row.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_priority_ui.dart';
 
 /// Full-screen task details (attachments, checklists, reorderable subtasks).
@@ -106,42 +108,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       return;
     }
 
-    final TextEditingController titleController =
-        TextEditingController(text: task.title);
-    final bool? confirmed = await showDialog<bool>(
+    final String? title = await showDialog<String>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text('task_template_dialog_title'.tr()),
-          content: TextField(
-            controller: titleController,
-            decoration: InputDecoration(
-              labelText: 'task_template_name_label'.tr(),
-              border: const OutlineInputBorder(),
-            ),
-            autofocus: true,
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text('common_cancel'.tr()),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text('common_save'.tr()),
-            ),
-          ],
-        );
+        return _SaveTaskTemplateDialog(initialTitle: task.title);
       },
     );
 
-    if (confirmed != true || !mounted) {
-      titleController.dispose();
+    if (!mounted || title == null) {
       return;
     }
 
-    final String title = titleController.text.trim();
-    titleController.dispose();
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('task_enter_template_name'.tr())),
@@ -338,6 +315,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   ),
                 ),
               ],
+              const SizedBox(height: 12),
+              ReminderDetailRow(
+                reminderAt: task.reminderAt,
+              ),
               const SizedBox(height: 8),
               Text(
                 'created_label'.tr(
@@ -415,6 +396,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 onLinkExistingTask: () => DashboardScreen.openLinkTaskSheet(
                   context,
                   parentTask: task,
+                  selectedDate: widget.selectedDate,
                 ),
                 onOpenChild: (Task child) => DashboardScreen.openTaskDetail(
                   context,
@@ -426,20 +408,30 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               Divider(height: 1, color: colors.outlineVariant),
               const SizedBox(height: 16),
               TaskAttachmentsSection(
-                attachments: _attachments,
-                attachmentRepository:
-                    context.read<TaskAttachmentRepository>(),
-                onEditAttachment: (TaskAttachment attachment) =>
-                    DashboardScreen.openEditAttachmentSheet(
-                  context,
-                  task: task,
-                  attachment: attachment,
-                ),
-                onDeleteAttachment: (TaskAttachment attachment) =>
-                    DashboardScreen.deleteAttachmentWithUndo(
-                  context,
-                  attachment: attachment,
-                ),
+                attachments: _attachments
+                    .map(AttachmentRef.fromTask)
+                    .toList(growable: false),
+                fileStore:
+                    context.read<TaskAttachmentRepository>().fileStore,
+                onEditAttachment: (AttachmentRef attachment) {
+                  final TaskAttachment source = _attachments.firstWhere(
+                    (TaskAttachment a) => a.id == attachment.id,
+                  );
+                  DashboardScreen.openEditAttachmentSheet(
+                    context,
+                    task: task,
+                    attachment: source,
+                  );
+                },
+                onDeleteAttachment: (AttachmentRef attachment) {
+                  final TaskAttachment source = _attachments.firstWhere(
+                    (TaskAttachment a) => a.id == attachment.id,
+                  );
+                  DashboardScreen.deleteAttachmentWithUndo(
+                    context,
+                    attachment: source,
+                  );
+                },
                 onToggleChecklistItem: (Id attachmentId, int localId) =>
                     context.read<DashboardBloc>().add(
                       ToggleAttachmentChecklistItem(
@@ -599,5 +591,59 @@ class _TaskDetailBadges extends StatelessWidget {
       return 'due_today'.tr();
     }
     return L10n.dateFormat('d MMM yyyy', context: context).format(due);
+  }
+}
+
+/// Name prompt when saving a task as a [UiTemplate].
+///
+/// Owns [TextEditingController] so it is disposed only after the route closes.
+class _SaveTaskTemplateDialog extends StatefulWidget {
+  const _SaveTaskTemplateDialog({required this.initialTitle});
+
+  final String initialTitle;
+
+  @override
+  State<_SaveTaskTemplateDialog> createState() => _SaveTaskTemplateDialogState();
+}
+
+class _SaveTaskTemplateDialogState extends State<_SaveTaskTemplateDialog> {
+  late final TextEditingController _titleController;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.initialTitle);
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('task_template_dialog_title'.tr()),
+      content: TextField(
+        controller: _titleController,
+        decoration: InputDecoration(
+          labelText: 'task_template_name_label'.tr(),
+          border: const OutlineInputBorder(),
+        ),
+        autofocus: true,
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('common_cancel'.tr()),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.of(context).pop(_titleController.text.trim()),
+          child: Text('common_save'.tr()),
+        ),
+      ],
+    );
   }
 }

@@ -6,7 +6,7 @@ import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
 class TaskDateVisibility {
   TaskDateVisibility._();
 
-  /// Undated tasks are shown in the dashboard «Без срока» section, not per day.
+  /// Undated tasks are shown in the dashboard backlog section, not per day.
   /// Dated tasks appear on the due day and every following day until completed.
   /// Completed root tasks shown at the bottom of the dashboard day list.
   static bool isCompletedVisibleOnDate(Task task, DateTime selectedDate) {

@@ -33,6 +33,9 @@ class CalendarEvent {
   /// Local [Task.id] values linked to this event.
   List<int> linkedTaskIds = <int>[];
 
+  /// Minutes before [start]; `null` = no reminder.
+  int? reminderMinutesBefore;
+
   CalendarEvent();
 
   /// User-created event stored only in Isar (MVP local meetings).

@@ -3,6 +3,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
+import 'package:smart_planner/features/calendar_integration/domain/entities/event_attachment.dart';
 
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 
@@ -66,6 +67,8 @@ class IsarDatabase {
         TaskAttachmentSchema,
 
         CalendarEventSchema,
+
+        EventAttachmentSchema,
 
         UiTemplateSchema,
 

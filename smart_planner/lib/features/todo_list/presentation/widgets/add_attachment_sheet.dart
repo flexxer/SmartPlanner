@@ -5,7 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:isar/isar.dart';
+import 'package:smart_planner/features/calendar_integration/data/repositories/event_attachment_repository.dart';
+import 'package:smart_planner/features/calendar_integration/domain/entities/event_attachment.dart';
+import 'package:smart_planner/features/todo_list/data/attachment_file_store.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
+import 'package:smart_planner/features/todo_list/domain/entities/attachment_ref.dart';
 import 'package:smart_planner/features/todo_list/data/services/device_contact_picker.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_payloads.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
@@ -17,26 +21,50 @@ import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_blo
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/location_map_picker_sheet.dart';
 
-/// Add or edit a local [TaskAttachment] on a task.
+/// Add or edit a local attachment on a task or calendar event.
 class AddAttachmentSheet extends StatefulWidget {
   const AddAttachmentSheet({
-    required this.repository,
-    required this.taskId,
-    this.attachmentToEdit,
-    this.dashboardBloc,
+    required TaskAttachmentRepository repository,
+    required Id taskId,
+    TaskAttachment? attachmentToEdit,
+    DashboardBloc? dashboardBloc,
     super.key,
-  });
+  })  : taskRepository = repository,
+        eventRepository = null,
+        taskId = taskId,
+        eventId = null,
+        taskAttachmentToEdit = attachmentToEdit,
+        eventAttachmentToEdit = null,
+        dashboardBloc = dashboardBloc;
 
-  final TaskAttachmentRepository repository;
-  final Id taskId;
+  const AddAttachmentSheet.forEvent({
+    required EventAttachmentRepository repository,
+    required Id eventId,
+    EventAttachment? attachmentToEdit,
+    super.key,
+  })  : taskRepository = null,
+        eventRepository = repository,
+        taskId = null,
+        eventId = eventId,
+        taskAttachmentToEdit = null,
+        eventAttachmentToEdit = attachmentToEdit,
+        dashboardBloc = null;
 
-  /// When set, the sheet opens in edit mode with fields prefilled.
-  final TaskAttachment? attachmentToEdit;
-
-  /// When set, save dispatches [UpdateTaskAttachment] on this bloc.
+  final TaskAttachmentRepository? taskRepository;
+  final EventAttachmentRepository? eventRepository;
+  final Id? taskId;
+  final Id? eventId;
+  final TaskAttachment? taskAttachmentToEdit;
+  final EventAttachment? eventAttachmentToEdit;
   final DashboardBloc? dashboardBloc;
 
-  bool get isEditing => attachmentToEdit != null;
+  bool get isEditing =>
+      taskAttachmentToEdit != null || eventAttachmentToEdit != null;
+
+  bool get isEventMode => eventRepository != null;
+
+  AttachmentFileStore get fileStore =>
+      taskRepository?.fileStore ?? eventRepository!.fileStore;
 
   @override
   State<AddAttachmentSheet> createState() => _AddAttachmentSheetState();
@@ -58,6 +86,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   final List<ChecklistItemPayload> _checklistItems = <ChecklistItemPayload>[];
 
   String? _imageRelativePath;
+  StoredAttachmentFile? _storedFile;
   double? _latitude;
   double? _longitude;
 
@@ -67,9 +96,12 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   @override
   void initState() {
     super.initState();
-    final TaskAttachment? existing = widget.attachmentToEdit;
-    if (existing != null) {
-      _prefillFromAttachment(existing);
+    final TaskAttachment? taskExisting = widget.taskAttachmentToEdit;
+    final EventAttachment? eventExisting = widget.eventAttachmentToEdit;
+    if (taskExisting != null) {
+      _prefillFromAttachment(AttachmentRef.fromTask(taskExisting));
+    } else if (eventExisting != null) {
+      _prefillFromAttachment(AttachmentRef.fromEvent(eventExisting));
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _tryReadClipboardUrl();
@@ -77,15 +109,24 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
     }
   }
 
-  void _prefillFromAttachment(TaskAttachment attachment) {
+  void _prefillFromAttachment(AttachmentRef attachment) {
     _selectedType = attachment.type;
     switch (attachment.type) {
       case TaskAttachmentType.contact:
-        _pickedContact = TaskAttachmentCodec.contact(attachment);
+        _pickedContact = TaskAttachmentCodec.contactRef(attachment);
       case TaskAttachmentType.image:
-        _imageRelativePath = TaskAttachmentCodec.image(attachment).relativePath;
+        _imageRelativePath =
+            TaskAttachmentCodec.imageRef(attachment).relativePath;
+      case TaskAttachmentType.file:
+        final FileAttachmentPayload file =
+            TaskAttachmentCodec.fileRef(attachment);
+        _storedFile = StoredAttachmentFile(
+          relativePath: file.relativePath,
+          fileName: file.fileName,
+          mimeType: file.mimeType,
+        );
       case TaskAttachmentType.url:
-        final UrlAttachmentPayload url = TaskAttachmentCodec.url(attachment);
+        final UrlAttachmentPayload url = TaskAttachmentCodec.urlRef(attachment);
         _urlController.text = url.url;
         final String label = (url.label ?? '').trim();
         if (label.isNotEmpty && label != url.url) {
@@ -93,7 +134,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
         }
       case TaskAttachmentType.location:
         final LocationAttachmentPayload location =
-            TaskAttachmentCodec.location(attachment);
+            TaskAttachmentCodec.locationRef(attachment);
         _latitude = location.latitude;
         _longitude = location.longitude;
         _pickedPlaceName = location.placeName;
@@ -105,7 +146,8 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
           _locationLabelController.text = location.placeName!.trim();
         }
       case TaskAttachmentType.note:
-        final NoteAttachmentPayload note = TaskAttachmentCodec.note(attachment);
+        final NoteAttachmentPayload note =
+            TaskAttachmentCodec.noteRef(attachment);
         final String? title = note.title?.trim();
         if (title != null && title.isNotEmpty) {
           _noteTitleController.text = title;
@@ -113,7 +155,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
         _noteBodyController.text = note.body;
       case TaskAttachmentType.checklist:
         final ChecklistAttachmentPayload checklist =
-            TaskAttachmentCodec.checklist(attachment);
+            TaskAttachmentCodec.checklistRef(attachment);
         final String? title = checklist.title?.trim();
         if (title != null && title.isNotEmpty) {
           _checklistTitleController.text = title;
@@ -161,8 +203,21 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
     super.dispose();
   }
 
+  Future<void> _pickFile() async {
+    final StoredAttachmentFile? picked =
+        await widget.fileStore.pickAndStoreFile();
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _selectedType = TaskAttachmentType.file;
+      _storedFile = picked;
+    });
+    await _save();
+  }
+
   Future<void> _pickImage() async {
-    final String? path = await widget.repository.fileStore.pickAndStoreImage();
+    final String? path = await widget.fileStore.pickAndStoreImage();
     if (path == null || !mounted) {
       return;
     }
@@ -323,6 +378,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
     final String? payloadJson = switch (type) {
       TaskAttachmentType.contact => _encodeContact(),
       TaskAttachmentType.image => _encodeImage(),
+      TaskAttachmentType.file => _encodeFile(),
       TaskAttachmentType.url => _encodeUrl(),
       TaskAttachmentType.location => _encodeLocation(),
       TaskAttachmentType.note => _encodeNote(),
@@ -347,26 +403,16 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
       };
 
       if (widget.isEditing) {
-        final TaskAttachment attachment = widget.attachmentToEdit!
-          ..payloadJson = payloadJson
-          ..label = attachmentLabel;
-        final DashboardBloc? bloc = widget.dashboardBloc;
-        if (bloc != null) {
-          bloc.add(UpdateTaskAttachment(attachment));
-        } else {
-          await widget.repository.update(attachment);
-        }
+        await _saveEdit(
+          type: type,
+          payloadJson: payloadJson,
+          attachmentLabel: attachmentLabel,
+        );
       } else {
-        final int sortOrder =
-            await widget.repository.nextSortOrder(widget.taskId);
-        await widget.repository.save(
-          TaskAttachment.create(
-            taskId: widget.taskId,
-            type: type,
-            payloadJson: payloadJson,
-            label: attachmentLabel,
-            sortOrder: sortOrder,
-          ),
+        await _saveCreate(
+          type: type,
+          payloadJson: payloadJson,
+          attachmentLabel: attachmentLabel,
         );
       }
       if (mounted) {
@@ -391,6 +437,76 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
       return null;
     }
     return TaskAttachmentCodec.encodeMap(contact.toJson());
+  }
+
+  Future<void> _saveEdit({
+    required TaskAttachmentType type,
+    required String payloadJson,
+    required String? attachmentLabel,
+  }) async {
+    if (widget.isEventMode) {
+      final EventAttachment attachment = widget.eventAttachmentToEdit!
+        ..payloadJson = payloadJson
+        ..label = attachmentLabel;
+      await widget.eventRepository!.update(attachment);
+      return;
+    }
+    final TaskAttachment attachment = widget.taskAttachmentToEdit!
+      ..payloadJson = payloadJson
+      ..label = attachmentLabel;
+    final DashboardBloc? bloc = widget.dashboardBloc;
+    if (bloc != null) {
+      bloc.add(UpdateTaskAttachment(attachment));
+    } else {
+      await widget.taskRepository!.update(attachment);
+    }
+  }
+
+  Future<void> _saveCreate({
+    required TaskAttachmentType type,
+    required String payloadJson,
+    required String? attachmentLabel,
+  }) async {
+    if (widget.isEventMode) {
+      final int sortOrder =
+          await widget.eventRepository!.nextSortOrder(widget.eventId!);
+      await widget.eventRepository!.save(
+        EventAttachment.create(
+          eventId: widget.eventId!,
+          type: type,
+          payloadJson: payloadJson,
+          label: attachmentLabel,
+          sortOrder: sortOrder,
+        ),
+      );
+      return;
+    }
+    final int sortOrder =
+        await widget.taskRepository!.nextSortOrder(widget.taskId!);
+    await widget.taskRepository!.save(
+      TaskAttachment.create(
+        taskId: widget.taskId!,
+        type: type,
+        payloadJson: payloadJson,
+        label: attachmentLabel,
+        sortOrder: sortOrder,
+      ),
+    );
+  }
+
+  String? _encodeFile() {
+    final StoredAttachmentFile? file = _storedFile;
+    if (file == null) {
+      _showError('attachment_select_file'.tr());
+      return null;
+    }
+    return TaskAttachmentCodec.encodeMap(
+      FileAttachmentPayload(
+        relativePath: file.relativePath,
+        fileName: file.fileName,
+        mimeType: file.mimeType,
+      ).toJson(),
+    );
   }
 
   String? _encodeImage() {
@@ -564,6 +680,11 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
         Icons.image_outlined,
         TaskAttachmentType.image,
       ),
+      _typeTile(
+        'attachment_type_file'.tr(),
+        Icons.insert_drive_file_outlined,
+        TaskAttachmentType.file,
+      ),
       _typeTile('attachment_type_url'.tr(), Icons.link, TaskAttachmentType.url),
       _typeTile(
         'attachment_type_location'.tr(),
@@ -593,6 +714,10 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
         if (type == TaskAttachmentType.contact) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _pickContactSystem();
+          });
+        } else if (type == TaskAttachmentType.file) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _pickFile();
           });
         }
       },
@@ -625,6 +750,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
       ...switch (type) {
         TaskAttachmentType.contact => _contactForm(),
         TaskAttachmentType.image => _imageForm(),
+        TaskAttachmentType.file => _fileForm(),
         TaskAttachmentType.url => _urlForm(),
         TaskAttachmentType.location => _locationForm(),
         TaskAttachmentType.note => _noteForm(),
@@ -637,6 +763,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
     return switch (type) {
       TaskAttachmentType.contact => 'attachment_type_contact'.tr(),
       TaskAttachmentType.image => 'attachment_type_photo'.tr(),
+      TaskAttachmentType.file => 'attachment_type_file'.tr(),
       TaskAttachmentType.url => 'attachment_type_url'.tr(),
       TaskAttachmentType.location => 'attachment_type_location'.tr(),
       TaskAttachmentType.note => 'attachment_type_note'.tr(),
@@ -676,10 +803,38 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
     ];
   }
 
+  List<Widget> _fileForm() => <Widget>[
+        if (_storedFile != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: <Widget>[
+                const Icon(Icons.insert_drive_file_outlined),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _storedFile!.fileName,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        OutlinedButton.icon(
+          onPressed: _pickFile,
+          icon: const Icon(Icons.folder_open_outlined),
+          label: Text(
+            _storedFile != null
+                ? 'attachment_pick_other_file'.tr()
+                : 'attachment_pick_file'.tr(),
+          ),
+        ),
+      ];
+
   List<Widget> _imageForm() => <Widget>[
         if (_imageRelativePath != null) ...<Widget>[
           FutureBuilder<File>(
-            future: widget.repository.fileStore.resolveFile(_imageRelativePath!),
+            future: widget.fileStore.resolveFile(_imageRelativePath!),
             builder: (BuildContext context, AsyncSnapshot<File> snapshot) {
               if (!snapshot.hasData || !snapshot.data!.existsSync()) {
                 return const SizedBox.shrink();

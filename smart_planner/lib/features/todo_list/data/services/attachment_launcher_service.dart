@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:open_filex/open_filex.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Opens contacts, maps, and URLs via platform handlers.
@@ -16,6 +19,15 @@ class AttachmentLauncherService {
 
   static Future<bool> sendEmail(String email) {
     return _launch(Uri(scheme: 'mailto', path: email));
+  }
+
+  /// Opens a local file with the system default app.
+  static Future<bool> openLocalFile(File file) async {
+    if (!file.existsSync()) {
+      return false;
+    }
+    final OpenResult result = await OpenFilex.open(file.path);
+    return result.type == ResultType.done;
   }
 
   static Future<bool> openUrl(String url) {

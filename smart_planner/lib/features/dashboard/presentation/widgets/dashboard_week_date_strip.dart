@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/dashboard/domain/day_activity_marker.dart';
-import 'package:smart_planner/features/dashboard/presentation/widgets/day_marker_dots.dart';
 
-/// Horizontally scrollable week days with activity dots under each date.
+/// Horizontally scrollable week days with event/task counts per day.
 class DashboardWeekDateStrip extends StatefulWidget {
   const DashboardWeekDateStrip({
     required this.selectedDate,
@@ -18,7 +17,6 @@ class DashboardWeekDateStrip extends StatefulWidget {
   final ValueChanged<DateTime> onDateSelected;
 
   static const double _dayWidth = 44;
-  static const double _dotSize = 3.5;
 
   @override
   State<DashboardWeekDateStrip> createState() => _DashboardWeekDateStripState();
@@ -83,7 +81,7 @@ class _DashboardWeekDateStripState extends State<DashboardWeekDateStrip> {
     final weekdayFormat = L10n.dateFormat('E', context: context);
 
     return SizedBox(
-      height: 72,
+      height: 68,
       child: ListView.builder(
         controller: _scrollController,
         scrollDirection: Axis.horizontal,
@@ -108,7 +106,6 @@ class _DashboardWeekDateStripState extends State<DashboardWeekDateStrip> {
             isToday: isToday,
             marker: marker,
             colors: colors,
-            dotSize: DashboardWeekDateStrip._dotSize,
             onTap: () => widget.onDateSelected(day),
           );
         },
@@ -125,7 +122,6 @@ class _DayCell extends StatelessWidget {
     required this.isToday,
     required this.marker,
     required this.colors,
-    required this.dotSize,
     required this.onTap,
   });
 
@@ -135,19 +131,28 @@ class _DayCell extends StatelessWidget {
   final bool isToday;
   final DayActivityMarker marker;
   final ColorScheme colors;
-  final double dotSize;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle? weekdayStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: isSelected ? colors.onPrimaryContainer : colors.onSurfaceVariant,
-          fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
-        );
+    final TextStyle? weekdayStyle =
+        Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: isSelected
+                  ? colors.onPrimaryContainer
+                  : colors.onSurfaceVariant,
+              fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+            );
     final TextStyle? dayStyle = Theme.of(context).textTheme.titleSmall?.copyWith(
           color: isSelected ? colors.onPrimaryContainer : colors.onSurface,
           fontWeight: FontWeight.w700,
         );
+
+    final Color badgeBackground = isSelected
+        ? colors.primary.withValues(alpha: 0.22)
+        : colors.surfaceContainerHighest;
+    final Color badgeForeground = isSelected
+        ? colors.onPrimaryContainer
+        : colors.onSurfaceVariant;
 
     return Material(
       color: Colors.transparent,
@@ -164,22 +169,50 @@ class _DayCell extends StatelessWidget {
                 ? Border.all(color: colors.outline)
                 : null,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
             children: <Widget>[
-              Text(
-                weekdayLabel,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: weekdayStyle,
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      weekdayLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: weekdayStyle,
+                    ),
+                    const SizedBox(height: 2),
+                    Text('${day.day}', style: dayStyle),
+                  ],
+                ),
               ),
-              const SizedBox(height: 2),
-              Text('${day.day}', style: dayStyle),
-              const SizedBox(height: 4),
-              DayMarkerDots(
-                marker: marker,
-                dotSize: dotSize,
-              ),
+              if (marker.hasStripBadge)
+                Positioned(
+                  right: 3,
+                  bottom: 3,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: badgeBackground,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 3,
+                        vertical: 1,
+                      ),
+                      child: Text(
+                        marker.stripBadgeLabel,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              fontSize: 9,
+                              height: 1.1,
+                              fontWeight: FontWeight.w700,
+                              color: badgeForeground,
+                              letterSpacing: -0.2,
+                            ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

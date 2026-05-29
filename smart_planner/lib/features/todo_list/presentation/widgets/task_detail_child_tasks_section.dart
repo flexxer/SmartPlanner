@@ -104,7 +104,7 @@ class TaskDetailChildTasksSection extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: onLinkExistingTask,
           icon: const Icon(Icons.link, size: 18),
-          label: Text('child_tasks_link'.tr()),
+          label: Text('task_relation_button'.tr()),
         ),
       ],
     );

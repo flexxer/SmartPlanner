@@ -1,5 +1,6 @@
 import 'package:isar/isar.dart';
 import 'package:smart_planner/core/database/isar_database.dart';
+import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_priority.dart';
@@ -145,6 +146,17 @@ class TodoRepository {
       result[parentId] = await getChildTasksBundle(parentId);
     }
     return result;
+  }
+
+  /// Uncompleted tasks not yet linked to [event].
+  Future<List<Task>> getTasksAttachableToEvent(CalendarEvent event) async {
+    final Set<int> linkedIds = event.linkedTaskIds.toSet();
+    final List<Task> all = await getUncompletedTasks();
+    final List<Task> attachable = all
+        .where((Task t) => !linkedIds.contains(t.id))
+        .toList(growable: false);
+    attachable.sort(_compareTasksByPriority);
+    return attachable;
   }
 
   /// Root uncompleted tasks that may be linked under [parentTaskId].

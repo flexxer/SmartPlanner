@@ -158,6 +158,7 @@ const _TaskAttachmenttypeEnumValueMap = {
   'location': 3,
   'note': 4,
   'checklist': 5,
+  'file': 6,
 };
 const _TaskAttachmenttypeValueEnumMap = {
   0: TaskAttachmentType.contact,
@@ -166,6 +167,7 @@ const _TaskAttachmenttypeValueEnumMap = {
   3: TaskAttachmentType.location,
   4: TaskAttachmentType.note,
   5: TaskAttachmentType.checklist,
+  6: TaskAttachmentType.file,
 };
 
 Id _taskAttachmentGetId(TaskAttachment object) {

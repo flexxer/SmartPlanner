@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
+import 'package:smart_planner/features/todo_list/data/attachment_file_store.dart';
+import 'package:smart_planner/features/todo_list/domain/entities/attachment_ref.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/attachment_default_action.dart';
 
@@ -14,9 +15,25 @@ enum _AttachmentMenuAction {
 Future<void> showAttachmentActionSheet(
   BuildContext context, {
   required TaskAttachment attachment,
-  required TaskAttachmentRepository attachmentRepository,
+  required AttachmentFileStore fileStore,
   required VoidCallback onEdit,
   required void Function(TaskAttachment attachment) onDelete,
+}) async {
+  await showAttachmentActionSheetRef(
+    context,
+    attachment: AttachmentRef.fromTask(attachment),
+    fileStore: fileStore,
+    onEdit: onEdit,
+    onDelete: () => onDelete(attachment),
+  );
+}
+
+Future<void> showAttachmentActionSheetRef(
+  BuildContext context, {
+  required AttachmentRef attachment,
+  required AttachmentFileStore fileStore,
+  required VoidCallback onEdit,
+  required VoidCallback onDelete,
 }) async {
   final _AttachmentMenuAction? action = await showModalBottomSheet<_AttachmentMenuAction>(
     context: context,
@@ -71,14 +88,14 @@ Future<void> showAttachmentActionSheet(
 
   switch (action) {
     case _AttachmentMenuAction.open:
-      await AttachmentDefaultAction.open(
+      await AttachmentDefaultAction.openRef(
         context,
         attachment: attachment,
-        fileStore: attachmentRepository.fileStore,
+        fileStore: fileStore,
       );
     case _AttachmentMenuAction.edit:
       onEdit();
     case _AttachmentMenuAction.delete:
-      onDelete(attachment);
+      onDelete();
   }
 }

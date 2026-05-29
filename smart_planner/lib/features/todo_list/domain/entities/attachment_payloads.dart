@@ -35,6 +35,32 @@ class ContactAttachmentPayload {
   }
 }
 
+class FileAttachmentPayload {
+  const FileAttachmentPayload({
+    required this.relativePath,
+    required this.fileName,
+    this.mimeType,
+  });
+
+  final String relativePath;
+  final String fileName;
+  final String? mimeType;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'relativePath': relativePath,
+        'fileName': fileName,
+        'mimeType': mimeType,
+      };
+
+  factory FileAttachmentPayload.fromJson(Map<String, dynamic> json) {
+    return FileAttachmentPayload(
+      relativePath: json['relativePath'] as String? ?? '',
+      fileName: json['fileName'] as String? ?? '',
+      mimeType: json['mimeType'] as String?,
+    );
+  }
+}
+
 class ImageAttachmentPayload {
   const ImageAttachmentPayload({
     required this.relativePath,

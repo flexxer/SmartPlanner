@@ -1,71 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  DayLinx adaptive icon foreground — Concept 3 monogram "D".
-  Safe zone: content within ~33dp radius of viewport center (54, 54) on 108x108 canvas.
+  Adaptive icon foreground — strict geometric "D" + checklist.
+  Single accent, square caps, no gradients or gloss.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Vertical stem of "D" (timeline / ruler spine) -->
+    <!-- D stem -->
     <path
-        android:fillColor="#E2E8F0"
-        android:pathData="M37,32h6.5v44H37z" />
+        android:fillColor="#CBD5E1"
+        android:pathData="M36,30h8v48h-8z" />
 
-    <!-- Ruler ticks along the stem -->
+    <!-- D bowl -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M44,30 C69,30 77,54 69,78"
+        android:strokeWidth="7"
+        android:strokeColor="#2563EB"
+        android:strokeLineCap="butt"
+        android:strokeLineJoin="miter" />
+
+    <!-- Checklist row 1: empty box + line -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M48,40h7v7h-7z"
+        android:strokeWidth="1.6"
+        android:strokeColor="#64748B" />
     <path
         android:fillColor="#64748B"
-        android:pathData="M43.5,38h9v1.4h-9z M43.5,44h9v1.4h-9z M43.5,50h9v1.4h-9z
-            M43.5,56h9v1.4h-9z M43.5,62h9v1.4h-9z M43.5,68h9v1.4h-9z" />
+        android:pathData="M57,42.5h15v2h-15z" />
 
-    <!-- Curved bowl of "D": gradient stroke (day flow / checklist arc) -->
+    <!-- Checklist row 2 -->
     <path
         android:fillColor="@android:color/transparent"
-        android:pathData="M43.5,33.5 C69,33.5 76.5,54 69,74.5"
-        android:strokeWidth="5.2"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round">
-        <aapt:attr name="android:strokeColor">
-            <gradient
-                android:type="linear"
-                android:startX="43.5"
-                android:startY="33.5"
-                android:endX="76"
-                android:endY="74.5">
-                <item
-                    android:color="#FF3B82F6"
-                    android:offset="0" />
-                <item
-                    android:color="#FF6366F1"
-                    android:offset="0.45" />
-                <item
-                    android:color="#FF8B5CF6"
-                    android:offset="1" />
-            </gradient>
-        </aapt:attr>
-    </path>
-
-    <!-- Inner highlight on the arc (checklist lane) -->
-    <path
-        android:fillColor="@android:color/transparent"
-        android:pathData="M45,36 C66,36 72,54 66,72"
+        android:pathData="M48,52h7v7h-7z"
         android:strokeWidth="1.6"
-        android:strokeAlpha="0.35"
-        android:strokeColor="#FFFFFF"
-        android:strokeLineCap="round" />
+        android:strokeColor="#64748B" />
+    <path
+        android:fillColor="#64748B"
+        android:pathData="M57,54.5h12v2h-12z" />
 
-    <!-- Task dots along the arc (completed items) -->
+    <!-- Checklist row 3: done -->
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M48,64h7v7h-7z" />
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M57,38.5a2.6,2.6 0 1,0 0.01,0z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M69.5,54a2.8,2.8 0 1,0 0.01,0z" />
-    <path
-        android:fillColor="#C4B5FD"
-        android:pathData="M57,69.5a2.4,2.4 0 1,0 0.01,0z" />
+        android:pathData="M49.8,67.2 L52.2,69.6 55.8,65.2 57,66.4 52.2,71.2 48.6,67.6z" />
 
 </vector>

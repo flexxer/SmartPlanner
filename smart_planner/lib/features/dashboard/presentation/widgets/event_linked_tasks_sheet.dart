@@ -160,10 +160,10 @@ class _EventLinkedTasksSheetState extends State<EventLinkedTasksSheet> {
                 ),
               ),
             const SizedBox(height: 12),
-            FilledButton.icon(
+            OutlinedButton.icon(
               onPressed: widget.onAddTask,
-              icon: const Icon(Icons.add),
-              label: Text('events_add_task'.tr()),
+              icon: const Icon(Icons.link),
+              label: Text('task_relation_button'.tr()),
             ),
           ],
         ),

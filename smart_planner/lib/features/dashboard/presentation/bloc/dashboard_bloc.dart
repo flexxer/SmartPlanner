@@ -7,6 +7,7 @@ import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/data/calendar_preferences_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/linked_calendars_loader.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
+import 'package:smart_planner/features/calendar_integration/data/repositories/event_attachment_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
@@ -22,7 +23,9 @@ import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
 import 'package:smart_planner/features/todo_list/domain/task_overdue_selection.dart';
+import 'package:smart_planner/features/notifications/data/day_status_home_widget_service.dart';
 import 'package:smart_planner/features/notifications/data/day_status_notification_controller.dart';
+import 'package:smart_planner/features/notifications/data/item_reminder_scheduler.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_checklist.dart';
 
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
@@ -34,6 +37,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     DashboardDayMarkersRepository? dayMarkersRepository,
     LocalCalendarEventRepository? localCalendarEventRepository,
     DayStatusNotificationController? dayStatusNotifications,
+    DayStatusHomeWidgetService? dayStatusHomeWidget,
+    ItemReminderScheduler? itemReminders,
+    EventAttachmentRepository? eventAttachmentRepository,
   })  : _todoRepository = todoRepository,
         _attachmentRepository =
             attachmentRepository ?? TaskAttachmentRepository(),
@@ -46,8 +52,14 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
             DashboardDayMarkersRepository(
               todoRepository: todoRepository,
               calendarService: calendarService,
+              localCalendarEventRepository: localCalendarEventRepository ??
+                  LocalCalendarEventRepository(),
             ),
         _dayStatusNotifications = dayStatusNotifications,
+        _dayStatusHomeWidget = dayStatusHomeWidget,
+        _itemReminders = itemReminders ?? ItemReminderScheduler(),
+        _eventAttachments =
+            eventAttachmentRepository ?? EventAttachmentRepository(),
         super(const DashboardInitial()) {
     on<LoadDashboardData>(_onLoadDashboardData);
     on<SelectDashboardDate>(_onSelectDashboardDate);
@@ -77,6 +89,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
   final LocalCalendarEventRepository _localCalendarEvents;
   final DashboardDayMarkersRepository _dayMarkersRepository;
   final DayStatusNotificationController? _dayStatusNotifications;
+  final DayStatusHomeWidgetService? _dayStatusHomeWidget;
+  final ItemReminderScheduler _itemReminders;
+  final EventAttachmentRepository _eventAttachments;
 
   List<String> _selectedCalendarIds = <String>[];
   DateTime _selectedDate = AppDateUtils.startOfDay(DateTime.now());
@@ -199,6 +214,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
       task.postponeToNextDay(referenceDate: current.selectedDate);
       await _todoRepository.updateTask(task);
+      await _itemReminders.syncTask(task);
 
       await _emitReloadedTasks(current, emit);
     } catch (error) {
@@ -223,6 +239,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
       task.postponeDueDate(event.newDueDate);
       await _todoRepository.updateTask(task);
+      await _itemReminders.syncTask(task);
 
       await _emitReloadedTasks(current, emit);
     } catch (error) {
@@ -426,6 +443,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         await _todoRepository.updateTask(child);
       }
 
+      await _itemReminders.cancelTask(event.taskId);
       await _todoRepository.deleteTask(event.taskId);
       await _emitReloadedTasks(current, emit);
     } catch (error) {
@@ -443,6 +461,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     }
 
     try {
+      await _itemReminders.cancelEvent(event.eventId);
+      await _eventAttachments.deleteAllForEvent(event.eventId);
       await _localCalendarEvents.deleteLocalEvent(event.eventId);
       await _emitReloadedTasks(current, emit);
     } catch (error) {
@@ -471,8 +491,10 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         ..dueDate = event.task.dueDate
         ..priority = event.task.priority
         ..calendarId = event.task.calendarId
+        ..reminderAt = event.task.reminderAt
         ..updatedAt = event.task.updatedAt;
       await _todoRepository.updateTask(existing);
+      await _itemReminders.syncTask(existing);
       await _emitReloadedTasks(current, emit);
     } catch (error) {
       emit(DashboardError(error.toString()));
@@ -559,10 +581,13 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
   void _syncDayStatusNotification() {
     final DayStatusNotificationController? controller = _dayStatusNotifications;
-    if (controller == null) {
-      return;
+    if (controller != null) {
+      unawaited(controller.syncTodayStatus());
     }
-    unawaited(controller.syncTodayStatus());
+    final DayStatusHomeWidgetService? widget = _dayStatusHomeWidget;
+    if (widget != null) {
+      unawaited(widget.syncToday());
+    }
   }
 
   static List<Id> _parentTaskIdsForDashboard(
@@ -608,6 +633,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
       task.isCompleted = !task.isCompleted;
       await _todoRepository.updateTask(task);
+      await _itemReminders.syncTask(task);
 
       await _emitReloadedTasks(current, emit);
     } catch (error) {

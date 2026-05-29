@@ -2,6 +2,7 @@ import 'package:isar/isar.dart';
 import 'package:smart_planner/core/database/isar_database.dart';
 import 'package:smart_planner/features/todo_list/data/attachment_file_store.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_payloads.dart';
+import 'package:smart_planner/features/todo_list/domain/entities/attachment_ref.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment_type.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.dart';
@@ -73,11 +74,7 @@ class TaskAttachmentRepository {
     if (attachment == null) {
       return;
     }
-    if (attachment.type == TaskAttachmentType.image) {
-      final ImageAttachmentPayload payload =
-          TaskAttachmentCodec.image(attachment);
-      await _fileStore.deleteIfExists(payload.relativePath);
-    }
+    await _deleteStoredFileIfNeeded(attachment);
     await _db.writeTxn(() => _db.taskAttachments.delete(attachmentId));
   }
 
@@ -99,6 +96,18 @@ class TaskAttachmentRepository {
             mimeType: image.mimeType,
           ).toJson(),
         );
+      } else if (item.type == TaskAttachmentType.file) {
+        final FileAttachmentPayload file =
+            TaskAttachmentCodec.fileRef(AttachmentRef.fromTask(item));
+        final String newPath =
+            await _fileStore.copyStoredFileForReopen(file.relativePath);
+        payloadJson = TaskAttachmentCodec.encodeMap(
+          FileAttachmentPayload(
+            relativePath: newPath,
+            fileName: file.fileName,
+            mimeType: file.mimeType,
+          ).toJson(),
+        );
       }
       await save(
         TaskAttachment.create(
@@ -109,6 +118,18 @@ class TaskAttachmentRepository {
           sortOrder: item.sortOrder,
         ),
       );
+    }
+  }
+
+  Future<void> _deleteStoredFileIfNeeded(TaskAttachment attachment) async {
+    if (attachment.type == TaskAttachmentType.image) {
+      final ImageAttachmentPayload payload =
+          TaskAttachmentCodec.image(attachment);
+      await _fileStore.deleteIfExists(payload.relativePath);
+    } else if (attachment.type == TaskAttachmentType.file) {
+      final FileAttachmentPayload payload =
+          TaskAttachmentCodec.fileRef(AttachmentRef.fromTask(attachment));
+      await _fileStore.deleteIfExists(payload.relativePath);
     }
   }
 }

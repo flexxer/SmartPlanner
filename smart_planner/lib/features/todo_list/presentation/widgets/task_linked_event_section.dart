@@ -36,7 +36,7 @@ class TaskLinkedEventSection extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onLink,
             icon: const Icon(Icons.link),
-            label: Text('link_event_button'.tr()),
+            label: Text('task_relation_button'.tr()),
           )
         else ...<Widget>[
           Builder(

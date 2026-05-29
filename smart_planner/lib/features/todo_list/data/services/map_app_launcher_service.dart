@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:map_launcher/map_launcher.dart';
 
 /// Opens installed map apps (Google Maps, Yandex, etc.) at coordinates only.
@@ -46,11 +47,10 @@ class MapAppLauncherService {
               ),
               ...maps.map(
                 (AvailableMap map) => ListTile(
-                  leading: Image.asset(
+                  leading: SvgPicture.asset(
                     map.icon,
                     height: 30,
                     width: 30,
-                    package: 'map_launcher',
                   ),
                   title: Text(map.mapName),
                   onTap: () => Navigator.of(sheetContext).pop(map),

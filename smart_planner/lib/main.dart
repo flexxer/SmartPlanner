@@ -4,6 +4,8 @@ import 'package:smart_planner/app.dart';
 import 'package:smart_planner/core/app_initializer.dart';
 import 'package:smart_planner/core/localization/app_locales.dart';
 import 'package:smart_planner/core/localization/locale_preferences_repository.dart';
+import 'package:smart_planner/features/notifications/data/item_reminder_scheduler.dart';
+import 'package:smart_planner/features/notifications/notification_helper.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,4 +28,9 @@ Future<void> main() async {
       ),
     ),
   );
+
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    await NotificationHelper.ensureAndroidChannels();
+    await ItemReminderScheduler().rescheduleAll();
+  });
 }

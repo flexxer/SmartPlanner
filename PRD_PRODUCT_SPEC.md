@@ -38,7 +38,7 @@ Professionals, freelancers, and people with high cognitive load who juggle multi
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| Tasks without strict time binding | **Implemented** | Optional `dueDate` (`null` = no deadline); **Undated** collapsible section on every selected day (`undated_section`) |
+| Tasks without strict time binding | **Implemented** | Optional `dueDate` (`null` = no deadline); **Backlog** section on every selected day (`backlog_section`), always visible alongside dated tasks |
 | Roll unfinished tasks with overdue indicator | **Partial** | Dedicated **overdue panel** on today; badge via `Task.dynamicOverdueDays` (calendar days past `dueDate`); automatic midnight roll not yet wired (`background_service` TODO) |
 | Tasks filtered by selected calendar day | **Implemented** | Dated tasks via `getUncompletedTasksForDate`; undated via `getUndatedTasks` |
 | Postpone task (tomorrow or pick date) | **Implemented** | `TaskDetailScreen` + `PostponeTaskSheet`; `PostponeTask` / `PostponeTaskToNextDay` |
@@ -140,10 +140,11 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 
 ### Tasks
 
-- **Overdue section (today only):** collapsible **Overdue (N)** above the main list (`overdue_section`; `DashboardLoaded.overdueTasks`). Hidden on other days.
-- **Active tasks:** root uncompleted **dated** tasks for `selectedDate` (`getUncompletedTasksForDate`; excludes `dueDate == null`).
-- **Undated tasks:** collapsible **No due date (N)** above completed section (`undated_section`); all days; from `getUndatedTasks` (`dueDate == null`, uncompleted).
+- **Overdue section (today only):** collapsible **Overdue (N)** above task sections (`overdue_section`; `DashboardLoaded.overdueTasks`). Hidden on other days.
+- **Tasks due (dated):** section header **Tasks due today** / **Tasks due on {date}**; root uncompleted **dated** tasks for `selectedDate` (`getUncompletedTasksForDate`; excludes `dueDate == null`).
+- **Backlog:** standalone section **Backlog (N)** (`backlog_section`); always expanded; all uncompleted tasks with `dueDate == null` from `getUndatedTasks`; shown on every selected day.
 - **Completed tasks (same day):** collapsible **Completed (N)** at the bottom (`completed_section`); tiles at **50% opacity**, **strikethrough** title; unchecking returns task to the active list immediately (`ToggleTaskCompletion`).
+- **Empty day:** when there are no dated, backlog, or completed tasks for the day, a hint is shown at the **bottom** of the scroll (events and other content stay higher).
 - **One full-width compact tile per row** (`TaskExpandableTile`).
   - **Checkbox** (48×48 dp): `ToggleTaskCompletion`; separate splash from body.
   - **Body tap** → **`TaskDetailScreen`** (`Navigator.push`).
@@ -151,7 +152,7 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
   - **Badge row** (`TaskBadge`, `Wrap`): context calendar, priority, due, overdue, linked event, subtasks, checklist, attachments; tappable badges can open detail or event screen.
   - Chevron indicates navigation (no in-place expand).
 - **FAB (+):** `TaskFormSheet` (create mode); no default due date — user may leave deadline empty.
-- Empty state when both active and completed lists are empty.
+- Empty state at the bottom of the scroll when active dated, backlog, and completed lists are all empty.
 
 ### Task detail (`TaskDetailScreen`)
 
@@ -200,7 +201,7 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 
 - **Default:** app language follows the **device locale** when it matches `en`, `ru`, or `es`; otherwise **English** fallback.
 - **Override:** **Calendars** screen → **Language** dropdown (System default / English / Russian / Spanish); persisted in SharedPreferences; UI updates immediately without restart.
-- **Day-status notification (Android):** same settings screen → **Show status bar in notifications**; persisted as `day_status_bar_enabled`; requires notification permission on Android 13+.
+- **Day-status notification (Android):** same settings screen → **Show status bar in notifications** (`day_status_bar_enabled`) and **Pin above other notifications** (`day_status_bar_pinned`, default on); requires notification permission on Android 13+.
 - **Implementation:** all presentation strings use translation keys in `assets/translations/*.json`; helpers in `lib/core/localization/l10n.dart` for plurals, priorities, and `DateFormat`.
 - **Not localized:** demo seed tasks in `task_bootstrap.dart`; calendar-name heuristics in `calendar_context_colors.dart` (matching only).
 
@@ -238,3 +239,4 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 | 2026-05 | Android day-status foreground notification (ongoing FGS, dashboard sync, settings toggle) |
 | 2026-05 | Deep links: `daylinx://create?type=task\|event` → prefilled create sheets |
 | 2026-05 | Product name **DayLinx** (Dayline unavailable); `daylinx://`; `DayLinxApp` root widget |
+| 2026-05 | Dashboard **backlog** top-level section; empty tasks hint at scroll bottom |

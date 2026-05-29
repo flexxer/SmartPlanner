@@ -13,9 +13,10 @@ class NotificationHelper {
 
   static FlutterLocalNotificationsPlugin get plugin => _plugin;
 
-  static Future<void> initialize() async {
+  /// Plugin init only (safe before [EasyLocalization.ensureInitialized]).
+  static Future<void> initializePlugin() async {
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('ic_stat_smartplanner');
 
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings(
@@ -30,7 +31,6 @@ class NotificationHelper {
     );
 
     await _plugin.initialize(settings);
-    await _createAndroidChannels();
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       await _plugin
@@ -49,6 +49,17 @@ class NotificationHelper {
               AndroidFlutterLocalNotificationsPlugin>()
           ?.requestNotificationsPermission();
     }
+  }
+
+  /// Creates localized Android channels; call after EasyLocalization is ready.
+  static Future<void> ensureAndroidChannels() async {
+    await _createAndroidChannels();
+  }
+
+  @Deprecated('Use initializePlugin + ensureAndroidChannels after localization')
+  static Future<void> initialize() async {
+    await initializePlugin();
+    await ensureAndroidChannels();
   }
 
   static Future<void> _createAndroidChannels() async {
@@ -93,6 +104,16 @@ class NotificationHelper {
         enableVibration: false,
       ),
     );
+    await android.createNotificationChannel(
+      AndroidNotificationChannel(
+        NotificationChannels.dayStatusPinned,
+        'notification_day_status_pinned_channel'.tr(),
+        description: 'notification_day_status_pinned_channel_desc'.tr(),
+        importance: Importance.high,
+        playSound: false,
+        enableVibration: false,
+      ),
+    );
   }
 
   /// Schedules a one-shot notification (meeting, digest, etc.).
@@ -105,10 +126,12 @@ class NotificationHelper {
   }) async {
     final AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
-      NotificationChannels.meetings,
+      channelId,
       'notification_reminders_group'.tr(),
+      channelDescription: 'notification_meetings_channel_desc'.tr(),
       importance: Importance.high,
       priority: Priority.high,
+      icon: 'ic_stat_smartplanner',
     );
 
     final NotificationDetails details = NotificationDetails(

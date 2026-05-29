@@ -13,6 +13,9 @@ import 'package:smart_planner/features/todo_list/data/repositories/task_attachme
 import 'package:smart_planner/features/todo_list/data/repositories/todo_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_priority.dart';
+import 'package:smart_planner/features/notifications/data/item_reminder_scheduler.dart';
+import 'package:smart_planner/features/notifications/domain/task_reminder_defaults.dart';
+import 'package:smart_planner/features/notifications/presentation/widgets/reminder_at_field.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_linked_calendars_field.dart';
 
 /// Bottom sheet to create or edit a [Task].
@@ -31,6 +34,7 @@ class TaskFormSheet extends StatefulWidget {
     this.attachmentRepository,
     this.initialTitle,
     this.initialPriority,
+    this.initialParentTaskId,
     super.key,
   });
 
@@ -65,6 +69,9 @@ class TaskFormSheet extends StatefulWidget {
   /// Prefilled priority when creating (e.g. from a deep link).
   final TaskPriority? initialPriority;
 
+  /// After save, attach the new task under this parent ([Task.parentTaskId]).
+  final Id? initialParentTaskId;
+
   bool get isEditing => taskToEdit != null;
 
   @override
@@ -77,6 +84,8 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
   late DateTime? _dueDate;
   late TaskPriority _priority;
   String? _selectedCalendarId;
+  DateTime? _reminderAt;
+  bool _reminderLoaded = false;
   bool _saving = false;
 
   @override
@@ -91,6 +100,8 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       _priority = existing.priority;
       final String calendarId = existing.calendarId;
       _selectedCalendarId = calendarId.isEmpty ? null : calendarId;
+      _reminderAt = existing.reminderAt;
+      _reminderLoaded = true;
     } else {
       final UiTemplate? template = widget.templateToApply;
       final String titleText = widget.initialTitle?.isNotEmpty == true
@@ -106,6 +117,19 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       if (initialId != null && initialId.isNotEmpty) {
         _selectedCalendarId = initialId;
       }
+      _loadDefaultReminder();
+    }
+  }
+
+  Future<void> _loadDefaultReminder() async {
+    final DateTime at = await TaskReminderDefaults.defaultReminderAt(
+      dueDate: _dueDate,
+    );
+    if (mounted) {
+      setState(() {
+        _reminderAt = at;
+        _reminderLoaded = true;
+      });
     }
   }
 
@@ -126,7 +150,20 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       locale: context.locale,
     );
     if (picked != null) {
-      setState(() => _dueDate = AppDateUtils.startOfDay(picked));
+      setState(() {
+        _dueDate = AppDateUtils.startOfDay(picked);
+      });
+      if (_reminderAt == null) {
+        await _loadDefaultReminder();
+      }
+    }
+  }
+
+  Future<void> _syncReminderForTask(Task task) async {
+    try {
+      await ItemReminderScheduler().syncTask(task);
+    } on Object {
+      // Scheduling is best-effort; save already succeeded.
     }
   }
 
@@ -228,7 +265,8 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
           : _descriptionController.text.trim()
       ..dueDate = _dueDate
       ..priority = _priority
-      ..calendarId = calendarId;
+      ..calendarId = calendarId
+      ..reminderAt = _reminderAt;
     task.markUpdated();
 
     final DashboardBloc? bloc = widget.dashboardBloc;
@@ -236,6 +274,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       bloc.add(UpdateTask(task));
     } else {
       await widget.repository.updateTask(task);
+      await _syncReminderForTask(task);
     }
 
     if (mounted) {
@@ -256,8 +295,11 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       priority: _priority,
       calendarId: calendarId,
       linkedEventId: widget.initialLinkedEventId,
+      reminderAt: _reminderAt,
     );
     final Id taskId = await widget.repository.saveTask(task);
+    task.id = taskId;
+    await _syncReminderForTask(task);
     final Id? linkedEventId = widget.initialLinkedEventId;
     final LocalCalendarEventRepository? localRepo =
         widget.localCalendarRepository;
@@ -272,6 +314,14 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       await UiTemplateApplicator(
         attachmentRepository: attachmentRepo,
       ).applyToTask(taskId: taskId, template: template);
+    }
+
+    final Id? parentTaskId = widget.initialParentTaskId;
+    if (parentTaskId != null) {
+      await widget.repository.attachTaskToParent(
+        childTaskId: taskId,
+        parentTaskId: parentTaskId,
+      );
     }
 
     if (mounted) {
@@ -438,6 +488,15 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
                   ],
                 ],
               ),
+              if (_reminderLoaded) ...<Widget>[
+                const SizedBox(height: 12),
+                ReminderAtField(
+                  reminderAt: _reminderAt,
+                  onChanged: (DateTime? value) {
+                    setState(() => _reminderAt = value);
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: _saving ? null : _save,

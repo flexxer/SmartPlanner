@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smart_planner/core/localization/app_locales.dart';
 import 'package:smart_planner/core/localization/locale_preferences_repository.dart';
 
-/// Language selector for [CalendarSettingsPage] (instant UI update).
+/// Language selector for the settings page (instant UI update).
 class LanguagePickerSection extends StatefulWidget {
   const LanguagePickerSection({super.key});
 
@@ -52,18 +52,8 @@ class _LanguagePickerSectionState extends State<LanguagePickerSection> {
         context.read<LocalePreferencesRepository>();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            'language_section_title'.tr(),
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: DropdownButtonFormField<String>(
             value: _pickerCodes.contains(_selectedCode)
                 ? _selectedCode
                 : AppLocales.systemLanguageCode,
@@ -97,8 +87,6 @@ class _LanguagePickerSectionState extends State<LanguagePickerSection> {
               }
             },
           ),
-        ],
-      ),
     );
   }
 }

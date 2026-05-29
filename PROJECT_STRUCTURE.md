@@ -207,7 +207,7 @@ smart_planner/test/
 | `CompletedTasksBloc` | @deprecated — not in AppBar nav |
 | `DashboardScreen` AppBar | Templates stub; calendars; refresh |
 | `TodoRepository` | Task CRUD; `getUncompletedTasksForDate`, `getUndatedTasks`, `getCompletedTasksForDate`, `getOverdueUncompletedTasks`, `deleteTask`, `reopenFromCompleted`, `reorderChildTasks`, `compareChildTasks` (`Task.sortOrder`) |
-| `TaskDateVisibility` | Dated tasks per day; undated tasks excluded from day list (dashboard section only) |
+| `TaskDateVisibility` | Dated tasks per day; undated tasks in dashboard backlog section only |
 | `LinkedCalendarsLoader` | Device calendars enabled in app settings (for forms + markers) |
 | `TaskLinkedCalendarsField` | Horizontal chips to pick `Task.calendarId` |
 | `DeviceCalendarService` | Permissions, calendars, `getEventsForDay` / `getEventsForToday` |
@@ -242,8 +242,8 @@ smart_planner/test/
 | `CalendarSettingsPage` | Device calendar multi-select + **language** + **day-status notification** toggle (Android) |
 | `NotificationHelper` | `flutter_local_notifications` init; Android channels (meetings, digest, overdue, **day status**) |
 | `DayStatusNotificationController` | Android foreground service via `startForegroundService` / `show` / `stopForegroundService`; always reflects **today** |
-| `DayStatusNotificationBuilder` | Localized title (`done` / `total` tasks) + body (current or next calendar event via `EventTimeStatusResolver`) |
-| `NotificationPreferencesRepository` | `day_status_bar_enabled` in SharedPreferences (default **false**, opt-in) |
+| `DayStatusNotificationBuilder` | Title with `done`/`total` when tasks exist, else plain title; body = current/next event |
+| `NotificationPreferencesRepository` | `day_status_bar_enabled` (default **false**); `day_status_bar_pinned` (default **true**) |
 | `DayStatusBarSettingsSection` | `SwitchListTile` on `CalendarSettingsPage`; calls `setDayStatusBarEnabled` |
 | `DayStatusServiceHost` | Post-frame `ensureStartedIfEnabled()` when feature is on |
 | `DeepLinkService` | `app_links`: `getInitialLink` + `uriLinkStream` → `DeepLinkParser` |
@@ -275,7 +275,7 @@ After any successful `DashboardLoaded` emit or `_emitReloadedTasks`, `DashboardB
 ### Day-status foreground notification (Android)
 
 1. User enables **Show status bar in notifications** on `CalendarSettingsPage` → `NotificationPreferencesRepository` + `DayStatusNotificationController.setDayStatusBarEnabled(true)`.
-2. Controller loads **today’s** uncompleted/completed tasks and visible calendar events (device upsert + Isar + `RecurrenceEvaluator`), builds copy via `DayStatusNotificationBuilder`, starts FGS with `ongoing: true` (notification id `7391`, channel `day_status_bar`, `Importance.low`).
+2. Controller loads **today’s** uncompleted/completed tasks and visible calendar events, builds copy via `DayStatusNotificationBuilder`, starts FGS (`notificationId` 7391, channel `day_status_bar` or `day_status_bar_pinned` when pin enabled).
 3. `DashboardBloc` refreshes the notification after task/event mutations (completion, postpone, link, delete, etc.).
 4. User disables the toggle → `stopForegroundService()`. `DayStatusServiceHost` restores the service on cold start if still enabled.
 5. **Energy:** FGS uses `specialUse` type; `android:stopWithTask="true"` stops the service when the app task is removed from recents.
@@ -433,3 +433,4 @@ Example prompt:
 | 2026-05 | Android **day-status foreground notification** (`DayStatusNotificationController`, `DashboardBloc` sync, settings toggle, `specialUse` FGS) |
 | 2026-05 | **Deep links** (`daylinx://create`, `app_links`, `DeepLinkDispatcher`, prefilled task/event sheets) |
 | 2026-05 | Product name **DayLinx** (`DayLinxApp`, `daylinx://`; formerly Dayline) |
+| 2026-05 | Dashboard **backlog** as top-level section (not collapsible); task empty state at scroll bottom |

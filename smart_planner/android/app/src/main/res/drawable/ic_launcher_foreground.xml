@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive icon foreground — strict geometric "D" + checklist (pre-v24 fallback).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#CBD5E1"
+        android:pathData="M36,30h8v48h-8z" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M44,30 C69,30 77,54 69,78"
+        android:strokeWidth="7"
+        android:strokeColor="#2563EB"
+        android:strokeLineCap="butt"
+        android:strokeLineJoin="miter" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M48,40h7v7h-7z"
+        android:strokeWidth="1.6"
+        android:strokeColor="#64748B" />
+    <path
+        android:fillColor="#64748B"
+        android:pathData="M57,42.5h15v2h-15z" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M48,52h7v7h-7z"
+        android:strokeWidth="1.6"
+        android:strokeColor="#64748B" />
+    <path
+        android:fillColor="#64748B"
+        android:pathData="M57,54.5h12v2h-12z" />
+
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M48,64h7v7h-7z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M49.8,67.2 L52.2,69.6 55.8,65.2 57,66.4 52.2,71.2 48.6,67.6z" />
+
+</vector>

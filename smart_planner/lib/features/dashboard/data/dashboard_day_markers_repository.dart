@@ -1,4 +1,5 @@
 import 'package:smart_planner/core/utils/app_date_utils.dart';
+import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/exceptions/calendar_exceptions.dart';
@@ -6,18 +7,20 @@ import 'package:smart_planner/features/dashboard/domain/dashboard_day_markers_bu
 import 'package:smart_planner/features/dashboard/domain/day_activity_marker.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/todo_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
-import 'package:smart_planner/features/todo_list/domain/task_date_visibility.dart';
 
 /// Cached week-range markers for the dashboard date strip (one DB + one calendar fetch).
 class DashboardDayMarkersRepository {
   DashboardDayMarkersRepository({
     required TodoRepository todoRepository,
     required CalendarService calendarService,
+    required LocalCalendarEventRepository localCalendarEventRepository,
   })  : _todoRepository = todoRepository,
-        _calendarService = calendarService;
+        _calendarService = calendarService,
+        _localCalendarEventRepository = localCalendarEventRepository;
 
   final TodoRepository _todoRepository;
   final CalendarService _calendarService;
+  final LocalCalendarEventRepository _localCalendarEventRepository;
 
   String? _cacheKey;
   Map<int, DayActivityMarker>? _cachedMarkers;
@@ -43,8 +46,8 @@ class DashboardDayMarkersRepository {
       return _cachedMarkers!;
     }
 
-    final Set<int> taskDayKeys = await _loadTaskDayKeys(start, end);
-    final List<CalendarEvent> events = await _loadCalendarEvents(
+    final List<Task> tasks = await _todoRepository.getUncompletedTasks();
+    final List<CalendarEvent> events = await _loadMergedEventsForMarkers(
       calendarIds: calendarIds,
       rangeStart: start,
       rangeEnd: end,
@@ -53,7 +56,7 @@ class DashboardDayMarkersRepository {
     final Map<int, DayActivityMarker> markers = DashboardDayMarkersBuilder.build(
       rangeStart: start,
       rangeEnd: end,
-      taskDayKeys: taskDayKeys,
+      tasks: tasks,
       events: events,
     );
 
@@ -62,24 +65,40 @@ class DashboardDayMarkersRepository {
     return markers;
   }
 
-  Future<Set<int>> _loadTaskDayKeys(DateTime start, DateTime end) async {
-    final List<Task> tasks = await _todoRepository.getUncompletedTasks();
-    return TaskDateVisibility.taskDayKeysWithVisibleTasksInRange(
-      tasks: tasks,
-      rangeStart: start,
-      rangeEnd: end,
-    );
-  }
-
-  Future<List<CalendarEvent>> _loadCalendarEvents({
+  /// Isar rows (local + last synced device) merged with fresh device fetch.
+  ///
+  /// The dashboard strip lists events from Isar after recurrence handling; marking
+  /// only from raw [getEvents] misses local-only rows and recurrence metadata.
+  Future<List<CalendarEvent>> _loadMergedEventsForMarkers({
     required List<String> calendarIds,
     required DateTime rangeStart,
     required DateTime rangeEnd,
   }) async {
-    if (calendarIds.isEmpty) {
-      return <CalendarEvent>[];
-    }
+    final List<CalendarEvent> fromIsar =
+        await _localCalendarEventRepository.getAll();
 
+    final List<CalendarEvent> fromDevice = calendarIds.isEmpty
+        ? <CalendarEvent>[]
+        : await _loadCalendarEventsFromDevice(
+            calendarIds: calendarIds,
+            rangeStart: rangeStart,
+            rangeEnd: rangeEnd,
+          );
+
+    final Map<String, CalendarEvent> byDeviceId = <String, CalendarEvent>{
+      for (final CalendarEvent e in fromIsar) e.deviceEventId: e,
+    };
+    for (final CalendarEvent e in fromDevice) {
+      byDeviceId[e.deviceEventId] = e;
+    }
+    return byDeviceId.values.toList(growable: false);
+  }
+
+  Future<List<CalendarEvent>> _loadCalendarEventsFromDevice({
+    required List<String> calendarIds,
+    required DateTime rangeStart,
+    required DateTime rangeEnd,
+  }) async {
     try {
       return await _calendarService.getEvents(
         calendarIds: calendarIds,

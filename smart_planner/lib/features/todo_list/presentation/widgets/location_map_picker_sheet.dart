@@ -193,16 +193,22 @@ class _LocationMapPickerSheetState extends State<LocationMapPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final EdgeInsets viewInsets = MediaQuery.viewInsetsOf(context);
+    final double maxHeight = MediaQuery.sizeOf(context).height * 0.92;
+    final bool keyboardOpen = viewInsets.bottom > 0;
+    final double mapHeight = keyboardOpen ? 160 : 280;
 
     return Padding(
       padding: EdgeInsets.only(bottom: viewInsets.bottom),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
               Text(
                 'location_picker_title'.tr(),
                 style: Theme.of(context).textTheme.titleLarge,
@@ -264,7 +270,7 @@ class _LocationMapPickerSheetState extends State<LocationMapPickerSheet> {
               ),
               const SizedBox(height: 8),
               SizedBox(
-                height: 280,
+                height: mapHeight,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: _loading
@@ -347,7 +353,9 @@ class _LocationMapPickerSheetState extends State<LocationMapPickerSheet> {
                 onPressed: _confirm,
                 child: Text('location_picker_confirm'.tr()),
               ),
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ),

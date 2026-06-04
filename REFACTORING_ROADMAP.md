@@ -3,7 +3,7 @@
 > **Purpose:** Handoff for a new agent session.  
 > **Package root:** `smart_planner/`  
 > **Docs:** `PROJECT_STRUCTURE.md`, `PRD_PRODUCT_SPEC.md`, `DEVICE_CALENDAR.md`  
-> **Last updated:** 2026-06 (after Sprint E — product polish)
+> **Last updated:** 2026-06-04 (Sprint E + dashboard/calendar UX fixes)
 
 ---
 
@@ -147,7 +147,11 @@
 | **Dashboard events merge** | Removed duplicate `DashboardLoaded.events`; strip uses `calendarEvents` only (`VisibleCalendarEventsMerger`) |
 | **Calendar write-back QA** | Move event to another writable calendar (delete old device row + create); recurring delete dialog → `deleteEventInstance` |
 | **Read-only UX** | Badge + disabled chips / picker for read-only calendars when creating |
-| **Onboarding** | Snackbars after calendar permission grant and after saving calendar selection |
+| **Onboarding** | Snackbar after calendar permission grant; saving **Settings** reloads dashboard (no “calendars updated” snackbar on full settings page) |
+| **Calendar selection** | Only checked calendars are queried; disabled calendars hidden on dashboard and markers |
+| **Recurring display** | Android Instances per occurrence; merger expands `recurrenceRuleJson` when a day has no device instance |
+| **Event strip “now”** | Timeline hidden before the first event starts (avoids overlay on first card) |
+| **Week strip badges** | Task count uses `TaskDateVisibility` (not reminder-only without due on that day) |
 | **Recurring tasks** | `Task.recurrenceRuleJson`, form dropdown (none/daily/weekly), `TaskDateVisibility` + markers |
 | **Morning/evening digest** | WM one-off 08:00 / 19:00, `TaskDailyDigestWorker`, settings toggles |
 | **PRD + README** | Updated product status rows |

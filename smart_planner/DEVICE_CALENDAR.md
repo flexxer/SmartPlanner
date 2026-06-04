@@ -12,7 +12,7 @@ Use **Open device calendar** in the same screen to jump to the system Calendar a
 
 Events are read through Android’s calendar provider—the same data the built-in Calendar app uses.
 
-On Android, DayLinx reads instances via a **direct** `CalendarContract` query (Instances + Events master table). When Google edits event times, **Instances** can lag; **Events.DTSTART/DTEND** is preferred for the same `eventId`. The `device_calendar` plugin is still used for calendar list, permissions, and write-back.
+On Android, DayLinx reads instances via a **direct** `CalendarContract` query (Instances + Events master table). Each **instance** of a recurring series is a separate row (`eventId` + `begin`); the reader does not collapse a series to one row. When Google edits event times, **Instances** can lag; **Events.DTSTART/DTEND** is preferred for the same `eventId` when merging master data. The `device_calendar` plugin is still used for calendar list, permissions, and write-back.
 
 ## Permissions
 
@@ -29,14 +29,14 @@ When you save an event in DayLinx and pick a **writable** calendar, the app call
 
 On dashboard load, pull-to-refresh, and when the app returns to the foreground, DayLinx:
 
-1. Fetches events for the selected day from the device provider.
+1. Fetches events for the selected day from the device provider (**only calendars checked** in **Settings → Calendars**).
 2. Upserts them into Isar (`upsertDeviceEvents`).
-3. Builds the event strip from that **fresh fetch** (not from a stale Isar-only filter).
+3. Builds the visible list via `VisibleCalendarEventsMerger` (fresh device rows + local-only + recurring expansion from stored `recurrenceRuleJson` when an instance is missing for that day).
 4. **Purges stale device rows** in the sync window that were not returned by the latest fetch (non-recurring only; local `local_*` rows are kept).
 
 Edits made in Google Calendar appear after sync reaches the device calendar, then after the next refresh or resume. There is no background polling of Google.
 
-**If events created in the system Calendar app do not appear:** ensure at least one calendar is selected in **Settings → Calendars** and calendar permission is granted. DayLinx imports from **all user calendars on the device** when any calendar is selected — external events often land on a different calendar row (e.g. localized «Мой календарь» vs the email-named primary).
+**If events created in the system Calendar app do not appear:** ensure that calendar is **checked** in **Settings → Calendars** and calendar permission is granted. Unchecked calendars are not queried and their events are hidden on the dashboard and week strip.
 
 **If times do not update:** pull to refresh on the dashboard or reopen the app (foreground reload). Ensure calendar permission is granted.
 
@@ -44,6 +44,8 @@ Edits made in Google Calendar appear after sync reaches the device calendar, the
 
 - Linked calendar IDs are stored in `CalendarPreferencesRepository`.
 - Device rows are upserted via `LocalCalendarEventRepository.upsertDeviceEvents` with `EventSource.device`.
-- Visible list merge: `VisibleCalendarEventsMerger` in `lib/features/dashboard/domain/`.
+- Visible list merge: `VisibleCalendarEventsMerger` in `lib/features/dashboard/domain/` (per-day and range; expands recurring stored rows).
+- Calendar id resolution: `LinkedCalendarIdsResolver.resolve` / `resolveForDeviceSync` (user selection only; no “import all device calendars” expansion).
+- Event strip layout: `CompressedEventsStripLayout` — “now” line hidden when current time is before the first event of the day.
 - Stale purge: `DeviceCalendarStalePurge` + `LocalCalendarEventRepository.purgeStaleDeviceEvents`.
 - `SyncAccount` / `SyncRecord` in Isar remain for a future cloud sync engine; they are not used for calendar import today.

@@ -16,7 +16,8 @@ You are continuing work on **DayLinx** (Flutter app in `smart_planner/`, repo ro
 
 ### What is already done
 - Phases 0–5 + **Sprints A–E** (write-back, widget, templates, product polish)  
-- Device calendar read/write, `VisibleCalendarEventsMerger`, recurring task rules, morning/evening digest WM  
+- Device calendar read/write, `VisibleCalendarEventsMerger` (selected calendars + recurring expansion), recurring task rules, morning/evening digest WM  
+- Dashboard UX fixes (2026-06-04): disabled calendars hidden, week strip counts, now line before first event — see `DEVICE_CALENDAR.md`  
 - ~90 tests pass (`flutter test`)
 
 ### Your task (default)

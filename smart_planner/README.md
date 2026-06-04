@@ -62,7 +62,9 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
 - **AppBar:** search, templates (`TemplatesPage`), calendar settings (language, reminders, digests, midnight roll), **week/month time grid** (auto-scroll to current time when today is visible), refresh
 
-- **Device calendar write-back** — create/edit/delete on writable calendars; read-only calendars save to Isar only; move event between calendars on edit; recurring delete (this occurrence vs series)
+- **Device calendar write-back** — create/edit/delete on writable calendars; read-only calendars save to Isar only; move event between calendars on edit; recurring delete (this occurrence vs series); import/read **only checked** calendars in settings
+
+- **Dashboard calendar UX** — recurring series shown on each day (device instances + merger); “now” timeline hidden before the first event; week strip task badge matches visible tasks on that day
 
 - **Recurring tasks** — optional daily/weekly repeat on tasks with a due date (same JSON rule model as events)
 

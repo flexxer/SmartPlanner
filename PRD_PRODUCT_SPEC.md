@@ -32,7 +32,9 @@ Professionals, freelancers, and people with high cognitive load who juggle multi
 | Color-code events by calendar source | **Implemented** | `CalendarContextColors` + accent bar on strip cards |
 | Events for a user-selected day | **Implemented** | Device fetch → Isar upsert → `DashboardLocalEventsStrip` for selected day |
 | Local calendar events CRUD + task linking | **Implemented** | `LocalCalendarEventRepository`; link/unlink tasks; create/edit sheets |
-| Live “now” timeline on today’s event strip | **Implemented** | Pulsing indicator + auto-scroll to current/upcoming event |
+| Live “now” timeline on today’s event strip | **Implemented** | Pulsing indicator + auto-scroll; hidden when now is before the first event of the day |
+| Week strip activity badges | **Implemented** | Event count + task count (`TaskDateVisibility`); not reminder-only without due on that day |
+| Recurring events on dashboard | **Implemented** | Device instances per occurrence + `VisibleCalendarEventsMerger` expansion from stored rules |
 | Week time grid scroll to current time | **Implemented** | `CalendarGridWeekView` scrolls to now when the visible week includes today |
 
 ### 3.2 To-Do engine
@@ -246,3 +248,4 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 | 2026-05 | Dashboard **backlog** top-level section; empty tasks hint at scroll bottom |
 | 2026-06 | Device calendar write-back; removed Google OAuth from scope; midnight overdue roll + settings toggle |
 | 2026-06 | Android home widget MVP (medium 4×2, shared day-status payload, widget deep links) |
+| 2026-06-04 | Calendar UX: selected calendars only; recurring instances + merger; now line before first event; week strip task counts aligned with dashboard |

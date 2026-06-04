@@ -496,3 +496,4 @@ Example prompt:
 | 2026-05 | Phase 5 notifications: overdue Workmanager digest, recurring reminder slots, TZ reschedule, day-status/widget background refresh |
 | 2026-05 | Calendar via `device_calendar` only (Google when synced on device); removed Google Calendar API / OAuth |
 | 2026-05 | Device calendar write-back: `CalendarEventWriteService`, create/update/delete via `device_calendar` |
+| 2026-06-04 | Dashboard calendar UX: selected-calendar filter, recurring instance read/merge, now-line strip rules, week markers via `TaskDateVisibility` |

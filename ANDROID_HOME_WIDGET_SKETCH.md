@@ -1,6 +1,6 @@
 # Android home screen widget — design sketch (DayLinx)
 
-> **Status:** Draft / not implemented. Stub: `smart_planner/lib/widgets/android_widget_provider.dart`.  
+> **Status:** **Implemented (MVP)** — medium 4×2 widget via `DayLinxWidgetProvider` + `DayStatusHomeWidgetService`. Large widget and checkbox toggle = phase 2.  
 > **Goal:** Same mental model as the **day-status notification**, but richer: scannable layout, short lists, tap targets, optional complete-from-widget (PRD §3.3).
 
 ---

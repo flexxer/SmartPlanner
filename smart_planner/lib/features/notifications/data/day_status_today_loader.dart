@@ -3,7 +3,8 @@ import 'package:smart_planner/features/calendar_integration/data/calendar_prefer
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
-import 'package:smart_planner/features/calendar_integration/domain/recurrence_evaluator.dart';
+import 'package:smart_planner/features/calendar_integration/domain/linked_calendar_ids_resolver.dart';
+import 'package:smart_planner/features/dashboard/domain/visible_calendar_events_merger.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/todo_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 
@@ -59,8 +60,11 @@ class DayStatusTodayLoader {
       ],
     );
 
+    final List<Task> activeTasks = parallel[0] as List<Task>
+      ..sort(TodoRepository.compareTasksByPriority);
+
     return DayStatusTodaySnapshot(
-      activeTasks: parallel[0] as List<Task>,
+      activeTasks: activeTasks,
       completedTasks: parallel[1] as List<Task>,
       backlogTasks: parallel[2] as List<Task>,
       overdueTasks: parallel[3] as List<Task>,
@@ -70,33 +74,38 @@ class DayStatusTodayLoader {
   }
 
   Future<List<CalendarEvent>> _loadTodayCalendarEvents(DateTime today) async {
-    final List<String>? saved =
-        await _calendarPreferences.getSelectedCalendarIds();
-    if (saved == null || saved.isEmpty) {
+    final List<String> calendarIds =
+        await LinkedCalendarIdsResolver.resolveForDeviceSync(
+      calendarService: _calendarService,
+      preferences: _calendarPreferences,
+    );
+    if (calendarIds.isEmpty) {
       return const <CalendarEvent>[];
     }
 
+    List<CalendarEvent> deviceForDay = const <CalendarEvent>[];
     try {
-      final List<CalendarEvent> deviceEvents =
-          await _calendarService.getEventsForDay(
-        calendarIds: saved,
+      deviceForDay = await _calendarService.getEventsForDay(
+        calendarIds: calendarIds,
         day: today,
       );
-      await _localCalendarEvents.upsertDeviceEvents(deviceEvents);
+      await _localCalendarEvents.upsertDeviceEvents(deviceForDay);
+      await _localCalendarEvents.purgeStaleDeviceEvents(
+        fetchedInWindow: deviceForDay,
+        windowStart: AppDateUtils.startOfDay(today),
+        windowEndExclusive:
+            AppDateUtils.startOfDay(today).add(const Duration(days: 1)),
+        syncedCalendarIds: calendarIds.toSet(),
+      );
     } catch (_) {
       // Keep local Isar events when device fetch fails.
     }
 
     final List<CalendarEvent> allStored = await _localCalendarEvents.getAll();
-    final List<CalendarEvent> visible = allStored
-        .where(
-          (CalendarEvent event) =>
-              RecurrenceEvaluator.shouldShowEventOnDate(event, today),
-        )
-        .toList(growable: false)
-      ..sort(
-        (CalendarEvent a, CalendarEvent b) => a.start.compareTo(b.start),
-      );
-    return visible;
+    return VisibleCalendarEventsMerger.merge(
+      selectedDay: today,
+      deviceEventsForDay: deviceForDay,
+      allStored: allStored,
+    );
   }
 }

@@ -153,5 +153,34 @@ class NotificationHelper {
 
   static Future<void> cancel(int id) => _plugin.cancel(id);
 
+  static Future<void> showNotification({
+    required int id,
+    required String title,
+    required String body,
+    required String channelId,
+  }) async {
+    final AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+      channelId,
+      'notification_reminders_group'.tr(),
+      channelDescription: 'notification_meetings_channel_desc'.tr(),
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: 'ic_stat_smartplanner',
+    );
+
+    final NotificationDetails details = NotificationDetails(
+      android: androidDetails,
+      iOS: const DarwinNotificationDetails(),
+    );
+
+    await _plugin.show(
+      id,
+      title,
+      body,
+      details,
+    );
+  }
+
   static Future<void> cancelAll() => _plugin.cancelAll();
 }

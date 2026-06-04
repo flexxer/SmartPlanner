@@ -8,6 +8,7 @@ import 'package:smart_planner/features/todo_list/presentation/widgets/attachment
 enum _AttachmentMenuAction {
   open,
   edit,
+  saveAsTemplate,
   delete,
 }
 
@@ -34,7 +35,9 @@ Future<void> showAttachmentActionSheetRef(
   required AttachmentFileStore fileStore,
   required VoidCallback onEdit,
   required VoidCallback onDelete,
+  VoidCallback? onSaveAsTemplate,
 }) async {
+  final bool canSaveTemplate = onSaveAsTemplate != null;
   final _AttachmentMenuAction? action = await showModalBottomSheet<_AttachmentMenuAction>(
     context: context,
     showDragHandle: true,
@@ -65,6 +68,14 @@ Future<void> showAttachmentActionSheetRef(
                 _AttachmentMenuAction.edit,
               ),
             ),
+            if (canSaveTemplate)
+              ListTile(
+                leading: const Icon(Icons.bookmark_add_outlined),
+                title: Text('attachment_template_save_from_attachment'.tr()),
+                onTap: () => Navigator.of(sheetContext).pop(
+                  _AttachmentMenuAction.saveAsTemplate,
+                ),
+              ),
             ListTile(
               leading: Icon(Icons.delete_outline, color: colors.error),
               title: Text(
@@ -95,6 +106,8 @@ Future<void> showAttachmentActionSheetRef(
       );
     case _AttachmentMenuAction.edit:
       onEdit();
+    case _AttachmentMenuAction.saveAsTemplate:
+      onSaveAsTemplate?.call();
     case _AttachmentMenuAction.delete:
       onDelete();
   }

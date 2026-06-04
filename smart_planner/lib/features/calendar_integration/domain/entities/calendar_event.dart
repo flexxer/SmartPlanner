@@ -1,4 +1,5 @@
 import 'package:isar/isar.dart';
+import 'package:smart_planner/features/calendar_integration/domain/entities/event_source.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_rule.dart';
 
 part 'calendar_event.g.dart';
@@ -26,6 +27,12 @@ class CalendarEvent {
 
   /// Future Google Calendar sync id.
   String? googleEventId;
+
+  @Enumerated(EnumType.ordinal)
+  EventSource source = EventSource.local;
+
+  /// Last mutation time for sync conflict resolution.
+  DateTime? updatedAt;
 
   /// JSON payload from [RecurrenceRule.toJsonString].
   String? recurrenceRuleJson;
@@ -57,6 +64,7 @@ class CalendarEvent {
       calendarId: calendarId,
       colorValue: colorValue,
       recurrenceRule: recurrenceRule,
+      source: EventSource.local,
     );
   }
 
@@ -71,6 +79,7 @@ class CalendarEvent {
     String? googleEventId,
     RecurrenceRule? recurrenceRule,
     List<int>? linkedTaskIds,
+    EventSource source = EventSource.device,
   }) {
     final CalendarEvent event = CalendarEvent()
       ..deviceEventId = deviceEventId
@@ -80,13 +89,24 @@ class CalendarEvent {
       ..calendarId = calendarId
       ..colorValue = colorValue
       ..googleEventId = googleEventId
+      ..source = source
       ..linkedTaskIds = linkedTaskIds ?? <int>[];
 
     if (recurrenceRule != null) {
       event.recurrenceRuleJson = recurrenceRule.toJsonString();
     }
+    event.markUpdated();
     return event;
   }
+
+  /// Sets [updatedAt] to now. Call after in-memory field changes before persisting.
+  void markUpdated() {
+    updatedAt = DateTime.now();
+  }
+
+  /// True when the row exists only in Isar (`local_` id or [EventSource.local]).
+  bool get isLocalOnly =>
+      source == EventSource.local || deviceEventId.startsWith('local_');
 
   @ignore
   RecurrenceRule? get recurrenceRule {

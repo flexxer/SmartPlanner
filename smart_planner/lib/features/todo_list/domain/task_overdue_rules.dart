@@ -1,5 +1,6 @@
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
+import 'package:smart_planner/features/todo_list/domain/task_overdue_selection.dart';
 
 /// Overdue-day calculation and due-date postpone helpers (PRD §3.2).
 class TaskOverdueRules {
@@ -46,5 +47,16 @@ class TaskOverdueRules {
       const Duration(days: 1),
     );
     recordPostpone(task, tomorrow);
+  }
+
+  /// Midnight roll: moves an overdue task onto [referenceDay] (start-of-day).
+  static void rollToToday(
+    Task task, {
+    required DateTime referenceDay,
+  }) {
+    if (!TaskOverdueSelection.isOverdueRelativeToDay(task, referenceDay)) {
+      return;
+    }
+    recordPostpone(task, AppDateUtils.startOfDay(referenceDay));
   }
 }

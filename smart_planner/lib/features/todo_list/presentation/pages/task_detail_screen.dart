@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:isar/isar.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
-import 'package:smart_planner/core/utils/app_date_utils.dart';
-import 'package:smart_planner/features/calendar_integration/domain/calendar_context_colors.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
@@ -16,15 +14,16 @@ import 'package:smart_planner/features/todo_list/data/repositories/todo_reposito
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_ref.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
+import 'package:smart_planner/features/todo_list/presentation/attachment_coordinator.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_attachments_section.dart';
-import 'package:smart_planner/features/todo_list/presentation/widgets/task_badge.dart';
+import 'package:smart_planner/features/todo_list/presentation/widgets/task_badges_row.dart';
+import 'package:smart_planner/features/todo_list/presentation/widgets/task_priority_icon.dart';
+import 'package:smart_planner/features/todo_list/presentation/widgets/task_tile_list_context.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_detail_child_tasks_section.dart';
 import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
-import 'package:smart_planner/features/todo_list/presentation/widgets/task_child_tasks_section.dart';
 import 'package:smart_planner/features/templates/data/repositories/ui_template_repository.dart';
 import 'package:smart_planner/features/templates/domain/ui_template_factory.dart';
 import 'package:smart_planner/features/notifications/presentation/widgets/reminder_detail_row.dart';
-import 'package:smart_planner/features/todo_list/presentation/widgets/task_priority_ui.dart';
 
 /// Full-screen task details (attachments, checklists, reorderable subtasks).
 class TaskDetailScreen extends StatefulWidget {
@@ -165,6 +164,19 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     _load();
   }
 
+  void _reorderAttachments(int oldIndex, int newIndex) {
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+    final List<TaskAttachment> items = List<TaskAttachment>.from(_attachments);
+    final TaskAttachment moved = items.removeAt(oldIndex);
+    items.insert(newIndex, moved);
+    setState(() => _attachments = items);
+    context.read<TaskAttachmentRepository>().reorder(
+          items.map((TaskAttachment a) => a.id).toList(growable: false),
+        );
+  }
+
   void _reorderChildren(int oldIndex, int newIndex) {
     if (newIndex > oldIndex) {
       newIndex -= 1;
@@ -245,24 +257,42 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             children: <Widget>[
-              Text(
-                task.title,
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  decoration:
-                      task.isCompleted ? TextDecoration.lineThrough : null,
-                  color: task.isCompleted
-                      ? colors.onSurface.withValues(alpha: 0.6)
-                      : null,
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, right: 8),
+                    child: TaskPriorityIcon(
+                      priority: task.priority,
+                      size: 24,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      task.title,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        decoration: task.isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
+                        color: task.isCompleted
+                            ? colors.onSurface.withValues(alpha: 0.6)
+                            : null,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
-              _TaskDetailBadges(
+              TaskBadgesRow(
                 task: task,
                 selectedDate: widget.selectedDate,
                 isOverdue: isOverdue,
+                listContext: TaskTileListContext.detail,
+                visibleCalendarCount: linkedCalendarsById.length,
                 contextCalendar: contextCalendar,
                 linkedEvent: linkedEvent,
+                linkedEventMaxTitleLength: 24,
                 childTasksBundle: ChildTasksBundle(
                   activeChildren: _activeChildren,
                   completedCount: _completedChildCount,
@@ -411,13 +441,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 attachments: _attachments
                     .map(AttachmentRef.fromTask)
                     .toList(growable: false),
+                onReorder: _reorderAttachments,
                 fileStore:
                     context.read<TaskAttachmentRepository>().fileStore,
                 onEditAttachment: (AttachmentRef attachment) {
                   final TaskAttachment source = _attachments.firstWhere(
                     (TaskAttachment a) => a.id == attachment.id,
                   );
-                  DashboardScreen.openEditAttachmentSheet(
+                  AttachmentCoordinator.openEditForTask(
                     context,
                     task: task,
                     attachment: source,
@@ -427,7 +458,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   final TaskAttachment source = _attachments.firstWhere(
                     (TaskAttachment a) => a.id == attachment.id,
                   );
-                  DashboardScreen.deleteAttachmentWithUndo(
+                  AttachmentCoordinator.deleteForTaskWithUndo(
                     context,
                     attachment: source,
                   );
@@ -439,7 +470,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         itemLocalId: localId,
                       ),
                     ),
-                onAddAttachment: () => DashboardScreen.openAddAttachmentSheet(
+                onAddAttachment: () => AttachmentCoordinator.openAddForTask(
                   context,
                   task: task,
                 ),
@@ -451,147 +482,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-}
-
-/// Badges row reused from dashboard tile styling.
-class _TaskDetailBadges extends StatelessWidget {
-  const _TaskDetailBadges({
-    required this.task,
-    required this.selectedDate,
-    required this.isOverdue,
-    this.contextCalendar,
-    this.linkedEvent,
-    required this.childTasksBundle,
-    required this.attachments,
-    this.onOpenLinkedEvent,
-  });
-
-  final Task task;
-  final DateTime selectedDate;
-  final bool isOverdue;
-  final DeviceCalendarInfo? contextCalendar;
-  final CalendarEvent? linkedEvent;
-  final ChildTasksBundle childTasksBundle;
-  final List<TaskAttachment> attachments;
-  final VoidCallback? onOpenLinkedEvent;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: <Widget>[
-        if (_contextCalendarBadge(context) case final Widget calendarBadge)
-          calendarBadge,
-        TaskBadge(
-          label: TaskPriorityUi.label(task.priority),
-          backgroundColor:
-              TaskPriorityUi.backgroundColor(task.priority, colors),
-          foregroundColor:
-              TaskPriorityUi.foregroundColor(task.priority, colors),
-          icon: Icons.flag_outlined,
-        ),
-        TaskBadge(
-          label: _dueBadgeLabel(context, task, selectedDate),
-          backgroundColor: isOverdue
-              ? colors.errorContainer
-              : colors.primaryContainer,
-          foregroundColor: isOverdue
-              ? colors.onErrorContainer
-              : colors.onPrimaryContainer,
-          icon: Icons.event_outlined,
-        ),
-        if (isOverdue)
-          TaskBadge(
-            label: L10n.overdueDays(task.dynamicOverdueDays),
-            backgroundColor: colors.errorContainer,
-            foregroundColor: colors.onErrorContainer,
-            icon: Icons.schedule,
-          ),
-        if (linkedEvent != null)
-          TaskBadge(
-            label: _linkedEventLabel(linkedEvent!),
-            backgroundColor: colors.secondaryContainer,
-            foregroundColor: colors.onSecondaryContainer,
-            icon: Icons.event,
-            onTap: onOpenLinkedEvent,
-          ),
-        if (checklistAttachmentProgressBadgeLabel(attachments)
-            case final String checklistProgress)
-          TaskBadge(
-            label: checklistProgress,
-            backgroundColor: colors.secondaryContainer,
-            foregroundColor: colors.onSecondaryContainer,
-            icon: Icons.fact_check,
-          ),
-        if (nonChecklistAttachmentCountBadgeLabel(attachments)
-            case final String attachCount)
-          TaskBadge(
-            label: attachCount,
-            backgroundColor: colors.primaryContainer,
-            foregroundColor: colors.onPrimaryContainer,
-            icon: Icons.attach_file,
-          ),
-        if (childTaskProgressBadgeLabel(childTasksBundle) case final String progress)
-          TaskBadge(
-            label: progress,
-            backgroundColor: colors.tertiaryContainer,
-            foregroundColor: colors.onTertiaryContainer,
-            icon: Icons.account_tree,
-          ),
-      ],
-    );
-  }
-
-  Widget? _contextCalendarBadge(BuildContext context) {
-    final String calendarId = task.calendarId.trim();
-    if (calendarId.isEmpty) {
-      return null;
-    }
-    final DeviceCalendarInfo? info = contextCalendar;
-    final String label = info?.name ?? calendarId;
-    final ({Color background, Color foreground}) badgeColors =
-        CalendarContextColors.badgeColorsFor(
-      context,
-      calendarId: calendarId,
-      fallbackColorValue: info?.colorValue,
-    );
-    return TaskBadge(
-      label: label,
-      backgroundColor: badgeColors.background,
-      foregroundColor: badgeColors.foreground,
-      icon: Icons.calendar_month_outlined,
-    );
-  }
-
-  static String _linkedEventLabel(CalendarEvent event) {
-    final String title = event.title.trim();
-    if (title.isEmpty) {
-      return 'task_event_fallback'.tr();
-    }
-    if (title.length <= 24) {
-      return title;
-    }
-    return '${title.substring(0, 22)}…';
-  }
-
-  static String _dueBadgeLabel(
-    BuildContext context,
-    Task task,
-    DateTime selectedDate,
-  ) {
-    final DateTime? due = task.dueDate;
-    if (due == null) {
-      return 'no_due_date'.tr();
-    }
-    if (AppDateUtils.isSameCalendarDay(due, selectedDate) &&
-        AppDateUtils.isToday(selectedDate)) {
-      return 'due_today'.tr();
-    }
-    return L10n.dateFormat('d MMM yyyy', context: context).format(due);
-  }
 }
 
 /// Name prompt when saving a task as a [UiTemplate].

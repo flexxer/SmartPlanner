@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smart_planner/features/deep_links/domain/deep_link_create_action.dart';
+import 'package:smart_planner/features/deep_links/domain/deep_link_action.dart';
 import 'package:smart_planner/features/deep_links/domain/deep_link_parser.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_priority.dart';
 
@@ -12,7 +12,7 @@ void main() {
         'daylinx://create?type=task&title=Купить_струны&priority=2',
       );
 
-      final DeepLinkCreateAction? action =
+      final DeepLinkAction? action =
           DeepLinkParser.parse(uri, referenceNow: reference);
 
       expect(action, isA<DeepLinkCreateTaskAction>());
@@ -26,7 +26,7 @@ void main() {
         'daylinx://create?type=event&title=Встреча&start=14:00',
       );
 
-      final DeepLinkCreateAction? action =
+      final DeepLinkAction? action =
           DeepLinkParser.parse(uri, referenceNow: reference);
 
       expect(action, isA<DeepLinkCreateEventAction>());
@@ -42,9 +42,39 @@ void main() {
       expect(DeepLinkParser.parse(uri), isNull);
     });
 
-    test('rejects missing title', () {
+    test('parses create task without title', () {
       final Uri uri = Uri.parse('daylinx://create?type=task');
+      final DeepLinkAction? action = DeepLinkParser.parse(uri);
+      expect(action, isA<DeepLinkCreateTaskAction>());
+      expect((action! as DeepLinkCreateTaskAction).title, isEmpty);
+    });
+
+    test('rejects create event without title', () {
+      final Uri uri = Uri.parse('daylinx://create?type=event');
       expect(DeepLinkParser.parse(uri), isNull);
+    });
+
+    test('parses create task from template link', () {
+      final Uri uri = Uri.parse('daylinx://create?type=template&templateId=42');
+
+      final DeepLinkAction? action =
+          DeepLinkParser.parse(uri, referenceNow: reference);
+
+      expect(action, isA<DeepLinkCreateTaskFromTemplateAction>());
+      expect(
+        (action! as DeepLinkCreateTaskFromTemplateAction).templateId,
+        42,
+      );
+    });
+
+    test('rejects template link without id', () {
+      final Uri uri = Uri.parse('daylinx://create?type=template');
+      expect(DeepLinkParser.parse(uri), isNull);
+    });
+
+    test('parses widget refresh link', () {
+      final Uri uri = Uri.parse('daylinx://widget?action=refresh');
+      expect(DeepLinkParser.parse(uri), isA<DeepLinkRefreshWidgetAction>());
     });
 
     test('truncates overly long titles', () {

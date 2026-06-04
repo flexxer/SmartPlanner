@@ -96,6 +96,7 @@ class TaskDetailChildTasksSection extends StatelessWidget {
             (Task child) => _CompletedChildRow(
               child: child,
               dueFormat: dueFormat,
+              onToggleComplete: () => onToggleChildComplete(child.id),
               onOpen: () => onOpenChild(child),
             ),
           ),
@@ -211,11 +212,13 @@ class _CompletedChildRow extends StatelessWidget {
   const _CompletedChildRow({
     required this.child,
     required this.dueFormat,
+    required this.onToggleComplete,
     required this.onOpen,
   });
 
   final Task child;
   final DateFormat dueFormat;
+  final VoidCallback onToggleComplete;
   final VoidCallback onOpen;
 
   @override
@@ -232,10 +235,14 @@ class _CompletedChildRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
           child: Row(
             children: <Widget>[
-              Icon(
-                Icons.check_circle_outline,
-                size: 20,
-                color: colors.onSurfaceVariant,
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: Checkbox(
+                  value: true,
+                  onChanged: (_) => onToggleComplete(),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(

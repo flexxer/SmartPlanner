@@ -7,11 +7,13 @@ import 'package:smart_planner/features/todo_list/domain/entities/task_priority.d
 import 'package:smart_planner/features/todo_list/domain/task_date_visibility.dart';
 import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
+import 'package:smart_planner/features/todo_list/domain/task_overdue_rules.dart';
 import 'package:smart_planner/features/todo_list/domain/task_overdue_selection.dart';
+import 'package:smart_planner/features/todo_list/domain/repositories/task_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/task_reopen.dart';
 
 /// CRUD задач в локальной БД Isar.
-class TodoRepository {
+class TodoRepository implements TaskRepository {
   TodoRepository({
     this._isar,
     TaskAttachmentRepository? attachmentRepository,
@@ -37,7 +39,7 @@ class TodoRepository {
         .isCompletedEqualTo(false)
         .findAll();
 
-    tasks.sort(_compareTasksByPriority);
+    tasks.sort(compareTasksByPriority);
     return tasks;
   }
 
@@ -66,6 +68,28 @@ class TodoRepository {
       toTaskId: reopened.id,
     );
     return reopened;
+  }
+
+  /// Rolls overdue root tasks onto [referenceDay] (midnight auto-postpone).
+  Future<int> rollOverdueUncompletedToToday({
+    DateTime? referenceDay,
+  }) async {
+    final DateTime day =
+        AppDateUtils.startOfDay(referenceDay ?? DateTime.now());
+    final List<Task> overdue = await getOverdueUncompletedTasks(
+      referenceDay: day,
+    );
+    if (overdue.isEmpty) {
+      return 0;
+    }
+
+    await _db.writeTxn(() async {
+      for (final Task task in overdue) {
+        TaskOverdueRules.rollToToday(task, referenceDay: day);
+        await _db.tasks.put(task);
+      }
+    });
+    return overdue.length;
   }
 
   /// Root uncompleted tasks whose [Task.dueDate] is strictly before [referenceDay].
@@ -155,7 +179,7 @@ class TodoRepository {
     final List<Task> attachable = all
         .where((Task t) => !linkedIds.contains(t.id))
         .toList(growable: false);
-    attachable.sort(_compareTasksByPriority);
+    attachable.sort(compareTasksByPriority);
     return attachable;
   }
 
@@ -171,7 +195,7 @@ class TodoRepository {
           ),
         )
         .toList(growable: false);
-    attachable.sort(_compareTasksByPriority);
+    attachable.sort(compareTasksByPriority);
     return attachable;
   }
 
@@ -256,10 +280,10 @@ class TodoRepository {
     if (byOrder != 0) {
       return byOrder;
     }
-    return _compareTasksByPriority(a, b);
+    return compareTasksByPriority(a, b);
   }
 
-  static int _compareTasksByPriority(Task a, Task b) {
+  static int compareTasksByPriority(Task a, Task b) {
     final int byPriority =
         b.priority.sortWeight.compareTo(a.priority.sortWeight);
     if (byPriority != 0) {

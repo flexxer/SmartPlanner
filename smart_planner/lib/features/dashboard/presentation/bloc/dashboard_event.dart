@@ -1,4 +1,6 @@
 import 'package:isar/isar.dart';
+import 'package:smart_planner/features/calendar_integration/domain/deleted_calendar_event_snapshot.dart';
+import 'package:smart_planner/features/todo_list/domain/deleted_task_snapshot.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 sealed class DashboardEvent {
@@ -146,9 +148,27 @@ final class DeleteTask extends DashboardEvent {
 
 /// Remove a local calendar event from Isar and refresh the dashboard.
 final class DeleteCalendarEvent extends DashboardEvent {
-  const DeleteCalendarEvent(this.eventId);
+  const DeleteCalendarEvent(
+    this.eventId, {
+    this.thisInstanceOnly = false,
+  });
 
   final Id eventId;
+  final bool thisInstanceOnly;
+}
+
+/// Restore a task deleted within the undo window.
+final class RestoreDeletedTask extends DashboardEvent {
+  const RestoreDeletedTask(this.snapshot);
+
+  final DeletedTaskSnapshot snapshot;
+}
+
+/// Restore a calendar event deleted within the undo window.
+final class RestoreDeletedCalendarEvent extends DashboardEvent {
+  const RestoreDeletedCalendarEvent(this.snapshot);
+
+  final DeletedCalendarEventSnapshot snapshot;
 }
 
 /// Expand a task tile on the dashboard (e.g. after navigating from a sheet).

@@ -2,22 +2,28 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
+import 'package:smart_planner/core/presentation/widgets/confirm_delete_record.dart';
+import 'package:smart_planner/core/presentation/widgets/form_sheet_scaffold.dart';
+import 'package:smart_planner/features/calendar_integration/domain/calendar_event_recurrence.dart';
+import 'package:smart_planner/features/calendar_integration/presentation/widgets/calendar_event_delete_dialog.dart';
+import 'package:smart_planner/features/calendar_integration/presentation/widgets/linked_calendars_field.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
+import 'package:smart_planner/features/calendar_integration/data/calendar_event_write_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/linked_calendars_loader.dart';
+import 'package:smart_planner/features/calendar_integration/domain/exceptions/calendar_exceptions.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_frequency.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_rule.dart';
-import 'package:smart_planner/features/calendar_integration/presentation/pages/calendar_settings_page.dart';
-import 'package:smart_planner/features/calendar_integration/presentation/widgets/device_calendar_picker_field.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
-import 'package:smart_planner/features/notifications/data/item_reminder_scheduler.dart';
+import 'package:smart_planner/features/dashboard/presentation/record_delete_coordinator.dart';
+import 'package:smart_planner/features/notifications/data/reminder_sync_service.dart';
 import 'package:smart_planner/features/notifications/data/notification_preferences_repository.dart';
 import 'package:smart_planner/features/notifications/presentation/widgets/reminder_picker_field.dart';
 
-/// Bottom sheet to create or edit a local [CalendarEvent] in Isar.
+/// Bottom sheet to create or edit a [CalendarEvent] (device calendar + Isar metadata).
 class EventFormSheet extends StatefulWidget {
   const EventFormSheet({
     required this.repository,
@@ -62,16 +68,11 @@ class _EventFormSheetState extends State<EventFormSheet> {
   late DateTime _start;
   late DateTime _end;
   String? _selectedCalendarId;
+  DeviceCalendarInfo? _selectedCalendar;
   RecurrenceFrequency _recurrenceFrequency = RecurrenceFrequency.none;
   int? _reminderMinutes;
   bool _reminderLoaded = false;
   bool _saving = false;
-  bool _loadingCalendars = true;
-  String? _calendarLoadError;
-  bool _permissionDenied = false;
-  bool _noneLinked = false;
-  bool _showingAllDeviceCalendars = false;
-  List<DeviceCalendarInfo> _linkedCalendars = <DeviceCalendarInfo>[];
 
   LinkedCalendarsLoader get _loader =>
       widget.linkedCalendarsLoader ?? LinkedCalendarsLoader();
@@ -106,7 +107,6 @@ class _EventFormSheetState extends State<EventFormSheet> {
     if (existing == null) {
       _loadDefaultReminder();
     }
-    _loadLinkedCalendars();
   }
 
   Future<void> _loadDefaultReminder() async {
@@ -122,68 +122,13 @@ class _EventFormSheetState extends State<EventFormSheet> {
   }
 
   Future<void> _syncReminderForEvent(CalendarEvent event) async {
-    try {
-      await ItemReminderScheduler().syncEvent(event);
-    } on Object {
-      // Best-effort after save.
-    }
+    await context.read<ReminderSyncService>().syncEvent(event);
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadLinkedCalendars() async {
-    setState(() {
-      _loadingCalendars = true;
-      _calendarLoadError = null;
-      _permissionDenied = false;
-      _noneLinked = false;
-      _showingAllDeviceCalendars = false;
-    });
-
-    final LinkedCalendarsLoadResult result = await _loader.load(
-      selectedCalendarIds: widget.selectedCalendarIds,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _loadingCalendars = false;
-      _permissionDenied = result.permissionDenied;
-      _noneLinked = result.noneLinked;
-      _showingAllDeviceCalendars = result.showingAllDeviceCalendars;
-      _calendarLoadError = result.errorMessage;
-      _linkedCalendars = result.calendars;
-      if (_selectedCalendarId == null && result.calendars.isNotEmpty) {
-        _selectedCalendarId = result.calendars.first.id;
-      }
-    });
-  }
-
-  Future<void> _openCalendarSettings() async {
-    final DashboardBloc? dashboardBloc = widget.dashboardBloc;
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (BuildContext routeContext) {
-          final Widget page = const CalendarSettingsPage();
-          if (dashboardBloc == null) {
-            return page;
-          }
-          return BlocProvider<DashboardBloc>.value(
-            value: dashboardBloc,
-            child: page,
-          );
-        },
-      ),
-    );
-    if (mounted) {
-      await _loadLinkedCalendars();
-    }
   }
 
   Future<void> _pickDate() async {
@@ -252,52 +197,11 @@ class _EventFormSheetState extends State<EventFormSheet> {
     });
   }
 
-  DeviceCalendarInfo? get _selectedCalendar {
-    final String? id = _selectedCalendarId;
-    if (id == null) {
-      return null;
-    }
-    for (final DeviceCalendarInfo calendar in _linkedCalendars) {
-      if (calendar.id == id) {
-        return calendar;
-      }
-    }
-    return null;
-  }
-
   RecurrenceRule? _buildRecurrenceRule() {
     if (_recurrenceFrequency == RecurrenceFrequency.none) {
       return null;
     }
     return RecurrenceRule(frequency: _recurrenceFrequency);
-  }
-
-  Future<bool> _confirmDeleteRecord() async {
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        final ColorScheme dialogColors = Theme.of(dialogContext).colorScheme;
-        return AlertDialog(
-          title: Text('delete_dialog_title'.tr()),
-          content: Text('delete_dialog_body'.tr()),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text('common_cancel'.tr()),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: FilledButton.styleFrom(
-                backgroundColor: dialogColors.error,
-                foregroundColor: dialogColors.onError,
-              ),
-              child: Text('common_delete'.tr()),
-            ),
-          ],
-        );
-      },
-    );
-    return confirmed ?? false;
   }
 
   Future<void> _deleteEvent() async {
@@ -307,15 +211,21 @@ class _EventFormSheetState extends State<EventFormSheet> {
       return;
     }
 
-    final bool confirmed = await _confirmDeleteRecord();
+    final bool confirmed = await confirmDeleteRecord(context);
     if (!confirmed || !mounted) {
       return;
     }
 
-    bloc.add(DeleteCalendarEvent(event.id));
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    await RecordDeleteCoordinator.deleteCalendarEvent(
+      context,
+      event: event,
+      bloc: bloc,
+      onDeleted: () {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+    );
   }
 
   Future<void> _save() async {
@@ -349,6 +259,20 @@ class _EventFormSheetState extends State<EventFormSheet> {
       } else {
         await _saveCreate(title: title, calendar: calendar);
       }
+    } on CalendarPermissionDeniedException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('calendar_settings_permission_needed'.tr())),
+        );
+        setState(() => _saving = false);
+      }
+    } on CalendarServiceException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+        setState(() => _saving = false);
+      }
     } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -369,16 +293,18 @@ class _EventFormSheetState extends State<EventFormSheet> {
     required String title,
     required DeviceCalendarInfo calendar,
   }) async {
-    final CalendarEvent event = CalendarEvent.createLocal(
+    final CalendarEventWriteService writer =
+        context.read<CalendarEventWriteService>();
+    final CalendarEvent event = await writer.save(
       title: title,
       start: _start,
       end: _end,
-      calendarId: calendar.id,
-      colorValue: calendar.colorValue,
-      recurrenceRule: _buildRecurrenceRule(),
-    )..reminderMinutesBefore = _reminderMinutes;
-    await widget.repository.saveLocalEvent(event);
+      calendar: calendar,
+      recurrence: _buildRecurrenceRule(),
+      reminderMinutesBefore: _reminderMinutes,
+    );
     await _syncReminderForEvent(event);
+    _showReadOnlyNoticeIfNeeded(calendar);
     if (mounted) {
       Navigator.of(context).pop(true);
     }
@@ -388,17 +314,19 @@ class _EventFormSheetState extends State<EventFormSheet> {
     required String title,
     required DeviceCalendarInfo calendar,
   }) async {
-    final CalendarEvent event = widget.eventToEdit!
-      ..title = title
-      ..start = _start
-      ..end = _end
-      ..calendarId = calendar.id
-      ..colorValue = calendar.colorValue
-      ..recurrenceRule = _buildRecurrenceRule()
-      ..reminderMinutesBefore = _reminderMinutes;
-
-    await widget.repository.saveLocalEvent(event);
+    final CalendarEventWriteService writer =
+        context.read<CalendarEventWriteService>();
+    final CalendarEvent event = await writer.save(
+      title: title,
+      start: _start,
+      end: _end,
+      calendar: calendar,
+      recurrence: _buildRecurrenceRule(),
+      reminderMinutesBefore: _reminderMinutes,
+      existing: widget.eventToEdit,
+    );
     await _syncReminderForEvent(event);
+    _showReadOnlyNoticeIfNeeded(calendar);
 
     widget.dashboardBloc?.add(const LoadDashboardData());
 
@@ -407,50 +335,36 @@ class _EventFormSheetState extends State<EventFormSheet> {
     }
   }
 
+  void _showReadOnlyNoticeIfNeeded(DeviceCalendarInfo calendar) {
+    if (!calendar.isReadOnly || !mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('event_saved_read_only_calendar'.tr())),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final EdgeInsets viewInsets = MediaQuery.viewInsetsOf(context);
     final ColorScheme colors = Theme.of(context).colorScheme;
     final bool isEditing = widget.isEditing;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: viewInsets.bottom),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      isEditing ? 'event_edit'.tr() : 'event_new'.tr(),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  if (isEditing)
-                    IconButton(
-                      tooltip: 'event_delete_tooltip'.tr(),
-                      onPressed: _saving ? null : _deleteEvent,
-                      icon: Icon(
-                        Icons.delete_outline,
-                        color: colors.error,
-                      ),
-                    ),
-                ],
-              ),
-              if (!isEditing) ...<Widget>[
-                const SizedBox(height: 8),
-                Text(
-                  'event_save_hint'.tr(),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
+    return FormSheetScaffold(
+      title: isEditing ? 'event_edit'.tr() : 'event_new'.tr(),
+      onDelete: isEditing ? _deleteEvent : null,
+      deleteEnabled: !_saving,
+      headerChildren: <Widget>[
+        if (!isEditing) ...<Widget>[
+          const SizedBox(height: 8),
+          Text(
+            'event_save_hint'.tr(),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceVariant,
                 ),
-              ],
-              const SizedBox(height: 16),
+          ),
+        ],
+      ],
+      children: <Widget>[
               TextField(
                 controller: _titleController,
                 decoration: InputDecoration(
@@ -460,7 +374,32 @@ class _EventFormSheetState extends State<EventFormSheet> {
                 textInputAction: TextInputAction.done,
               ),
               const SizedBox(height: 12),
-              _buildCalendarPicker(context, colors),
+              LinkedCalendarsField(
+                style: LinkedCalendarsStyle.dropdown,
+                linkedCalendarsLoader: _loader,
+                selectedCalendarIds: widget.selectedCalendarIds,
+                selectedCalendarId: _selectedCalendarId,
+                isEditing: isEditing,
+                permissionDeniedMessage: 'calendar_permission_request'.tr(),
+                permissionDeniedActionLabel:
+                    'calendar_settings_request_access'.tr(),
+                emptyMessage: 'calendar_no_device_calendars'.tr(),
+                errorRetryActionLabel: 'calendar_permission_retry'.tr(),
+                onCalendarSelected: (DeviceCalendarInfo calendar) {
+                  if (!isEditing && calendar.isReadOnly) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('calendar_read_only_cannot_select'.tr()),
+                      ),
+                    );
+                    return;
+                  }
+                  setState(() {
+                    _selectedCalendarId = calendar.id;
+                    _selectedCalendar = calendar;
+                  });
+                },
+              ),
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerLeft,
@@ -527,85 +466,13 @@ class _EventFormSheetState extends State<EventFormSheet> {
                 ),
               ],
               const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _canSave && !_saving ? _save : null,
-                child: _saving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(
-                        isEditing
-                            ? 'task_save_changes'.tr()
-                            : 'common_save'.tr(),
-                      ),
+              FormSheetSaveButton(
+                label: isEditing
+                    ? 'task_save_changes'.tr()
+                    : 'common_save'.tr(),
+                enabled: !_saving && _selectedCalendarId != null,
+                onPressed: _save,
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  bool get _canSave =>
-      !_saving && !_loadingCalendars && _selectedCalendarId != null;
-
-  Widget _buildCalendarPicker(BuildContext context, ColorScheme colors) {
-    if (_loadingCalendars) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 12),
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (_permissionDenied) {
-      return _CalendarPickerMessage(
-        message: 'calendar_permission_request'.tr(),
-        actionLabel: 'calendar_settings_request_access'.tr(),
-        onAction: _loadLinkedCalendars,
-      );
-    }
-
-    if (_calendarLoadError != null) {
-      return _CalendarPickerMessage(
-        message: _calendarLoadError!,
-        actionLabel: 'calendar_permission_retry'.tr(),
-        onAction: _loadLinkedCalendars,
-      );
-    }
-
-    if (_noneLinked || _linkedCalendars.isEmpty) {
-      return _CalendarPickerMessage(
-        message:
-            'calendar_no_device_calendars'.tr(),
-        actionLabel: 'common_calendars'.tr(),
-        onAction: _openCalendarSettings,
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        if (_showingAllDeviceCalendars)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              widget.isEditing
-                  ? 'calendar_saved_selection_missing'.tr()
-                  : 'calendar_saved_selection_missing_settings'.tr(),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-            ),
-          ),
-        DeviceCalendarPickerField(
-          calendars: _linkedCalendars,
-          selectedCalendarId: _selectedCalendarId,
-          onCalendarSelected: (DeviceCalendarInfo calendar) {
-            setState(() => _selectedCalendarId = calendar.id);
-          },
-        ),
       ],
     );
   }
@@ -622,49 +489,5 @@ class _EventFormSheetState extends State<EventFormSheet> {
 
   static String _recurrenceLabel(RecurrenceFrequency frequency) {
     return L10n.recurrenceLabel(frequency.name);
-  }
-}
-
-class _CalendarPickerMessage extends StatelessWidget {
-  const _CalendarPickerMessage({
-    required this.message,
-    required this.actionLabel,
-    required this.onAction,
-  });
-
-  final String message;
-  final String actionLabel;
-  final VoidCallback onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            message,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colors.onSurfaceVariant,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onAction,
-              child: Text(actionLabel),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

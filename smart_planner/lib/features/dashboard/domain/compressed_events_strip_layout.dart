@@ -188,7 +188,7 @@ class CompressedEventsStripLayout {
     final CalendarEvent first = sortedEvents.first;
     final CalendarEvent last = sortedEvents.last;
     if (now.isBefore(first.start)) {
-      return 0;
+      return null;
     }
     if (now.isAfter(last.end)) {
       final CompressedEventSegment? lastSegment = segments

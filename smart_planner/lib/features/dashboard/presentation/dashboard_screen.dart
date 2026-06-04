@@ -6,7 +6,9 @@ import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/pages/calendar_grid_screen.dart';
+import 'package:smart_planner/features/search/presentation/pages/search_screen.dart';
 import 'package:smart_planner/features/templates/presentation/pages/templates_page.dart';
+import 'package:smart_planner/features/templates/presentation/widgets/template_picker_sheet.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/pages/calendar_settings_page.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
@@ -20,21 +22,21 @@ import 'package:isar/isar.dart';
 import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
-import 'package:smart_planner/features/todo_list/domain/task_attachment_snapshot.dart';
-import 'package:smart_planner/features/todo_list/presentation/widgets/add_attachment_sheet.dart';
+import 'package:smart_planner/features/todo_list/presentation/attachment_coordinator.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/postpone_task_sheet.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_expandable_tile.dart';
+import 'package:smart_planner/features/todo_list/presentation/widgets/task_tile_list_context.dart';
 import 'package:smart_planner/features/dashboard/domain/day_activity_marker.dart';
 import 'package:smart_planner/features/calendar_integration/data/calendar_preferences_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/linked_calendars_loader.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
+import 'package:smart_planner/features/calendar_integration/data/task_event_link_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/device_calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/widgets/event_form_sheet.dart';
 import 'package:smart_planner/features/dashboard/presentation/widgets/dashboard_create_fab.dart';
 import 'package:smart_planner/features/dashboard/presentation/widgets/dashboard_local_events_section.dart';
 import 'package:smart_planner/features/dashboard/presentation/widgets/dashboard_week_date_strip.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/pages/event_detail_screen.dart';
-import 'package:smart_planner/features/dashboard/presentation/widgets/event_linked_tasks_sheet.dart';
 import 'package:smart_planner/features/todo_list/presentation/pages/task_detail_screen.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_relation_sheet.dart';
 
@@ -52,6 +54,11 @@ class DashboardScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('app_title'.tr()),
         actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'dashboard_tooltip_search'.tr(),
+            onPressed: () => _openSearch(context),
+          ),
           IconButton(
             icon: const Icon(Icons.grid_view),
             tooltip: 'dashboard_tooltip_time_grid'.tr(),
@@ -80,6 +87,8 @@ class DashboardScreen extends StatelessWidget {
           return DashboardCreateFab(
             onCreateTask: () => _openCreateFromFab(fabContext, createEvent: false),
             onCreateEvent: () => _openCreateFromFab(fabContext, createEvent: true),
+            onCreateTaskFromTemplate: () =>
+                _openCreateTaskFromTemplate(fabContext),
           );
         },
       ),
@@ -250,6 +259,7 @@ class DashboardScreen extends StatelessWidget {
             (BuildContext context, int index) => _DashboardTaskTile(
               task: activeDated[index],
               tileContext: tileContext,
+              listContext: TaskTileListContext.dashboardDueOnSelectedDay,
             ),
             childCount: activeDated.length,
           ),
@@ -268,6 +278,7 @@ class DashboardScreen extends StatelessWidget {
             (BuildContext context, int index) => _DashboardTaskTile(
               task: undatedTasks[index],
               tileContext: tileContext,
+              listContext: TaskTileListContext.dashboardBacklog,
             ),
             childCount: undatedTasks.length,
           ),
@@ -309,6 +320,28 @@ class DashboardScreen extends StatelessWidget {
       }
     }
     return (active: active, completed: completed);
+  }
+
+  static Future<void> _openCreateTaskFromTemplate(BuildContext context) async {
+    final DashboardState blocState = context.read<DashboardBloc>().state;
+    final DateTime selectedDate = blocState is DashboardLoaded
+        ? blocState.selectedDate
+        : DateTime.now();
+    final List<String> selectedCalendarIds = blocState is DashboardLoaded
+        ? blocState.selectedCalendarIds
+        : const <String>[];
+
+    final UiTemplate? template = await TemplatePickerSheet.show(context);
+    if (!context.mounted || template == null) {
+      return;
+    }
+
+    await openTaskFormSheet(
+      context,
+      initialDueDate: selectedDate,
+      selectedCalendarIds: selectedCalendarIds,
+      templateToApply: template,
+    );
   }
 
   static Future<void> _openCreateFromFab(
@@ -426,8 +459,6 @@ class DashboardScreen extends StatelessWidget {
         repository: sheetContext.read<TodoRepository>(),
         taskToEdit: taskToEdit,
         dashboardBloc: taskToEdit != null ? dashboardBloc : null,
-        localCalendarRepository:
-            sheetContext.read<LocalCalendarEventRepository>(),
         initialDueDate: initialDueDate,
         initialTitle: initialTitle,
         initialPriority: initialPriority,
@@ -565,11 +596,12 @@ class DashboardScreen extends StatelessWidget {
     required Id taskId,
   }) async {
     final DashboardBloc bloc = context.read<DashboardBloc>();
-    final TodoRepository repository = context.read<TodoRepository>();
 
     switch (target) {
       case TaskRelationParentTarget(:final Id parentTaskId):
-        final bool ok = await repository.attachTaskToParent(
+        final TaskEventLinkService links =
+            context.read<TaskEventLinkService>();
+        final bool ok = await links.attachTaskToParent(
           childTaskId: taskId,
           parentTaskId: parentTaskId,
         );
@@ -700,39 +732,13 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  static Future<void> openEventLinkedTasks(
-    BuildContext context, {
-    required CalendarEvent event,
-    required DateTime selectedDate,
-  }) async {
-    final LocalCalendarEventRepository localRepo =
-        context.read<LocalCalendarEventRepository>();
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext sheetContext) => EventLinkedTasksSheet(
-        event: event,
-        localCalendarRepository: localRepo,
-        onAddTask: () {
-          Navigator.of(sheetContext).pop();
-          openAttachTaskToEventSheet(
-            context,
-            event: event,
-            selectedDate: selectedDate,
-          );
-        },
-        onToggleTaskCompletion: (Id taskId) {
-          context.read<DashboardBloc>().add(ToggleTaskCompletion(taskId));
-        },
-        onTaskSelected: (Id taskId) {
-          Navigator.of(sheetContext).pop();
-          openTaskDetail(
-            context,
-            taskId: taskId,
-            selectedDate: selectedDate,
-          );
-        },
+  static Future<void> _openSearch(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext routeContext) => BlocProvider<DashboardBloc>.value(
+          value: context.read<DashboardBloc>(),
+          child: const SearchScreen(),
+        ),
       ),
     );
   }
@@ -760,7 +766,7 @@ class DashboardScreen extends StatelessWidget {
   }
 
   static Future<void> _openCalendarSettings(BuildContext context) async {
-    await Navigator.of(context).push<bool>(
+    final bool? saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => BlocProvider.value(
           value: context.read<DashboardBloc>(),
@@ -768,6 +774,9 @@ class DashboardScreen extends StatelessWidget {
         ),
       ),
     );
+    if (saved == true && context.mounted) {
+      context.read<DashboardBloc>().add(const LoadDashboardData());
+    }
   }
 
   static Future<void> _onRefresh(BuildContext context) async {
@@ -792,68 +801,28 @@ class DashboardScreen extends StatelessWidget {
   static Future<void> openAddAttachmentSheet(
     BuildContext context, {
     required Task task,
-  }) async {
-    final TaskAttachmentRepository repository =
-        context.read<TaskAttachmentRepository>();
-    final bool? added = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext sheetContext) => AddAttachmentSheet(
-        repository: repository,
-        taskId: task.id,
-      ),
-    );
-    if (added == true && context.mounted) {
-      context.read<DashboardBloc>().add(const LoadDashboardData());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('snackbar_attachment_added'.tr())),
-      );
-    }
-  }
+  }) =>
+      AttachmentCoordinator.openAddForTask(context, task: task);
 
   static Future<void> openEditAttachmentSheet(
     BuildContext context, {
     required Task task,
     required TaskAttachment attachment,
-  }) async {
-    final DashboardBloc dashboardBloc = context.read<DashboardBloc>();
-    final TaskAttachmentRepository repository =
-        context.read<TaskAttachmentRepository>();
-    final bool? saved = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext sheetContext) => AddAttachmentSheet(
-        repository: repository,
-        taskId: task.id,
-        attachmentToEdit: attachment,
-        dashboardBloc: dashboardBloc,
-      ),
-    );
-    if (saved == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('snackbar_attachment_updated'.tr())),
+  }) =>
+      AttachmentCoordinator.openEditForTask(
+        context,
+        task: task,
+        attachment: attachment,
       );
-    }
-  }
 
   static void deleteAttachmentWithUndo(
     BuildContext context, {
     required TaskAttachment attachment,
-  }) {
-    final DashboardBloc bloc = context.read<DashboardBloc>();
-    final TaskAttachment backup = taskAttachmentSnapshot(attachment);
-    bloc.add(DeleteTaskAttachment(attachment.id));
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('snackbar_attachment_deleted'.tr()),
-        action: SnackBarAction(
-          label: 'snackbar_undo'.tr(),
-          onPressed: () => bloc.add(RestoreTaskAttachment(backup)),
-        ),
-      ),
-    );
-  }
+  }) =>
+      AttachmentCoordinator.deleteForTaskWithUndo(
+        context,
+        attachment: attachment,
+      );
 
   static Future<void> openLinkTaskSheet(
     BuildContext context, {
@@ -1078,6 +1047,7 @@ class _OverdueTasksPanel extends StatelessWidget {
                     attachmentsByTaskId: attachmentsByTaskId,
                     linkedCalendarsById: linkedCalendarsById,
                   ),
+                  listContext: TaskTileListContext.dashboardOverdue,
                 ),
             ],
           ),
@@ -1091,11 +1061,13 @@ class _DashboardTaskTile extends StatelessWidget {
   const _DashboardTaskTile({
     required this.task,
     required this.tileContext,
+    required this.listContext,
     this.dimAsCompleted = false,
   });
 
   final Task task;
   final _TaskTileContext tileContext;
+  final TaskTileListContext listContext;
   final bool dimAsCompleted;
 
   @override
@@ -1113,9 +1085,13 @@ class _DashboardTaskTile extends StatelessWidget {
     final CalendarEvent? linkedEvent =
         tileContext.localCalendarEventById[task.linkedEventId];
 
+    final int visibleCalendarCount = tileContext.linkedCalendarsById.length;
+
     final Widget tile = TaskExpandableTile(
       task: task,
       selectedDate: tileContext.selectedDate,
+      listContext: listContext,
+      visibleCalendarCount: visibleCalendarCount,
       contextCalendar: tileContext.linkedCalendarsById[task.calendarId],
       childTasksBundle: childBundle,
       attachments: attachments,
@@ -1281,6 +1257,7 @@ class _CompletedTasksPanel extends StatelessWidget {
                     attachmentsByTaskId: attachmentsByTaskId,
                     linkedCalendarsById: linkedCalendarsById,
                   ),
+                  listContext: TaskTileListContext.dashboardDueOnSelectedDay,
                   dimAsCompleted: true,
                 ),
             ],

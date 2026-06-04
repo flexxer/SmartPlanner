@@ -72,6 +72,13 @@ class _DayStatusBarSettingsSectionState extends State<DayStatusBarSettingsSectio
           value: enabled,
           onChanged: controlsEnabled ? _onEnabledChanged : null,
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Text(
+            'settings_day_status_widget_note'.tr(),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
       ],
     );
   }

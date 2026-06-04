@@ -49,8 +49,8 @@ void main() {
     );
 
     expect(markers[mondayKey]!.eventCount, 2);
-    expect(markers[mondayKey]!.timedTaskCount, 1);
-    expect(markers[mondayKey]!.stripBadgeLabel, '2+1');
+    expect(markers[mondayKey]!.timedTaskCount, 0);
+    expect(markers[mondayKey]!.stripBadgeLabel, '2');
     expect(markers[tuesdayKey]!.eventCount, 0);
     expect(markers[tuesdayKey]!.timedTaskCount, 1);
     expect(markers[tuesdayKey]!.stripBadgeLabel, '1');

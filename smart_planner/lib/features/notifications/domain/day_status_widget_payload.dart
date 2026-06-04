@@ -5,6 +5,7 @@ class DayStatusWidgetPayload {
     required this.headerTitle,
     required this.progressPercent,
     required this.nowVisible,
+    required this.nowLabel,
     required this.nowTimeRange,
     required this.nowTitle,
     required this.nextEvents,
@@ -21,6 +22,7 @@ class DayStatusWidgetPayload {
   final int progressPercent;
 
   final bool nowVisible;
+  final String nowLabel;
   final String nowTimeRange;
   final String nowTitle;
 
@@ -41,6 +43,7 @@ class DayStatusWidgetPayload {
       'dw_header_title': headerTitle,
       'dw_progress_percent': '$progressPercent',
       'dw_now_visible': nowVisible ? '1' : '0',
+      'dw_now_label': nowLabel,
       'dw_now_time': nowTimeRange,
       'dw_now_title': nowTitle,
       'dw_tasks_section': tasksSectionTitle,

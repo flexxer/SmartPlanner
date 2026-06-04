@@ -22,7 +22,6 @@ final class DashboardLoaded extends DashboardState {
   const DashboardLoaded({
     required this.tasks,
     this.completedTasks = const <Task>[],
-    required this.events,
     required this.calendarEvents,
     required this.selectedDate,
     this.overdueTasks = const <Task>[],
@@ -48,10 +47,7 @@ final class DashboardLoaded extends DashboardState {
 
   /// Root uncompleted tasks with no due date (always loaded for the dashboard).
   final List<Task> undatedTasks;
-  /// Device-calendar events for the selected day (read-only preview).
-  final List<CalendarEvent> events;
-
-  /// Local Isar events visible on [selectedDate] ([RecurrenceEvaluator]).
+  /// Merged device + local-only events for [selectedDate] (dashboard strip).
   final List<CalendarEvent> calendarEvents;
 
   final DateTime selectedDate;
@@ -98,7 +94,6 @@ final class DashboardLoaded extends DashboardState {
     List<Task>? completedTasks,
     List<Task>? overdueTasks,
     List<Task>? undatedTasks,
-    List<CalendarEvent>? events,
     List<CalendarEvent>? calendarEvents,
     Map<Id, CalendarEvent>? localCalendarEventById,
     DateTime? selectedDate,
@@ -116,7 +111,6 @@ final class DashboardLoaded extends DashboardState {
       completedTasks: completedTasks ?? this.completedTasks,
       overdueTasks: overdueTasks ?? this.overdueTasks,
       undatedTasks: undatedTasks ?? this.undatedTasks,
-      events: events ?? this.events,
       calendarEvents: calendarEvents ?? this.calendarEvents,
       localCalendarEventById:
           localCalendarEventById ?? this.localCalendarEventById,

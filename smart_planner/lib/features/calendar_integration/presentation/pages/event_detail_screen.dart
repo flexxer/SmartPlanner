@@ -7,14 +7,11 @@ import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/event_attachment_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/event_attachment.dart';
-import 'package:smart_planner/features/calendar_integration/domain/event_attachment_snapshot.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_ref.dart';
-import 'package:smart_planner/features/todo_list/domain/entities/task_attachment_type.dart';
-import 'package:smart_planner/features/todo_list/domain/entities/attachment_payloads.dart';
-import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.dart';
+import 'package:smart_planner/features/todo_list/presentation/attachment_coordinator.dart';
+import 'package:smart_planner/features/todo_list/presentation/widgets/linked_task_list_tile.dart';
 import 'package:smart_planner/features/notifications/domain/reminder_schedule_time.dart';
 import 'package:smart_planner/features/notifications/presentation/widgets/reminder_detail_row.dart';
-import 'package:smart_planner/features/todo_list/presentation/widgets/add_attachment_sheet.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_attachments_section.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_context_colors.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
@@ -76,116 +73,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       _attachments = attachments;
       _loading = false;
     });
-  }
-
-  Future<void> _openAddAttachment() async {
-    final CalendarEvent? event = _event;
-    if (event == null) {
-      return;
-    }
-    final EventAttachmentRepository repository =
-        context.read<EventAttachmentRepository>();
-    final bool? added = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext sheetContext) => AddAttachmentSheet.forEvent(
-        repository: repository,
-        eventId: event.id,
-      ),
-    );
-    if (added == true && mounted) {
-      await _load();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('snackbar_attachment_added'.tr())),
-      );
-    }
-  }
-
-  Future<void> _openEditAttachment(EventAttachment attachment) async {
-    final CalendarEvent? event = _event;
-    if (event == null) {
-      return;
-    }
-    final EventAttachmentRepository repository =
-        context.read<EventAttachmentRepository>();
-    final bool? saved = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext sheetContext) => AddAttachmentSheet.forEvent(
-        repository: repository,
-        eventId: event.id,
-        attachmentToEdit: attachment,
-      ),
-    );
-    if (saved == true && mounted) {
-      await _load();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('snackbar_attachment_updated'.tr())),
-      );
-    }
-  }
-
-  void _deleteAttachmentWithUndo(EventAttachment attachment) {
-    final EventAttachmentRepository repository =
-        context.read<EventAttachmentRepository>();
-    final EventAttachment backup = eventAttachmentSnapshot(attachment);
-    repository.delete(attachment.id).then((_) async {
-      if (mounted) {
-        await _load();
-      }
-    });
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('snackbar_attachment_deleted'.tr()),
-        action: SnackBarAction(
-          label: 'snackbar_undo'.tr(),
-          onPressed: () async {
-            await repository.save(backup);
-            if (mounted) {
-              await _load();
-            }
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _toggleChecklistItem(Id attachmentId, int itemLocalId) async {
-    final EventAttachmentRepository repository =
-        context.read<EventAttachmentRepository>();
-    final EventAttachment? attachment =
-        await repository.getById(attachmentId);
-    if (attachment == null ||
-        attachment.type != TaskAttachmentType.checklist) {
-      return;
-    }
-    final ChecklistAttachmentPayload checklist =
-        TaskAttachmentCodec.checklistRef(AttachmentRef.fromEvent(attachment));
-    final int index = checklist.items.indexWhere(
-      (ChecklistItemPayload i) => i.localId == itemLocalId,
-    );
-    if (index < 0) {
-      return;
-    }
-    final List<ChecklistItemPayload> updated =
-        List<ChecklistItemPayload>.from(checklist.items);
-    final ChecklistItemPayload current = updated[index];
-    updated[index] = ChecklistItemPayload(
-      localId: current.localId,
-      text: current.text,
-      isCompleted: !current.isCompleted,
-    );
-    attachment.payloadJson = TaskAttachmentCodec.encodeMap(
-      ChecklistAttachmentPayload(
-        title: checklist.title,
-        items: updated,
-      ).toJson(),
-    );
-    await repository.update(attachment);
-    if (mounted) {
-      await _load();
-    }
   }
 
   Future<void> _openEdit() async {
@@ -413,16 +300,38 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   final EventAttachment source = _attachments.firstWhere(
                     (EventAttachment a) => a.id == ref.id,
                   );
-                  _openEditAttachment(source);
+                  AttachmentCoordinator.openEditForEvent(
+                    context,
+                    eventId: event.id,
+                    attachment: source,
+                    onChanged: _load,
+                  );
                 },
                 onDeleteAttachment: (AttachmentRef ref) {
                   final EventAttachment source = _attachments.firstWhere(
                     (EventAttachment a) => a.id == ref.id,
                   );
-                  _deleteAttachmentWithUndo(source);
+                  AttachmentCoordinator.deleteForEventWithUndo(
+                    context,
+                    attachment: source,
+                    onChanged: _load,
+                  );
                 },
-                onToggleChecklistItem: _toggleChecklistItem,
-                onAddAttachment: _openAddAttachment,
+                onToggleChecklistItem: (Id attachmentId, int itemLocalId) async {
+                  await AttachmentCoordinator.toggleEventChecklistItem(
+                    repository: context.read<EventAttachmentRepository>(),
+                    attachmentId: attachmentId,
+                    itemLocalId: itemLocalId,
+                  );
+                  if (mounted) {
+                    await _load();
+                  }
+                },
+                onAddAttachment: () => AttachmentCoordinator.openAddForEvent(
+                  context,
+                  eventId: event.id,
+                  onChanged: _load,
+                ),
               ),
               const SizedBox(height: 24),
               Text(
@@ -442,47 +351,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 )
               else
                 ..._linkedTasks.map(
-                  (Task task) => Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    elevation: 0,
-                    color: colors.surfaceContainerHighest
-                        .withValues(alpha: 0.5),
-                    child: ListTile(
-                      leading: Checkbox(
-                        value: task.isCompleted,
-                        onChanged: (_) {
-                          context.read<DashboardBloc>().add(
-                                ToggleTaskCompletion(task.id),
-                              );
-                        },
-                      ),
-                      title: Text(
-                        task.title,
-                        style: task.isCompleted
-                            ? theme.textTheme.bodyLarge?.copyWith(
-                                decoration: TextDecoration.lineThrough,
-                                color: colors.onSurfaceVariant,
-                              )
-                            : theme.textTheme.bodyLarge,
-                      ),
-                      subtitle: task.dueDate != null
-                          ? Text(
-                              'due_label'.tr(
-                                namedArgs: <String, String>{
-                                  'date': L10n.dateFormat(
-                                    'd MMM yyyy',
-                                    context: context,
-                                  ).format(task.dueDate!),
-                                },
-                              ),
-                            )
-                          : null,
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => DashboardScreen.openTaskDetail(
-                        context,
-                        taskId: task.id,
-                        selectedDate: widget.selectedDate,
-                      ),
+                  (Task task) => LinkedTaskListTile(
+                    task: task,
+                    onToggleComplete: (Id taskId) {
+                      context.read<DashboardBloc>().add(
+                            ToggleTaskCompletion(taskId),
+                          );
+                    },
+                    onTap: () => DashboardScreen.openTaskDetail(
+                      context,
+                      taskId: task.id,
+                      selectedDate: widget.selectedDate,
                     ),
                   ),
                 ),

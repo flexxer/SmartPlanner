@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
+import 'package:smart_planner/features/notifications/data/notification_preferences_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/task_overdue_rules.dart';
 
@@ -96,6 +98,44 @@ void main() {
         TaskOverdueRules.dynamicOverdueDays(task, now: today),
         0,
       );
+    });
+
+    test('rollToToday moves overdue task onto reference day', () {
+      final Task task = Task.create(title: 'Late', dueDate: twoDaysAgo);
+      TaskOverdueRules.rollToToday(task, referenceDay: today);
+
+      expect(task.dueDate, today);
+      expect(
+        TaskOverdueRules.dynamicOverdueDays(task, now: today),
+        0,
+      );
+    });
+
+    test('rollToToday is no-op when task is not overdue', () {
+      final Task task = Task.create(title: 'On time', dueDate: today);
+      TaskOverdueRules.rollToToday(task, referenceDay: today);
+
+      expect(task.dueDate, today);
+    });
+  });
+
+  group('auto-roll preferences', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+    });
+
+    test('defaults to enabled', () async {
+      final NotificationPreferencesRepository prefs =
+          NotificationPreferencesRepository();
+      expect(await prefs.isAutoRollOverdueAtMidnightEnabled(), isTrue);
+    });
+
+    test('last roll day key round-trips', () async {
+      final NotificationPreferencesRepository prefs =
+          NotificationPreferencesRepository();
+      final int key = AppDateUtils.dayKeyMs(today);
+      await prefs.setLastOverdueMidnightRollDayKey(key);
+      expect(await prefs.getLastOverdueMidnightRollDayKey(), key);
     });
   });
 }

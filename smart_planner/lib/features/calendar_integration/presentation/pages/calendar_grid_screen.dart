@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
+import 'package:smart_planner/features/calendar_integration/data/calendar_preferences_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
+import 'package:smart_planner/features/calendar_integration/domain/linked_calendar_ids_resolver.dart';
+import 'package:smart_planner/features/dashboard/domain/visible_calendar_events_merger.dart';
+import 'package:smart_planner/features/notifications/data/reminder_sync_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/exceptions/calendar_exceptions.dart';
@@ -54,35 +58,63 @@ class _CalendarGridScreenState extends State<CalendarGridScreen> {
       _loadError = null;
     });
 
-    final DashboardBloc dashboardBloc = context.read<DashboardBloc>();
-    final DashboardState blocState = dashboardBloc.state;
-    final List<String> calendarIds = blocState is DashboardLoaded
-        ? blocState.selectedCalendarIds
-        : const <String>[];
-
     final ({DateTime start, DateTime end}) range = _markerRange();
     final CalendarService calendarService = context.read<CalendarService>();
+    final CalendarPreferencesRepository calendarPreferences =
+        context.read<CalendarPreferencesRepository>();
     final LocalCalendarEventRepository localRepo =
         context.read<LocalCalendarEventRepository>();
     final DashboardDayMarkersRepository markersRepo =
         context.read<DashboardDayMarkersRepository>();
 
+    final List<String> calendarIds =
+        await LinkedCalendarIdsResolver.resolveForDeviceSync(
+      calendarService: calendarService,
+      preferences: calendarPreferences,
+    );
+
+    List<CalendarEvent> deviceEvents = const <CalendarEvent>[];
     try {
       if (calendarIds.isNotEmpty) {
-        final List<CalendarEvent> deviceEvents = await calendarService.getEvents(
+        deviceEvents = await calendarService.getEvents(
           calendarIds: calendarIds,
           from: range.start.subtract(const Duration(days: 1)),
           to: range.end.add(const Duration(days: 2)),
         );
         await localRepo.upsertDeviceEvents(deviceEvents);
+        await localRepo.purgeStaleDeviceEvents(
+          fetchedInWindow: deviceEvents,
+          windowStart: AppDateUtils.startOfDay(range.start),
+          windowEndExclusive: AppDateUtils.startOfDay(range.end)
+              .add(const Duration(days: 1)),
+          syncedCalendarIds: calendarIds.toSet(),
+        );
+        if (mounted) {
+          await context.read<ReminderSyncService>().syncDeviceEventsAfterUpsert(
+            localEvents: localRepo,
+            fromDevice: deviceEvents,
+          );
+        }
       }
     } on CalendarPermissionDeniedException {
-      // Still show locally stored events.
-    } on CalendarServiceException {
-      // Still show locally stored events.
+      if (mounted) {
+        setState(() {
+          _loadError = 'calendar_events_error_android_permission'.tr();
+        });
+      }
+    } on CalendarServiceException catch (e) {
+      if (mounted) {
+        setState(() => _loadError = e.toString());
+      }
     }
 
-    final List<CalendarEvent> stored = await localRepo.getAll();
+    final List<CalendarEvent> allStored = await localRepo.getAll();
+    final List<CalendarEvent> stored = VisibleCalendarEventsMerger.mergeForRange(
+      rangeStart: range.start,
+      rangeEnd: range.end,
+      deviceEventsInRange: deviceEvents,
+      allStored: allStored,
+    );
     final Map<int, DayActivityMarker> markers = await markersRepo.loadForRange(
       rangeStart: range.start,
       rangeEnd: range.end,

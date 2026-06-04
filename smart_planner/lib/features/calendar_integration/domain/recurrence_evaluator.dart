@@ -9,16 +9,29 @@ class RecurrenceEvaluator {
 
   /// Returns `true` when [event] should appear on the calendar day [targetDate].
   static bool shouldShowEventOnDate(CalendarEvent event, DateTime targetDate) {
-    final DateTime target = AppDateUtils.startOfDay(targetDate);
-    final DateTime anchor = AppDateUtils.startOfDay(event.start);
+    return shouldShowOnDate(
+      anchor: event.start,
+      recurrenceRuleJson: event.recurrenceRuleJson,
+      targetDate: targetDate,
+    );
+  }
 
-    if (target.isBefore(anchor)) {
+  /// Shared recurrence check for events and tasks ([anchor] = start or due date).
+  static bool shouldShowOnDate({
+    required DateTime anchor,
+    required String? recurrenceRuleJson,
+    required DateTime targetDate,
+  }) {
+    final DateTime target = AppDateUtils.startOfDay(targetDate);
+    final DateTime anchorDay = AppDateUtils.startOfDay(anchor);
+
+    if (target.isBefore(anchorDay)) {
       return false;
     }
 
-    final String? json = event.recurrenceRuleJson;
+    final String? json = recurrenceRuleJson;
     if (json == null || json.isEmpty) {
-      return AppDateUtils.isSameCalendarDay(target, anchor);
+      return AppDateUtils.isSameCalendarDay(target, anchorDay);
     }
 
     final RecurrenceRule rule = RecurrenceRule.fromJsonString(json);
@@ -29,10 +42,10 @@ class RecurrenceEvaluator {
     }
 
     if (rule.frequency == RecurrenceFrequency.none) {
-      return AppDateUtils.isSameCalendarDay(target, anchor);
+      return AppDateUtils.isSameCalendarDay(target, anchorDay);
     }
 
-    return _matchesRule(rule: rule, anchor: anchor, target: target);
+    return _matchesRule(rule: rule, anchor: anchorDay, target: target);
   }
 
   static bool _matchesRule({

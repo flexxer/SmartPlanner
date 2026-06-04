@@ -19,6 +19,19 @@ class CalendarGridLayout {
         dayTimelineHeight(hourHeight);
   }
 
+  /// Scroll offset so [time] sits near the top of the viewport ([viewportLeadFraction]).
+  static double scrollOffsetForTime({
+    required DateTime time,
+    required double hourHeight,
+    required double viewportHeight,
+    double viewportLeadFraction = 0.25,
+  }) {
+    final double timeTop = topOffsetForTime(time, hourHeight);
+    final double maxScroll =
+        (dayTimelineHeight(hourHeight) - viewportHeight).clamp(0.0, double.infinity);
+    return (timeTop - viewportHeight * viewportLeadFraction).clamp(0.0, maxScroll);
+  }
+
   static double heightForInterval({
     required DateTime start,
     required DateTime end,

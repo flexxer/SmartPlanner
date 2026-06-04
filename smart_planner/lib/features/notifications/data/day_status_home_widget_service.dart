@@ -2,9 +2,10 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:home_widget/home_widget.dart';
+import 'package:smart_planner/features/notifications/data/background_language_resolver.dart';
 import 'package:smart_planner/features/notifications/data/day_status_today_loader.dart';
+import 'package:smart_planner/features/notifications/domain/day_status_locale_copy.dart';
 import 'package:smart_planner/features/notifications/domain/day_status_widget_payload.dart';
-import 'package:smart_planner/features/notifications/domain/day_status_widget_payload_builder.dart';
 
 /// Pushes today's snapshot to the Android home-screen widget.
 class DayStatusHomeWidgetService {
@@ -25,8 +26,11 @@ class DayStatusHomeWidgetService {
 
     try {
       final DayStatusTodaySnapshot snapshot = await _loader.load();
-      final DayStatusWidgetPayload payload =
-          DayStatusWidgetPayloadBuilder.build(snapshot);
+      final String languageCode = await BackgroundLanguageResolver.resolve();
+      final DayStatusWidgetPayload payload = DayStatusLocaleCopy.widgetPayload(
+        snapshot: snapshot,
+        languageCode: languageCode,
+      );
       await _pushPayload(payload);
     } catch (_) {
       // Widget update must not break the app.

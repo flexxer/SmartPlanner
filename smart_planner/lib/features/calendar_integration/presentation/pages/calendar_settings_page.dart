@@ -10,15 +10,17 @@ import 'package:smart_planner/core/presentation/widgets/settings_expandable_sect
 
 import 'package:smart_planner/features/notifications/presentation/widgets/day_status_bar_settings_section.dart';
 
+import 'package:smart_planner/features/notifications/presentation/widgets/auto_roll_overdue_settings_section.dart';
+import 'package:smart_planner/features/notifications/presentation/widgets/task_digest_settings_section.dart';
 import 'package:smart_planner/features/notifications/presentation/widgets/default_reminder_settings_section.dart';
-
 import 'package:smart_planner/features/calendar_integration/data/calendar_preferences_repository.dart';
 
+import 'package:smart_planner/features/calendar_integration/data/services/calendar_system_settings_launcher.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/device_calendar_service.dart';
 
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
-
 import 'package:smart_planner/features/calendar_integration/domain/exceptions/calendar_exceptions.dart';
+import 'package:smart_planner/features/calendar_integration/domain/linked_calendar_ids_resolver.dart';
 
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 
@@ -88,6 +90,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
 
     try {
 
+      final bool wasAwaitingPermission = _error != null;
       final bool granted = await _calendarService.requestPermissions();
 
       if (!granted) {
@@ -138,6 +141,14 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
 
       });
 
+      if (wasAwaitingPermission && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('calendar_onboarding_permission_granted'.tr()),
+          ),
+        );
+      }
+
     } on CalendarPermissionDeniedException {
 
       setState(() {
@@ -163,6 +174,18 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
   }
 
 
+
+  Future<void> _openSystemCalendarSettings() async {
+    final bool opened = await CalendarSystemSettingsLauncher.open();
+    if (!mounted) {
+      return;
+    }
+    if (!opened) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('calendar_settings_open_failed'.tr())),
+      );
+    }
+  }
 
   Future<void> _save() async {
 
@@ -258,6 +281,10 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
 
             DefaultReminderSettingsSection(),
 
+            AutoRollOverdueSettingsSection(),
+
+            TaskDigestSettingsSection(),
+
           ],
 
         ),
@@ -294,90 +321,65 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
 
 
 
+  Widget _buildOpenSystemCalendarButton() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: OutlinedButton.icon(
+        onPressed: _openSystemCalendarSettings,
+        icon: const Icon(Icons.open_in_new),
+        label: Text('calendar_settings_open_system'.tr()),
+      ),
+    );
+  }
+
   List<Widget> _buildCalendarSectionChildren() {
+    final List<Widget> children = <Widget>[
+      _buildOpenSystemCalendarButton(),
+    ];
 
     if (_error != null) {
-
-      return <Widget>[
-
+      children.addAll(<Widget>[
         Padding(
-
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-
           child: Column(
-
             crossAxisAlignment: CrossAxisAlignment.stretch,
-
             children: <Widget>[
-
               Text(_error!, textAlign: TextAlign.center),
-
               const SizedBox(height: 16),
-
               FilledButton(
-
                 onPressed: _load,
-
                 child: Text('calendar_settings_request_access'.tr()),
-
               ),
-
             ],
-
           ),
-
         ),
-
-      ];
-
+      ]);
+      return children;
     }
-
-
 
     if (_calendars.isEmpty) {
-
-      return <Widget>[
-
+      children.add(
         Padding(
-
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-
           child: Text(
-
             'calendar_settings_empty'.tr(),
-
             textAlign: TextAlign.center,
-
           ),
-
         ),
-
-      ];
-
+      );
+      return children;
     }
 
-
-
-    return <Widget>[
-
+    children.addAll(<Widget>[
       Padding(
-
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-
         child: Text(
-
           'calendar_settings_hint'.tr(),
-
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
-
               ),
-
         ),
-
       ),
-
       for (final DeviceCalendarInfo calendar in _calendars)
 
         CheckboxListTile(
@@ -423,9 +425,8 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
           ),
 
         ),
-
-    ];
-
+    ]);
+    return children;
   }
 
 
@@ -465,9 +466,19 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
   }) {
 
     if (saved != null && saved.isNotEmpty) {
-
-      return saved.toSet();
-
+      final Set<String> validIds = calendars
+          .map(
+            (DeviceCalendarInfo c) =>
+                LinkedCalendarIdsResolver.normalizeId(c.id),
+          )
+          .toSet();
+      final Set<String> filtered = saved
+          .map(LinkedCalendarIdsResolver.normalizeId)
+          .where(validIds.contains)
+          .toSet();
+      if (filtered.isNotEmpty) {
+        return filtered;
+      }
     }
 
 

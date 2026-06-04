@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:isar/isar.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/event_attachment_repository.dart';
@@ -19,6 +20,13 @@ import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.da
 import 'package:smart_planner/features/todo_list/data/services/osm_place_search_service.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
+import 'package:smart_planner/features/attachment_templates/data/repositories/attachment_template_repository.dart';
+import 'package:smart_planner/features/attachment_templates/domain/attachment_template_applicator.dart';
+import 'package:smart_planner/features/attachment_templates/domain/attachment_template_labels.dart';
+import 'package:smart_planner/features/attachment_templates/domain/entities/attachment_template.dart';
+import 'package:smart_planner/features/attachment_templates/presentation/widgets/attachment_template_form_sheet.dart';
+import 'package:smart_planner/features/templates/presentation/pages/templates_page.dart';
+import 'package:smart_planner/features/todo_list/presentation/widgets/checklist_editor_section.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/location_map_picker_sheet.dart';
 
 /// Add or edit a local attachment on a task or calendar event.
@@ -82,8 +90,10 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   final TextEditingController _noteTitleController = TextEditingController();
   final TextEditingController _noteBodyController = TextEditingController();
   final TextEditingController _checklistTitleController = TextEditingController();
-  final TextEditingController _checklistItemController = TextEditingController();
-  final List<ChecklistItemPayload> _checklistItems = <ChecklistItemPayload>[];
+  List<ChecklistItemPayload> _initialChecklistItems = <ChecklistItemPayload>[];
+  final GlobalKey<ChecklistEditorSectionState> _checklistKey =
+      GlobalKey<ChecklistEditorSectionState>();
+  List<AttachmentTemplate> _templates = <AttachmentTemplate>[];
 
   String? _imageRelativePath;
   StoredAttachmentFile? _storedFile;
@@ -105,7 +115,21 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _tryReadClipboardUrl();
+        _loadTemplates();
       });
+    }
+  }
+
+  Future<void> _loadTemplates() async {
+    try {
+      final AttachmentTemplateRepository repository =
+          context.read<AttachmentTemplateRepository>();
+      final List<AttachmentTemplate> list = await repository.getAll();
+      if (mounted) {
+        setState(() => _templates = list);
+      }
+    } on Object {
+      // Templates are optional when repository is not provided.
     }
   }
 
@@ -160,7 +184,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
         if (title != null && title.isNotEmpty) {
           _checklistTitleController.text = title;
         }
-        _checklistItems.addAll(checklist.items);
+        _initialChecklistItems = List<ChecklistItemPayload>.from(checklist.items);
     }
   }
 
@@ -199,7 +223,6 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
     _noteTitleController.dispose();
     _noteBodyController.dispose();
     _checklistTitleController.dispose();
-    _checklistItemController.dispose();
     super.dispose();
   }
 
@@ -337,35 +360,139 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
     );
   }
 
-  void _commitChecklistLine(String text) {
-    final String trimmed = text.trim();
-    if (trimmed.isEmpty) {
-      return;
+  List<ChecklistItemPayload> _checklistItemsForSave() =>
+      _checklistKey.currentState?.collectItems() ?? _initialChecklistItems;
+
+  Future<void> _openNewTemplateForm() async {
+    final bool? saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const AttachmentTemplateFormSheet(),
+    );
+    if (saved == true) {
+      await _loadTemplates();
     }
-    setState(() {
-      _checklistItems.add(
-        ChecklistItemPayload(
-          localId: TaskAttachmentChecklist.nextItemLocalId(_checklistItems),
-          text: trimmed,
-        ),
-      );
-      _checklistItemController.clear();
-    });
   }
 
-  List<ChecklistItemPayload> _checklistItemsForSave() {
-    final List<ChecklistItemPayload> items =
-        List<ChecklistItemPayload>.from(_checklistItems);
-    final String pending = _checklistItemController.text.trim();
-    if (pending.isNotEmpty) {
-      items.add(
-        ChecklistItemPayload(
-          localId: TaskAttachmentChecklist.nextItemLocalId(items),
-          text: pending,
+  Future<void> _showTemplateMenu(AttachmentTemplate template) async {
+    final String? action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ListTile(
+              title: Text(AttachmentTemplateLabels.displayTitle(template)),
+              subtitle: Text(AttachmentTemplateLabels.typeLabel(template.type)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.play_arrow_outlined),
+              title: Text('attachment_template_apply'.tr()),
+              onTap: () => Navigator.pop(sheetContext, 'apply'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: Text('attachment_edit'.tr()),
+              onTap: () => Navigator.pop(sheetContext, 'edit'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy_outlined),
+              title: Text('attachment_template_duplicate'.tr()),
+              onTap: () => Navigator.pop(sheetContext, 'duplicate'),
+            ),
+          ],
         ),
-      );
+      ),
+    );
+    if (!mounted || action == null) {
+      return;
     }
-    return items;
+    switch (action) {
+      case 'apply':
+        await _applyTemplate(template);
+      case 'edit':
+        final bool? saved = await showModalBottomSheet<bool>(
+          context: context,
+          isScrollControlled: true,
+          builder: (_) =>
+              AttachmentTemplateFormSheet(templateToEdit: template),
+        );
+        if (saved == true) {
+          await _loadTemplates();
+        }
+      case 'duplicate':
+        final bool? saved = await showModalBottomSheet<bool>(
+          context: context,
+          isScrollControlled: true,
+          builder: (_) => AttachmentTemplateFormSheet(copyFrom: template),
+        );
+        if (saved == true) {
+          await _loadTemplates();
+        }
+    }
+  }
+
+  Future<void> _applyTemplate(AttachmentTemplate template) async {
+    if (!attachmentTemplateIsReady(template)) {
+      if (template.type == TaskAttachmentType.location) {
+        await _configureLocationTemplate(template);
+      }
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final bool applied = widget.isEventMode
+          ? await AttachmentTemplateApplicator.applyToEvent(
+              template: template,
+              eventId: widget.eventId!,
+              repository: widget.eventRepository!,
+            )
+          : await AttachmentTemplateApplicator.applyToTask(
+              template: template,
+              taskId: widget.taskId!,
+              repository: widget.taskRepository!,
+            );
+      if (applied && mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+  }
+
+  Future<void> _configureLocationTemplate(AttachmentTemplate template) async {
+    final LocationPickResult? result = await showModalBottomSheet<LocationPickResult>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => LocationMapPickerSheet(),
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+    String? placeName = result.placeName;
+    placeName ??= await OsmPlaceSearchService.reverseGeocode(
+      latitude: result.latitude,
+      longitude: result.longitude,
+    );
+    final String label = AttachmentTemplateLabels.displayTitle(template);
+    final String payload = TaskAttachmentCodec.encodeMap(
+      LocationAttachmentPayload(
+        latitude: result.latitude,
+        longitude: result.longitude,
+        placeName: placeName,
+        label: label,
+      ).toJson(),
+    );
+    template.payloadJson = payload;
+    try {
+      await context.read<AttachmentTemplateRepository>().save(template);
+    } on Object {
+      // Continue even if template save fails.
+    }
+    await _applyTemplate(template);
   }
 
   Future<void> _save() async {
@@ -641,8 +768,29 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
-              if (_selectedType == null)
-                ..._typePicker()
+              if (_selectedType == null) ...<Widget>[
+                if (!widget.isEditing) ...<Widget>[
+                  _AttachmentTemplateQuickStrip(
+                    templates: _templates,
+                    saving: _saving,
+                    onApply: _applyTemplate,
+                    onLongPress: _showTemplateMenu,
+                    onCreate: _openNewTemplateForm,
+                    onManage: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const TemplatesPage(
+                            initialTabIndex: 1,
+                          ),
+                        ),
+                      );
+                      await _loadTemplates();
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                ..._typePicker(),
+              ]
               else
                 ..._formForType(),
               const SizedBox(height: 16),
@@ -927,55 +1075,100 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
       ];
 
   List<Widget> _checklistForm() => <Widget>[
-        TextField(
-          controller: _checklistTitleController,
-          decoration: InputDecoration(
-            labelText: 'attachment_field_name'.tr(),
-            border: const OutlineInputBorder(),
-          ),
+        ChecklistEditorSection(
+          key: _checklistKey,
+          titleController: _checklistTitleController,
+          initialItems: _initialChecklistItems,
         ),
-        const SizedBox(height: 8),
+      ];
+}
+
+class _AttachmentTemplateQuickStrip extends StatelessWidget {
+  const _AttachmentTemplateQuickStrip({
+    required this.templates,
+    required this.saving,
+    required this.onApply,
+    required this.onLongPress,
+    required this.onCreate,
+    required this.onManage,
+  });
+
+  final List<AttachmentTemplate> templates;
+  final bool saving;
+  final Future<void> Function(AttachmentTemplate template) onApply;
+  final Future<void> Function(AttachmentTemplate template) onLongPress;
+  final VoidCallback onCreate;
+  final VoidCallback onManage;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Expanded(
-              child: TextField(
-                controller: _checklistItemController,
-                decoration: InputDecoration(
-                  hintText: 'attachment_checklist_item_hint'.tr(),
-                  border: const OutlineInputBorder(),
-                ),
-                textInputAction: TextInputAction.done,
-                onSubmitted: _commitChecklistLine,
+              child: Text(
+                'attachment_templates_quick'.tr(),
+                style: Theme.of(context).textTheme.titleSmall,
               ),
             ),
-            IconButton(
-              onPressed: () => _commitChecklistLine(_checklistItemController.text),
-              icon: const Icon(Icons.add),
-              tooltip: 'attachment_add_item_tooltip'.tr(),
+            TextButton(
+              onPressed: onManage,
+              child: Text('attachment_templates_manage'.tr()),
             ),
           ],
         ),
-        if (_checklistItems.isNotEmpty) ...<Widget>[
-          const SizedBox(height: 8),
-          ...List<Widget>.generate(_checklistItems.length, (int index) {
-            final ChecklistItemPayload item = _checklistItems[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                children: <Widget>[
-                  Expanded(child: Text(item.text)),
-                  IconButton(
-                    onPressed: () {
-                      setState(() => _checklistItems.removeAt(index));
-                    },
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: 'attachment_remove_item_tooltip'.tr(),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 40,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: templates.length + 1,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (BuildContext context, int index) {
+              if (index == templates.length) {
+                return ActionChip(
+                  avatar: const Icon(Icons.add, size: 18),
+                  label: Text('attachment_template_new'.tr()),
+                  onPressed: saving ? null : onCreate,
+                );
+              }
+              final AttachmentTemplate template = templates[index];
+              return GestureDetector(
+                onLongPress:
+                    saving ? null : () => onLongPress(template),
+                child: ActionChip(
+                  avatar: Icon(
+                    AttachmentTemplateLabels.iconFor(template.type),
+                    size: 18,
                   ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ];
+                  label: Text(
+                    AttachmentTemplateLabels.displayTitle(template),
+                  ),
+                  onPressed: saving ? null : () => onApply(template),
+                ),
+              );
+            },
+          ),
+        ),
+        if (templates.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'attachment_templates_chip_hint'.tr(),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        if (templates.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'attachment_templates_empty_inline'.tr(),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+      ],
+    );
+  }
 }

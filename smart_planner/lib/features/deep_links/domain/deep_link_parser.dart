@@ -1,5 +1,5 @@
 import 'package:smart_planner/core/utils/app_date_utils.dart';
-import 'package:smart_planner/features/deep_links/domain/deep_link_create_action.dart';
+import 'package:smart_planner/features/deep_links/domain/deep_link_action.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_priority.dart';
 
 /// Parses and sanitizes `daylinx://` URIs.
@@ -10,23 +10,23 @@ abstract final class DeepLinkParser {
   static const String createHost = 'create';
   static const int maxTitleLength = 200;
 
-  /// Returns a [DeepLinkCreateAction] or `null` if the URI is invalid or unsupported.
-  static DeepLinkCreateAction? parse(Uri? uri, {DateTime? referenceNow}) {
+  /// Returns a [DeepLinkAction] or `null` if the URI is invalid or unsupported.
+  static DeepLinkAction? parse(Uri? uri, {DateTime? referenceNow}) {
     if (uri == null || uri.scheme.toLowerCase() != scheme) {
       return null;
     }
+
+    final DeepLinkRefreshWidgetAction? refresh = _parseWidgetRefresh(uri);
+    if (refresh != null) {
+      return refresh;
+    }
+
     if (!_isCreateTarget(uri)) {
       return null;
     }
 
     final String? type = _queryValue(uri, 'type')?.toLowerCase();
-    final String? rawTitle = _queryValue(uri, 'title');
-    if (type == null || rawTitle == null) {
-      return null;
-    }
-
-    final String title = _sanitizeTitle(rawTitle);
-    if (title.isEmpty) {
+    if (type == null) {
       return null;
     }
 
@@ -35,11 +35,22 @@ abstract final class DeepLinkParser {
 
     switch (type) {
       case 'task':
+        final String? rawTitle = _queryValue(uri, 'title');
+        final String title =
+            rawTitle != null ? _sanitizeTitle(rawTitle) : '';
         return DeepLinkCreateTaskAction(
           title: title,
           priority: _parsePriority(_queryValue(uri, 'priority')),
         );
       case 'event':
+        final String? rawTitle = _queryValue(uri, 'title');
+        if (rawTitle == null) {
+          return null;
+        }
+        final String title = _sanitizeTitle(rawTitle);
+        if (title.isEmpty) {
+          return null;
+        }
         final DateTime? start = _parseClockOnDay(
           _queryValue(uri, 'start'),
           day,
@@ -56,9 +67,30 @@ abstract final class DeepLinkParser {
           start: start,
           end: end,
         );
+      case 'template':
+        final String? idRaw =
+            _queryValue(uri, 'templateId') ?? _queryValue(uri, 'id');
+        final int? templateId = int.tryParse(idRaw ?? '');
+        if (templateId == null || templateId <= 0) {
+          return null;
+        }
+        return DeepLinkCreateTaskFromTemplateAction(templateId: templateId);
       default:
         return null;
     }
+  }
+
+  static DeepLinkRefreshWidgetAction? _parseWidgetRefresh(Uri uri) {
+    final String host = uri.host.toLowerCase();
+    final String path = uri.path.toLowerCase();
+    final bool isWidget = host == 'widget' || path == '/widget' || path == 'widget';
+    if (!isWidget) {
+      return null;
+    }
+    if (_queryValue(uri, 'action')?.toLowerCase() == 'refresh') {
+      return const DeepLinkRefreshWidgetAction();
+    }
+    return null;
   }
 
   static bool _isCreateTarget(Uri uri) {

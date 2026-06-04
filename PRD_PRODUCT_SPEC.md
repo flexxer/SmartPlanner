@@ -26,20 +26,21 @@ Professionals, freelancers, and people with high cognitive load who juggle multi
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| Read device calendars (Google accounts synced to Android Calendar) | **Implemented** | `device_calendar` + calendar picker |
-| Google Calendar via OAuth 2.0 | **Planned** | Stub: `GoogleCalendarApiClient` |
-| Show events from multiple accounts (Personal, Work, Projects) | **Partial** | User selects calendars in settings |
+| Read device calendars (Google accounts synced to Android Calendar) | **Implemented** | `device_calendar` + calendar picker; no in-app OAuth |
+| Show events from multiple accounts (Personal, Work, Projects) | **Implemented** | User selects calendars in settings |
+| Write events to writable device calendars | **Implemented** | `CalendarEventWriteService` + `DeviceCalendarEventBridge`; read-only calendars → Isar-only + snackbar |
 | Color-code events by calendar source | **Implemented** | `CalendarContextColors` + accent bar on strip cards |
 | Events for a user-selected day | **Implemented** | Device fetch → Isar upsert → `DashboardLocalEventsStrip` for selected day |
 | Local calendar events CRUD + task linking | **Implemented** | `LocalCalendarEventRepository`; link/unlink tasks; create/edit sheets |
 | Live “now” timeline on today’s event strip | **Implemented** | Pulsing indicator + auto-scroll to current/upcoming event |
+| Week time grid scroll to current time | **Implemented** | `CalendarGridWeekView` scrolls to now when the visible week includes today |
 
 ### 3.2 To-Do engine
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
 | Tasks without strict time binding | **Implemented** | Optional `dueDate` (`null` = no deadline); **Backlog** section on every selected day (`backlog_section`), always visible alongside dated tasks |
-| Roll unfinished tasks with overdue indicator | **Partial** | Dedicated **overdue panel** on today; badge via `Task.dynamicOverdueDays` (calendar days past `dueDate`); automatic midnight roll not yet wired (`background_service` TODO) |
+| Roll unfinished tasks with overdue indicator | **Implemented** | **Overdue** panel on today; badge via `Task.dynamicOverdueDays`; optional **midnight roll** moves overdue tasks to today (`OverdueMidnightRollService`, Workmanager ~00:05 + 15 min refresh fallback; toggle in **Reminders** settings, default on) |
 | Tasks filtered by selected calendar day | **Implemented** | Dated tasks via `getUncompletedTasksForDate`; undated via `getUndatedTasks` |
 | Postpone task (tomorrow or pick date) | **Implemented** | `TaskDetailScreen` + `PostponeTaskSheet`; `PostponeTask` / `PostponeTaskToNextDay` |
 | Context calendars (device lists) | **Implemented** | `Task.calendarId` (device calendar id); `TaskLinkedCalendarsField` in `TaskFormSheet`; context badge on tiles via `CalendarContextColors` |
@@ -47,11 +48,15 @@ Professionals, freelancers, and people with high cognitive load who juggle multi
 | Recurring tasks (bills, stand-ups) | **Planned** | Not in schema yet |
 | Local CRUD + priority sorting | **Implemented** | Isar + `TodoRepository` |
 | Completed tasks on selected day | **Implemented** | Active tasks on top; collapsible **Completed** section at bottom (dimmed, strikethrough); toggle moves task between lists |
-| Completed tasks archive screen | **Deprecated** | `CompletedTasksPage` — no AppBar route; reopen still via `TodoRepository.reopenFromCompleted` if re-wired |
+| Completed tasks archive screen | **Removed** | Use dashboard **Completed** section; `TodoRepository.reopenFromCompleted` remains for reopen flows |
 | Reopen completed task (new copy, new due date) | **Implemented** | `TaskReopen` + `reopenFromCompleted`; original stays completed |
-| Task list tiles with badges | **Implemented** | Compact dashboard tile; tap → `TaskDetailScreen`; `TaskBadge` row (priority, due, linked event, subtasks, checklist, files) |
+| Task list tiles with badges | **Implemented** | `TaskPriorityIcon` beside title; `TaskBadgesRow` with context-aware due/link labels; counts for subtasks, checklist, attachments |
+| Global search (tasks + events) | **Implemented** | `SearchScreen` from dashboard AppBar |
+| Delete with 10s undo | **Implemented** | `RecordDeleteCoordinator` + `delete_undo_snackbar`; restore re-syncs device calendar when applicable |
+| Attachment templates (user presets) | **Implemented** | Isar `AttachmentTemplate`; hub tab + quick-add chips in `AddAttachmentSheet` |
+| Templates hub (task + attachment tabs) | **Implemented** | `TemplatesPage` with `TaskTemplatesTab` and `AttachmentTemplatesTab` |
 | Task / event detail screens | **Implemented** | `TaskDetailScreen`, `EventDetailScreen`; AppBar edit; full attachments + reorderable subtasks on task detail |
-| Templates module (AppBar) | **Planned** | AppBar placeholder (`Icons.layers_outlined`) — snackbar stub only |
+| Templates module (AppBar) | **Implemented** | `TemplatesPage` CRUD; apply via FAB, relation sheet, `TaskFormSheet`, deep link `type=template`; save from task detail |
 | Linked subtasks (existing task under a parent task) | **Implemented** | `Task.parentTaskId` + `Task.sortOrder`; manual reorder on `TaskDetailScreen`; link via picker; detach; progress badge on parent |
 | Task attachments (local) | **Implemented** | `TaskAttachment`: contact, image, URL, location, note, checklist; multiple per task (see §3.2.1) |
 
@@ -90,10 +95,10 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 | Requirement | Status | Notes |
 |-------------|--------|-------|
 | Push: meeting reminders (15/30 min before) | **Planned** | Channels defined; scheduling TBD |
-| Push: morning/evening task digest | **Planned** | |
+| Push: morning/evening task digest | **Implemented** | Workmanager ~08:00 / ~19:00 (`TaskDailyDigestWorker`); toggles in Settings |
 | Android ongoing **day-status** notification (foreground service) | **Implemented** | Opt-in on **Calendars** settings; `DayStatusNotificationController` + `flutter_local_notifications` FGS (`specialUse`); title = today’s task progress, body = current/next event; synced from `DashboardBloc`; default **off** |
-| Android home widget: day schedule + focus tasks + complete from widget | **Planned** | Stubs: `android_widget_provider.dart` |
-| Background check for overdue tasks | **Partial** | `workmanager` registered; postpone/notify logic TODO |
+| Android home widget: day schedule + focus tasks | **Implemented** | Medium 4×2 (`DayLinxWidgetProvider`); same payload as day-status via `DayStatusHomeWidgetService`; ↻ refresh + add task; complete-from-widget = planned |
+| Background check for overdue tasks | **Implemented** | `workmanager`: overdue digest (`OverdueBackgroundWorker`, 12h); midnight roll + digest refresh; day-status/widget refresh (15 min) |
 | Custom URL scheme deep links (`daylinx://create`) | **Implemented** | `app_links`; opens dashboard + `TaskFormSheet` / `EventFormSheet` with prefilled `title`, `priority`, `start` |
 
 ---
@@ -188,10 +193,10 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 
 Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `EditCalendarEventSheet` were removed in favor of the unified sheets. In-dashboard tile expansion was removed in favor of detail screens.
 
-### Deprecated: standalone completed archive
+### Completed tasks on dashboard
 
-- `CompletedTasksPage` / `CompletedTasksBloc` remain in the repo but are **not** routed from the AppBar.
-- Reopen-from-archive UX can be restored later; domain helper `TaskReopen` / `reopenFromCompleted` unchanged.
+- Standalone completed archive screen was removed; use the collapsible **Completed** section on the dashboard.
+- Domain helper `TaskReopen` / `reopenFromCompleted` unchanged for reopen flows.
 
 ### Appearance
 
@@ -214,7 +219,6 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 - Cloud sync / multi-device backup
 - AI scheduling assistant
 - In-app manual theme override (system only for now; language override is in scope)
-- Automatic nightly task rollover without user action (planned via background job)
 
 ---
 
@@ -240,3 +244,5 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 | 2026-05 | Deep links: `daylinx://create?type=task\|event` → prefilled create sheets |
 | 2026-05 | Product name **DayLinx** (Dayline unavailable); `daylinx://`; `DayLinxApp` root widget |
 | 2026-05 | Dashboard **backlog** top-level section; empty tasks hint at scroll bottom |
+| 2026-06 | Device calendar write-back; removed Google OAuth from scope; midnight overdue roll + settings toggle |
+| 2026-06 | Android home widget MVP (medium 4×2, shared day-status payload, widget deep links) |

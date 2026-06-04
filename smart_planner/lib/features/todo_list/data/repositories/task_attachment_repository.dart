@@ -61,6 +61,21 @@ class TaskAttachmentRepository {
     await _db.writeTxn(() => _db.taskAttachments.put(attachment));
   }
 
+  /// Persists [sortOrder] for each attachment id in [orderedIds].
+  Future<void> reorder(List<Id> orderedIds) async {
+    await _db.writeTxn(() async {
+      for (var i = 0; i < orderedIds.length; i++) {
+        final TaskAttachment? attachment =
+            await _db.taskAttachments.get(orderedIds[i]);
+        if (attachment == null) {
+          continue;
+        }
+        attachment.sortOrder = i;
+        await _db.taskAttachments.put(attachment);
+      }
+    });
+  }
+
   /// Removes all attachments (and image files) for [taskId].
   Future<void> deleteAllForTask(Id taskId) async {
     final List<TaskAttachment> attachments = await getAttachmentsForTask(taskId);

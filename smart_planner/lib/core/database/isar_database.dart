@@ -7,6 +7,9 @@ import 'package:smart_planner/features/calendar_integration/domain/entities/even
 
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 
+import 'package:smart_planner/features/sync/domain/entities/sync_account.dart';
+import 'package:smart_planner/features/sync/domain/entities/sync_record.dart';
+import 'package:smart_planner/features/attachment_templates/domain/entities/attachment_template.dart';
 import 'package:smart_planner/features/templates/domain/entities/ui_template.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 
@@ -71,6 +74,12 @@ class IsarDatabase {
         EventAttachmentSchema,
 
         UiTemplateSchema,
+
+        AttachmentTemplateSchema,
+
+        SyncAccountSchema,
+
+        SyncRecordSchema,
 
       ],
 

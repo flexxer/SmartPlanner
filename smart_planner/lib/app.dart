@@ -8,12 +8,15 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'package:smart_planner/core/localization/locale_preferences_repository.dart';
 
+import 'package:smart_planner/core/app_initializer.dart';
 import 'package:smart_planner/core/theme/app_theme.dart';
 
 import 'package:smart_planner/features/calendar_integration/data/calendar_preferences_repository.dart';
 
 import 'package:smart_planner/features/calendar_integration/data/repositories/event_attachment_repository.dart';
+import 'package:smart_planner/features/calendar_integration/data/calendar_event_write_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
+import 'package:smart_planner/features/calendar_integration/data/task_event_link_service.dart';
 
 import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
 
@@ -26,6 +29,7 @@ import 'package:smart_planner/features/notifications/data/day_status_home_widget
 import 'package:smart_planner/features/notifications/data/day_status_notification_controller.dart';
 import 'package:smart_planner/features/notifications/data/day_status_today_loader.dart';
 import 'package:smart_planner/features/notifications/data/item_reminder_scheduler.dart';
+import 'package:smart_planner/features/notifications/data/reminder_sync_service.dart';
 import 'package:smart_planner/features/notifications/data/notification_preferences_repository.dart';
 import 'package:smart_planner/features/notifications/presentation/widgets/day_status_service_host.dart';
 
@@ -33,6 +37,7 @@ import 'package:smart_planner/features/dashboard/presentation/dashboard_screen.d
 import 'package:smart_planner/features/deep_links/data/deep_link_service.dart';
 import 'package:smart_planner/features/deep_links/presentation/deep_link_dispatcher.dart';
 
+import 'package:smart_planner/features/attachment_templates/data/repositories/attachment_template_repository.dart';
 import 'package:smart_planner/features/templates/data/repositories/ui_template_repository.dart';
 
 import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
@@ -89,6 +94,9 @@ class DayLinxApp extends StatelessWidget {
 
     final UiTemplateRepository uiTemplateRepository = UiTemplateRepository();
 
+    final AttachmentTemplateRepository attachmentTemplateRepository =
+        AttachmentTemplateRepository();
+
     final DashboardDayMarkersRepository dayMarkersRepository =
 
         DashboardDayMarkersRepository(
@@ -123,7 +131,21 @@ class DayLinxApp extends StatelessWidget {
     final DayStatusHomeWidgetService dayStatusHomeWidget =
         DayStatusHomeWidgetService(loader: dayStatusTodayLoader);
 
-    final ItemReminderScheduler itemReminders = ItemReminderScheduler();
+    final ItemReminderScheduler itemReminders = AppInitializer.itemReminders;
+
+    final ReminderSyncService reminderSync =
+        ReminderSyncService(itemReminders);
+
+    final TaskEventLinkService taskEventLinkService = TaskEventLinkService(
+      localCalendarEvents: localCalendarEventRepository,
+      todoRepository: todoRepository,
+    );
+
+    final CalendarEventWriteService calendarEventWriter =
+        CalendarEventWriteService(
+      deviceCalendar: calendarService,
+      localEvents: localCalendarEventRepository,
+    );
 
     return MultiRepositoryProvider(
 
@@ -147,6 +169,10 @@ class DayLinxApp extends StatelessWidget {
 
           value: calendarService,
 
+        ),
+
+        RepositoryProvider<CalendarEventWriteService>.value(
+          value: calendarEventWriter,
         ),
 
         RepositoryProvider<DashboardDayMarkersRepository>.value(
@@ -177,6 +203,10 @@ class DayLinxApp extends StatelessWidget {
 
         ),
 
+        RepositoryProvider<AttachmentTemplateRepository>.value(
+          value: attachmentTemplateRepository,
+        ),
+
         RepositoryProvider<LocalePreferencesRepository>.value(
 
           value: localePreferences,
@@ -198,6 +228,14 @@ class DayLinxApp extends StatelessWidget {
 
         RepositoryProvider<ItemReminderScheduler>.value(
           value: itemReminders,
+        ),
+
+        RepositoryProvider<ReminderSyncService>.value(
+          value: reminderSync,
+        ),
+
+        RepositoryProvider<TaskEventLinkService>.value(
+          value: taskEventLinkService,
         ),
 
         RepositoryProvider<DeepLinkService>.value(value: deepLinks),
@@ -246,13 +284,13 @@ class DayLinxApp extends StatelessWidget {
 
             dayStatusNotifications: dayStatusNotifications,
             dayStatusHomeWidget: dayStatusHomeWidget,
-            itemReminders: itemReminders,
+            reminderSync: reminderSync,
+            taskEventLinkService: taskEventLinkService,
             eventAttachmentRepository: eventAttachmentRepository,
 
           )..add(const LoadDashboardData()),
 
           child: DeepLinkDispatcher(
-            navigatorKey: rootNavigatorKey,
             deepLinkService: deepLinks,
             child: const DayStatusServiceHost(
               child: DashboardScreen(),

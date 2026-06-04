@@ -36,11 +36,15 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
   - **Compact tiles** (`TaskExpandableTile`): checkbox vs body tap zones; **tap body** → **`TaskDetailScreen`**
 
-  - Badges: **context calendar**, priority, due date, overdue (`dynamicOverdueDays`), linked event, subtasks, checklist, attachments
+  - **Priority** — flag icon left of the title (all levels); compact **badges** below (context calendar when multiple calendars selected, due/overdue only when not redundant with section headers, linked event title, subtask/checklist/attachment counts)
 
   - Create via FAB → **`TaskFormSheet`**; edit/delete on detail screens and form sheets
 
-- **Task detail** (`TaskDetailScreen`): full title, description, badges, scrollable attachments/checklists, **reorderable linked subtasks** (`Task.sortOrder`), postpone, link/unlink event
+- **Global search** (AppBar) — tasks and calendar events with informative result rows
+
+- **Delete undo** — 10s SnackBar undo for tasks, events, and attachments; device delete skipped on read-only calendars (local Isar row removed)
+
+- **Task detail** (`TaskDetailScreen`): priority icon + title, description, badges, **reorderable attachments**, scrollable checklists, **reorderable linked subtasks** (`Task.sortOrder`) with checkbox to reopen completed subtasks, postpone, link/unlink event
 
 - **Event detail** (`EventDetailScreen`): time, calendar, recurrence, linked tasks, add task to event; AppBar edit
 
@@ -48,13 +52,23 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
 - **Task attachments** (local, multiple per task): contact, photo, URL, location (Nominatim), note, checklist
 
-  - Tap attachment → action sheet: **Open / View**, **Edit** (`AddAttachmentSheet`), **Delete** (SnackBar Undo)
+  - **Attachment templates** (user-defined): quick-add chips in `AddAttachmentSheet`; manage under **Templates** → Attachments tab
+
+  - Tap attachment → action sheet: **Open / View**, **Edit** (`AddAttachmentSheet`), **Delete** (SnackBar Undo), **Save as template**
+
+- **Templates hub** (`TemplatesPage`, AppBar): tabs **Tasks** (UI blueprints) and **Attachments** (presets)
 
 - **Create / edit / delete** tasks and local events via **`TaskFormSheet`** / **`EventFormSheet`** (delete with confirmation in edit mode)
 
-- **AppBar:** templates, calendar settings (includes **language** picker), time grid, refresh
+- **AppBar:** search, templates (`TemplatesPage`), calendar settings (language, reminders, digests, midnight roll), **week/month time grid** (auto-scroll to current time when today is visible), refresh
+
+- **Device calendar write-back** — create/edit/delete on writable calendars; read-only calendars save to Isar only; move event between calendars on edit; recurring delete (this occurrence vs series)
+
+- **Recurring tasks** — optional daily/weekly repeat on tasks with a due date (same JSON rule model as events)
 
 - **Android day-status notification** (optional, off by default): ongoing foreground notification with task progress when tasks exist, plus current or next calendar event; optional pin above other notifications; toggles under **Calendars**
+
+- **Morning / evening task digest** (optional, on by default): Workmanager notifications ~08:00 and ~19:00 with today's task count
 
 - **Light / dark theme** follows system settings
 
@@ -68,7 +82,7 @@ Calendar **events** (device + local Isar) ≠ local **tasks** (Isar); not Google
 
 
 
-> **Note:** Standalone `CompletedTasksPage` is deprecated and not linked from the AppBar. `EventLinkedTasksSheet` remains in the repo but is no longer the primary event tap target.
+> **Note:** Completed tasks appear in the dashboard **Completed** section; event tap opens `EventDetailScreen` (linked tasks + attachments).
 
 
 

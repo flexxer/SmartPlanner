@@ -15,6 +15,12 @@ class NotificationPreferencesRepository {
   static const String _defaultTaskReminderHourKey = 'default_task_reminder_hour';
   static const String _defaultTaskReminderMinuteKey =
       'default_task_reminder_minute';
+  static const String _autoRollOverdueAtMidnightKey =
+      'auto_roll_overdue_at_midnight';
+  static const String _lastOverdueMidnightRollDayKey =
+      'last_overdue_midnight_roll_day_key';
+  static const String _morningDigestEnabledKey = 'morning_digest_enabled';
+  static const String _eveningDigestEnabledKey = 'evening_digest_enabled';
 
   final Future<SharedPreferences> _preferencesFuture;
 
@@ -72,5 +78,47 @@ class NotificationPreferencesRepository {
     }
     final SharedPreferences prefs = await _preferencesFuture;
     await prefs.setInt(_defaultReminderMinutesKey, minutes);
+  }
+
+  /// When true, overdue tasks roll to today once per calendar day (background).
+  Future<bool> isAutoRollOverdueAtMidnightEnabled() async {
+    final SharedPreferences prefs = await _preferencesFuture;
+    return prefs.getBool(_autoRollOverdueAtMidnightKey) ?? true;
+  }
+
+  Future<void> setAutoRollOverdueAtMidnightEnabled(bool enabled) async {
+    final SharedPreferences prefs = await _preferencesFuture;
+    await prefs.setBool(_autoRollOverdueAtMidnightKey, enabled);
+  }
+
+  /// [AppDateUtils.dayKeyMs] for the last successful midnight roll, or null.
+  Future<int?> getLastOverdueMidnightRollDayKey() async {
+    final SharedPreferences prefs = await _preferencesFuture;
+    return prefs.getInt(_lastOverdueMidnightRollDayKey);
+  }
+
+  Future<void> setLastOverdueMidnightRollDayKey(int dayKey) async {
+    final SharedPreferences prefs = await _preferencesFuture;
+    await prefs.setInt(_lastOverdueMidnightRollDayKey, dayKey);
+  }
+
+  Future<bool> isMorningDigestEnabled() async {
+    final SharedPreferences prefs = await _preferencesFuture;
+    return prefs.getBool(_morningDigestEnabledKey) ?? true;
+  }
+
+  Future<void> setMorningDigestEnabled(bool enabled) async {
+    final SharedPreferences prefs = await _preferencesFuture;
+    await prefs.setBool(_morningDigestEnabledKey, enabled);
+  }
+
+  Future<bool> isEveningDigestEnabled() async {
+    final SharedPreferences prefs = await _preferencesFuture;
+    return prefs.getBool(_eveningDigestEnabledKey) ?? true;
+  }
+
+  Future<void> setEveningDigestEnabled(bool enabled) async {
+    final SharedPreferences prefs = await _preferencesFuture;
+    await prefs.setBool(_eveningDigestEnabledKey, enabled);
   }
 }

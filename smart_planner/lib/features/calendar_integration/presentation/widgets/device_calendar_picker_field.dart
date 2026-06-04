@@ -11,6 +11,7 @@ class DeviceCalendarPickerField extends StatelessWidget {
     required this.selectedCalendarId,
     required this.onCalendarSelected,
     this.hintText,
+    this.writableOnly = false,
     super.key,
   });
 
@@ -18,6 +19,9 @@ class DeviceCalendarPickerField extends StatelessWidget {
   final String? selectedCalendarId;
   final ValueChanged<DeviceCalendarInfo> onCalendarSelected;
   final String? hintText;
+
+  /// When true, read-only calendars are shown but cannot be selected.
+  final bool writableOnly;
 
   DeviceCalendarInfo? get _selected {
     final String? id = selectedCalendarId;
@@ -62,26 +66,25 @@ class DeviceCalendarPickerField extends StatelessWidget {
                   itemBuilder: (BuildContext context, int index) {
                     final DeviceCalendarInfo calendar = calendars[index];
                     final bool isSelected = calendar.id == selectedCalendarId;
+                    final bool disabled =
+                        writableOnly && calendar.isReadOnly;
                     return ListTile(
                       leading: CircleAvatar(
                         radius: 10,
                         backgroundColor: Color(_colorArgb(calendar.colorValue)),
                       ),
                       title: Text(calendar.name),
-                      subtitle: calendar.accountName != null
-                          ? Text(
-                              calendar.accountName!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            )
-                          : null,
+                      subtitle: _subtitleWidget(calendar),
                       trailing: isSelected
                           ? Icon(
                               Icons.check_circle,
                               color: Theme.of(sheetContext).colorScheme.primary,
                             )
                           : null,
-                      onTap: () => Navigator.of(sheetContext).pop(calendar),
+                      enabled: !disabled,
+                      onTap: disabled
+                          ? null
+                          : () => Navigator.of(sheetContext).pop(calendar),
                     );
                   },
                 ),
@@ -142,6 +145,32 @@ class DeviceCalendarPickerField extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget? _subtitleWidget(DeviceCalendarInfo calendar) {
+    final String? text = _subtitleText(calendar);
+    if (text == null) {
+      return null;
+    }
+    return Text(
+      text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  String? _subtitleText(DeviceCalendarInfo calendar) {
+    final List<String> parts = <String>[];
+    if (calendar.accountName != null && calendar.accountName!.isNotEmpty) {
+      parts.add(calendar.accountName!);
+    }
+    if (writableOnly && calendar.isReadOnly) {
+      parts.add('calendar_read_only_badge'.tr());
+    }
+    if (parts.isEmpty) {
+      return null;
+    }
+    return parts.join(' · ');
   }
 
   static int _colorArgb(int value) {

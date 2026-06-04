@@ -13,7 +13,8 @@ void main() {
       priority: TaskPriority.high,
       isCompleted: true,
     );
-    final DateTime newDue = DateTime(2026, 5, 25, 14, 30);
+    final DateTime newDue =
+        AppDateUtils.startOfDay(DateTime.now()).add(const Duration(days: 7));
     final Task reopened = TaskReopen.fromCompleted(source, dueDate: newDue);
 
     expect(reopened.title, 'Report');

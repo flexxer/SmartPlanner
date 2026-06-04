@@ -42,30 +42,46 @@ const CalendarEventSchema = CollectionSchema(
       name: r'googleEventId',
       type: IsarType.string,
     ),
-    r'linkedTaskIds': PropertySchema(
+    r'isLocalOnly': PropertySchema(
       id: 5,
+      name: r'isLocalOnly',
+      type: IsarType.bool,
+    ),
+    r'linkedTaskIds': PropertySchema(
+      id: 6,
       name: r'linkedTaskIds',
       type: IsarType.longList,
     ),
     r'recurrenceRuleJson': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'recurrenceRuleJson',
       type: IsarType.string,
     ),
     r'reminderMinutesBefore': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'reminderMinutesBefore',
       type: IsarType.long,
     ),
+    r'source': PropertySchema(
+      id: 9,
+      name: r'source',
+      type: IsarType.byte,
+      enumMap: _CalendarEventsourceEnumValueMap,
+    ),
     r'start': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'start',
       type: IsarType.dateTime,
     ),
     r'title': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'title',
       type: IsarType.string,
+    ),
+    r'updatedAt': PropertySchema(
+      id: 12,
+      name: r'updatedAt',
+      type: IsarType.dateTime,
     )
   },
   estimateSize: _calendarEventEstimateSize,
@@ -158,11 +174,14 @@ void _calendarEventSerialize(
   writer.writeString(offsets[2], object.deviceEventId);
   writer.writeDateTime(offsets[3], object.end);
   writer.writeString(offsets[4], object.googleEventId);
-  writer.writeLongList(offsets[5], object.linkedTaskIds);
-  writer.writeString(offsets[6], object.recurrenceRuleJson);
-  writer.writeLong(offsets[7], object.reminderMinutesBefore);
-  writer.writeDateTime(offsets[8], object.start);
-  writer.writeString(offsets[9], object.title);
+  writer.writeBool(offsets[5], object.isLocalOnly);
+  writer.writeLongList(offsets[6], object.linkedTaskIds);
+  writer.writeString(offsets[7], object.recurrenceRuleJson);
+  writer.writeLong(offsets[8], object.reminderMinutesBefore);
+  writer.writeByte(offsets[9], object.source.index);
+  writer.writeDateTime(offsets[10], object.start);
+  writer.writeString(offsets[11], object.title);
+  writer.writeDateTime(offsets[12], object.updatedAt);
 }
 
 CalendarEvent _calendarEventDeserialize(
@@ -178,11 +197,15 @@ CalendarEvent _calendarEventDeserialize(
   object.end = reader.readDateTime(offsets[3]);
   object.googleEventId = reader.readStringOrNull(offsets[4]);
   object.id = id;
-  object.linkedTaskIds = reader.readLongList(offsets[5]) ?? [];
-  object.recurrenceRuleJson = reader.readStringOrNull(offsets[6]);
-  object.reminderMinutesBefore = reader.readLongOrNull(offsets[7]);
-  object.start = reader.readDateTime(offsets[8]);
-  object.title = reader.readString(offsets[9]);
+  object.linkedTaskIds = reader.readLongList(offsets[6]) ?? [];
+  object.recurrenceRuleJson = reader.readStringOrNull(offsets[7]);
+  object.reminderMinutesBefore = reader.readLongOrNull(offsets[8]);
+  object.source =
+      _CalendarEventsourceValueEnumMap[reader.readByteOrNull(offsets[9])] ??
+          EventSource.local;
+  object.start = reader.readDateTime(offsets[10]);
+  object.title = reader.readString(offsets[11]);
+  object.updatedAt = reader.readDateTimeOrNull(offsets[12]);
   return object;
 }
 
@@ -204,19 +227,37 @@ P _calendarEventDeserializeProp<P>(
     case 4:
       return (reader.readStringOrNull(offset)) as P;
     case 5:
-      return (reader.readLongList(offset) ?? []) as P;
+      return (reader.readBool(offset)) as P;
     case 6:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongList(offset) ?? []) as P;
     case 7:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 8:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 9:
+      return (_CalendarEventsourceValueEnumMap[reader.readByteOrNull(offset)] ??
+          EventSource.local) as P;
+    case 10:
+      return (reader.readDateTime(offset)) as P;
+    case 11:
       return (reader.readString(offset)) as P;
+    case 12:
+      return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
 }
+
+const _CalendarEventsourceEnumValueMap = {
+  'local': 0,
+  'device': 1,
+  'googleApi': 2,
+};
+const _CalendarEventsourceValueEnumMap = {
+  0: EventSource.local,
+  1: EventSource.device,
+  2: EventSource.googleApi,
+};
 
 Id _calendarEventGetId(CalendarEvent object) {
   return object.id;
@@ -1141,6 +1182,16 @@ extension CalendarEventQueryFilter
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      isLocalOnlyEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isLocalOnly',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
       linkedTaskIdsElementEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -1514,6 +1565,62 @@ extension CalendarEventQueryFilter
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      sourceEqualTo(EventSource value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'source',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      sourceGreaterThan(
+    EventSource value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'source',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      sourceLessThan(
+    EventSource value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'source',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      sourceBetween(
+    EventSource lower,
+    EventSource upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'source',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
       startEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -1704,6 +1811,80 @@ extension CalendarEventQueryFilter
       ));
     });
   }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      updatedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'updatedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      updatedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'updatedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      updatedAtEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      updatedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      updatedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+      updatedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'updatedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
 }
 
 extension CalendarEventQueryObject
@@ -1780,6 +1961,19 @@ extension CalendarEventQuerySortBy
     });
   }
 
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> sortByIsLocalOnly() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isLocalOnly', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
+      sortByIsLocalOnlyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isLocalOnly', Sort.desc);
+    });
+  }
+
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
       sortByRecurrenceRuleJson() {
     return QueryBuilder.apply(this, (query) {
@@ -1808,6 +2002,18 @@ extension CalendarEventQuerySortBy
     });
   }
 
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> sortBySource() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'source', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> sortBySourceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'source', Sort.desc);
+    });
+  }
+
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> sortByStart() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'start', Sort.asc);
@@ -1829,6 +2035,19 @@ extension CalendarEventQuerySortBy
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> sortByTitleDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.desc);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> sortByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
+      sortByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 }
@@ -1913,6 +2132,19 @@ extension CalendarEventQuerySortThenBy
     });
   }
 
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> thenByIsLocalOnly() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isLocalOnly', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
+      thenByIsLocalOnlyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isLocalOnly', Sort.desc);
+    });
+  }
+
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
       thenByRecurrenceRuleJson() {
     return QueryBuilder.apply(this, (query) {
@@ -1941,6 +2173,18 @@ extension CalendarEventQuerySortThenBy
     });
   }
 
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> thenBySource() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'source', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> thenBySourceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'source', Sort.desc);
+    });
+  }
+
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> thenByStart() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'start', Sort.asc);
@@ -1962,6 +2206,19 @@ extension CalendarEventQuerySortThenBy
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> thenByTitleDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.desc);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> thenByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
+      thenByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 }
@@ -2004,6 +2261,13 @@ extension CalendarEventQueryWhereDistinct
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QDistinct>
+      distinctByIsLocalOnly() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isLocalOnly');
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct>
       distinctByLinkedTaskIds() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'linkedTaskIds');
@@ -2025,6 +2289,12 @@ extension CalendarEventQueryWhereDistinct
     });
   }
 
+  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct> distinctBySource() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'source');
+    });
+  }
+
   QueryBuilder<CalendarEvent, CalendarEvent, QDistinct> distinctByStart() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'start');
@@ -2035,6 +2305,12 @@ extension CalendarEventQueryWhereDistinct
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'title', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct> distinctByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'updatedAt');
     });
   }
 }
@@ -2079,6 +2355,12 @@ extension CalendarEventQueryProperty
     });
   }
 
+  QueryBuilder<CalendarEvent, bool, QQueryOperations> isLocalOnlyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isLocalOnly');
+    });
+  }
+
   QueryBuilder<CalendarEvent, List<int>, QQueryOperations>
       linkedTaskIdsProperty() {
     return QueryBuilder.apply(this, (query) {
@@ -2100,6 +2382,12 @@ extension CalendarEventQueryProperty
     });
   }
 
+  QueryBuilder<CalendarEvent, EventSource, QQueryOperations> sourceProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'source');
+    });
+  }
+
   QueryBuilder<CalendarEvent, DateTime, QQueryOperations> startProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'start');
@@ -2109,6 +2397,12 @@ extension CalendarEventQueryProperty
   QueryBuilder<CalendarEvent, String, QQueryOperations> titleProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'title');
+    });
+  }
+
+  QueryBuilder<CalendarEvent, DateTime?, QQueryOperations> updatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'updatedAt');
     });
   }
 }

@@ -70,22 +70,14 @@ class DashboardDayMarkersBuilder {
     return event.start.isBefore(dayEnd) && event.end.isAfter(dayStart);
   }
 
-  /// Tasks anchored to this calendar day (due or reminder), not overdue spillover.
+  /// Root tasks visible on this day (same rules as the dashboard day list).
   static int _timedTaskCountOnDay(List<Task> tasks, DateTime day) {
     int count = 0;
     for (final Task task in tasks) {
       if (!TaskHierarchy.isRoot(task) || task.isCompleted) {
         continue;
       }
-
-      final DateTime? due = task.dueDate;
-      if (due != null && AppDateUtils.isSameCalendarDay(due, day)) {
-        count++;
-        continue;
-      }
-
-      final DateTime? reminder = task.reminderAt;
-      if (reminder != null && AppDateUtils.isSameCalendarDay(reminder, day)) {
+      if (TaskDateVisibility.isVisibleOnDate(task, day)) {
         count++;
       }
     }

@@ -4,6 +4,7 @@ import 'package:smart_planner/features/calendar_integration/data/services/calend
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/exceptions/calendar_exceptions.dart';
 import 'package:smart_planner/features/dashboard/domain/dashboard_day_markers_builder.dart';
+import 'package:smart_planner/features/dashboard/domain/visible_calendar_events_merger.dart';
 import 'package:smart_planner/features/dashboard/domain/day_activity_marker.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/todo_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
@@ -74,41 +75,50 @@ class DashboardDayMarkersRepository {
     required DateTime rangeStart,
     required DateTime rangeEnd,
   }) async {
-    final List<CalendarEvent> fromIsar =
+    List<CalendarEvent> fromDevice = const <CalendarEvent>[];
+    var deviceFetchSucceeded = false;
+
+    if (calendarIds.isNotEmpty) {
+      try {
+        fromDevice = await _calendarService.getEvents(
+          calendarIds: calendarIds,
+          from: rangeStart.subtract(const Duration(days: 1)),
+          to: rangeEnd.add(const Duration(days: 2)),
+        );
+        deviceFetchSucceeded = true;
+      } on CalendarPermissionDeniedException {
+        fromDevice = const <CalendarEvent>[];
+      } on CalendarServiceException {
+        fromDevice = const <CalendarEvent>[];
+      }
+    }
+
+    if (deviceFetchSucceeded) {
+      if (fromDevice.isNotEmpty) {
+        await _localCalendarEventRepository.upsertDeviceEvents(fromDevice);
+      }
+      await _localCalendarEventRepository.purgeStaleDeviceEvents(
+        fetchedInWindow: fromDevice,
+        windowStart: AppDateUtils.startOfDay(rangeStart),
+        windowEndExclusive:
+            AppDateUtils.startOfDay(rangeEnd).add(const Duration(days: 1)),
+        syncedCalendarIds: calendarIds.toSet(),
+      );
+    }
+
+    final List<CalendarEvent> fromIsarAfterSync =
         await _localCalendarEventRepository.getAll();
 
-    final List<CalendarEvent> fromDevice = calendarIds.isEmpty
-        ? <CalendarEvent>[]
-        : await _loadCalendarEventsFromDevice(
-            calendarIds: calendarIds,
-            rangeStart: rangeStart,
-            rangeEnd: rangeEnd,
-          );
-
-    final Map<String, CalendarEvent> byDeviceId = <String, CalendarEvent>{
-      for (final CalendarEvent e in fromIsar) e.deviceEventId: e,
-    };
-    for (final CalendarEvent e in fromDevice) {
-      byDeviceId[e.deviceEventId] = e;
-    }
-    return byDeviceId.values.toList(growable: false);
-  }
-
-  Future<List<CalendarEvent>> _loadCalendarEventsFromDevice({
-    required List<String> calendarIds,
-    required DateTime rangeStart,
-    required DateTime rangeEnd,
-  }) async {
-    try {
-      return await _calendarService.getEvents(
-        calendarIds: calendarIds,
-        from: rangeStart.subtract(const Duration(days: 1)),
-        to: rangeEnd.add(const Duration(days: 2)),
-      );
-    } on CalendarPermissionDeniedException {
-      return <CalendarEvent>[];
-    } on CalendarServiceException {
-      return <CalendarEvent>[];
-    }
+    final Set<String> allowedCalendarIds = calendarIds.toSet();
+    return VisibleCalendarEventsMerger.mergeForRange(
+      rangeStart: rangeStart,
+      rangeEnd: rangeEnd,
+      deviceEventsInRange: fromDevice,
+      allStored: fromIsarAfterSync,
+    ).where(
+      (CalendarEvent event) =>
+          allowedCalendarIds.isEmpty ||
+          allowedCalendarIds.contains(event.calendarId),
+    ).toList(growable: false);
   }
 }

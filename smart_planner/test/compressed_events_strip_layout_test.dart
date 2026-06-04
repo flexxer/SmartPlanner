@@ -44,6 +44,25 @@ void main() {
     expect(layout.focusScrollLeft, isNotNull);
   });
 
+  test('hides now indicator before the first event starts', () {
+    final DateTime day = DateTime(2026, 5, 23);
+    final CalendarEvent evening = _event(
+      title: 'Evening',
+      start: day.add(const Duration(hours: 18)),
+      end: day.add(const Duration(hours: 19)),
+    );
+
+    final CompressedEventsStripLayout layout =
+        CompressedEventsStripLayout.build(
+      events: <CalendarEvent>[evening],
+      selectedDate: day,
+      now: day.add(const Duration(hours: 12)),
+      isToday: true,
+    );
+
+    expect(layout.nowIndicatorLeft, isNull);
+  });
+
   test('keeps short gaps as a small fixed spacing only', () {
     final DateTime day = DateTime(2026, 5, 23);
     final CalendarEvent first = _event(

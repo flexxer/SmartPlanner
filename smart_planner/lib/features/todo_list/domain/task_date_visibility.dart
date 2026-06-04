@@ -1,4 +1,5 @@
 import 'package:smart_planner/core/utils/app_date_utils.dart';
+import 'package:smart_planner/features/calendar_integration/domain/recurrence_evaluator.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
 
@@ -47,6 +48,14 @@ class TaskDateVisibility {
     }
 
     final DateTime dueDay = AppDateUtils.startOfDay(due);
+    if (task.recurrenceRuleJson != null && task.recurrenceRuleJson!.isNotEmpty) {
+      return RecurrenceEvaluator.shouldShowOnDate(
+        anchor: due,
+        recurrenceRuleJson: task.recurrenceRuleJson,
+        targetDate: day,
+      );
+    }
+
     if (dueDay.isAfter(day)) {
       return false;
     }
@@ -78,13 +87,27 @@ class TaskDateVisibility {
         continue;
       }
 
-      DateTime day = AppDateUtils.startOfDay(due);
-      if (day.isBefore(start)) {
-        day = start;
-      }
-      while (!day.isAfter(end)) {
-        keys.add(AppDateUtils.dayKeyMs(day));
-        day = day.add(const Duration(days: 1));
+      if (task.recurrenceRuleJson != null && task.recurrenceRuleJson!.isNotEmpty) {
+        for (DateTime day = start;
+            !day.isAfter(end);
+            day = day.add(const Duration(days: 1))) {
+          if (RecurrenceEvaluator.shouldShowOnDate(
+            anchor: due,
+            recurrenceRuleJson: task.recurrenceRuleJson,
+            targetDate: day,
+          )) {
+            keys.add(AppDateUtils.dayKeyMs(day));
+          }
+        }
+      } else {
+        DateTime day = AppDateUtils.startOfDay(due);
+        if (day.isBefore(start)) {
+          day = start;
+        }
+        while (!day.isAfter(end)) {
+          keys.add(AppDateUtils.dayKeyMs(day));
+          day = day.add(const Duration(days: 1));
+        }
       }
     }
 

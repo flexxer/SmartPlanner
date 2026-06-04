@@ -2,8 +2,11 @@ import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:isar/isar.dart';
-import 'package:smart_planner/features/todo_list/data/attachment_file_store.dart';
+import 'package:smart_planner/features/attachment_templates/data/repositories/attachment_template_repository.dart';
+import 'package:smart_planner/features/attachment_templates/domain/attachment_template_factory.dart';
+import 'package:smart_planner/features/attachment_templates/presentation/widgets/save_attachment_template_dialog.dart';
 import 'package:smart_planner/features/todo_list/data/attachment_file_store.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_payloads.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_ref.dart';
@@ -23,6 +26,7 @@ class TaskAttachmentsSection extends StatelessWidget {
     required this.onDeleteAttachment,
     required this.onToggleChecklistItem,
     required this.onAddAttachment,
+    this.onReorder,
     super.key,
   });
 
@@ -32,6 +36,7 @@ class TaskAttachmentsSection extends StatelessWidget {
   final void Function(AttachmentRef attachment) onDeleteAttachment;
   final void Function(Id attachmentId, int itemLocalId) onToggleChecklistItem;
   final VoidCallback onAddAttachment;
+  final void Function(int oldIndex, int newIndex)? onReorder;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +67,35 @@ class TaskAttachmentsSection extends StatelessWidget {
               fontStyle: FontStyle.italic,
             ),
           )
-        else ...<Widget>[
+        else if (onReorder != null) ...<Widget>[
+          Text(
+            'attachments_reorder_hint'.tr(),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            itemCount: attachments.length,
+            onReorder: onReorder!,
+            itemBuilder: (BuildContext context, int index) {
+              final AttachmentRef attachment = attachments[index];
+              return _ReorderableAttachmentRow(
+                key: ValueKey<int>(attachment.id),
+                index: index,
+                attachment: attachment,
+                fileStore: fileStore,
+                onEditAttachment: () => onEditAttachment(attachment),
+                onDeleteAttachment: () => onDeleteAttachment(attachment),
+                onToggleNoteItem: (int localId) =>
+                    onToggleChecklistItem(attachment.id, localId),
+              );
+            },
+          ),
+        ] else ...<Widget>[
           if (checklists.isNotEmpty) ...<Widget>[
             TaskTileSectionHeader(
               icon: Icons.fact_check,
@@ -132,6 +165,58 @@ class TaskAttachmentsSection extends StatelessWidget {
   }
 }
 
+class _ReorderableAttachmentRow extends StatelessWidget {
+  const _ReorderableAttachmentRow({
+    required super.key,
+    required this.index,
+    required this.attachment,
+    required this.fileStore,
+    required this.onEditAttachment,
+    required this.onDeleteAttachment,
+    required this.onToggleNoteItem,
+  });
+
+  final int index;
+  final AttachmentRef attachment;
+  final AttachmentFileStore fileStore;
+  final VoidCallback onEditAttachment;
+  final VoidCallback onDeleteAttachment;
+  final void Function(int localId) onToggleNoteItem;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          ReorderableDragStartListener(
+            index: index,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 12, 4, 8),
+              child: Icon(
+                Icons.drag_handle,
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Expanded(
+            child: _AttachmentTile(
+              attachment: attachment,
+              fileStore: fileStore,
+              onEditAttachment: onEditAttachment,
+              onDeleteAttachment: onDeleteAttachment,
+              onToggleNoteItem: onToggleNoteItem,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AttachmentTile extends StatelessWidget {
   const _AttachmentTile({
     required this.attachment,
@@ -147,13 +232,44 @@ class _AttachmentTile extends StatelessWidget {
   final VoidCallback onDeleteAttachment;
   final void Function(int localId) onToggleNoteItem;
 
+  Future<void> _saveAsTemplate(BuildContext context) async {
+    final String initialTitle = TaskAttachmentCodec.summaryLabelRef(attachment);
+    final String? title = await showSaveAttachmentTemplateDialog(
+      context,
+      initialTitle: initialTitle,
+    );
+    if (title == null || !context.mounted) {
+      return;
+    }
+    final AttachmentTemplateRepository repository =
+        context.read<AttachmentTemplateRepository>();
+    final int sortOrder = await repository.nextSortOrder();
+    await repository.save(
+      AttachmentTemplateFactory.fromAttachmentRef(
+        attachment,
+        title: title,
+        sortOrder: sortOrder,
+      ),
+    );
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('attachment_template_saved'.tr())),
+    );
+  }
+
   Future<void> _showActions(BuildContext context) async {
+    final bool canTemplate =
+        AttachmentTemplateFactory.canSaveAsTemplate(attachment.type);
     await showAttachmentActionSheetRef(
       context,
       attachment: attachment,
       fileStore: fileStore,
       onEdit: onEditAttachment,
       onDelete: onDeleteAttachment,
+      onSaveAsTemplate:
+          canTemplate ? () => _saveAsTemplate(context) : null,
     );
   }
 

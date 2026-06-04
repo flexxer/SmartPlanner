@@ -1,22 +1,28 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:isar/isar.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
+import 'package:smart_planner/core/presentation/widgets/confirm_delete_record.dart';
+import 'package:smart_planner/core/presentation/widgets/form_sheet_scaffold.dart';
+import 'package:smart_planner/features/calendar_integration/presentation/widgets/linked_calendars_field.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
-import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
+import 'package:smart_planner/features/calendar_integration/data/task_event_link_service.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
+import 'package:smart_planner/features/dashboard/presentation/record_delete_coordinator.dart';
 import 'package:smart_planner/features/templates/domain/entities/ui_template.dart';
+import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_frequency.dart';
+import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_rule.dart';
 import 'package:smart_planner/features/templates/domain/ui_template_applicator.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/todo_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_priority.dart';
-import 'package:smart_planner/features/notifications/data/item_reminder_scheduler.dart';
+import 'package:smart_planner/features/notifications/data/reminder_sync_service.dart';
 import 'package:smart_planner/features/notifications/domain/task_reminder_defaults.dart';
 import 'package:smart_planner/features/notifications/presentation/widgets/reminder_at_field.dart';
-import 'package:smart_planner/features/todo_list/presentation/widgets/task_linked_calendars_field.dart';
 
 /// Bottom sheet to create or edit a [Task].
 class TaskFormSheet extends StatefulWidget {
@@ -27,7 +33,6 @@ class TaskFormSheet extends StatefulWidget {
     this.initialLinkedEventId,
     this.initialCalendarId,
     this.linkedEventTitle,
-    this.localCalendarRepository,
     this.selectedCalendarIds,
     this.dashboardBloc,
     this.templateToApply,
@@ -42,8 +47,6 @@ class TaskFormSheet extends StatefulWidget {
 
   /// When set, the sheet opens in edit mode with fields prefilled.
   final Task? taskToEdit;
-
-  final LocalCalendarEventRepository? localCalendarRepository;
 
   /// Used when creating a task (ignored if [taskToEdit] is set).
   final DateTime? initialDueDate;
@@ -85,6 +88,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
   late TaskPriority _priority;
   String? _selectedCalendarId;
   DateTime? _reminderAt;
+  RecurrenceFrequency _recurrenceFrequency = RecurrenceFrequency.none;
   bool _reminderLoaded = false;
   bool _saving = false;
 
@@ -101,6 +105,8 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       final String calendarId = existing.calendarId;
       _selectedCalendarId = calendarId.isEmpty ? null : calendarId;
       _reminderAt = existing.reminderAt;
+      _recurrenceFrequency =
+          existing.recurrenceRule?.frequency ?? RecurrenceFrequency.none;
       _reminderLoaded = true;
     } else {
       final UiTemplate? template = widget.templateToApply;
@@ -160,39 +166,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
   }
 
   Future<void> _syncReminderForTask(Task task) async {
-    try {
-      await ItemReminderScheduler().syncTask(task);
-    } on Object {
-      // Scheduling is best-effort; save already succeeded.
-    }
-  }
-
-  Future<bool> _confirmDeleteRecord() async {
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        final ColorScheme colors = Theme.of(dialogContext).colorScheme;
-        return AlertDialog(
-          title: Text('delete_dialog_title'.tr()),
-          content: Text('delete_dialog_body'.tr()),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text('common_cancel'.tr()),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: FilledButton.styleFrom(
-                backgroundColor: colors.error,
-                foregroundColor: colors.onError,
-              ),
-              child: Text('common_delete'.tr()),
-            ),
-          ],
-        );
-      },
-    );
-    return confirmed ?? false;
+    await context.read<ReminderSyncService>().syncTask(task);
   }
 
   Future<void> _deleteTask() async {
@@ -202,15 +176,21 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       return;
     }
 
-    final bool confirmed = await _confirmDeleteRecord();
+    final bool confirmed = await confirmDeleteRecord(context);
     if (!confirmed || !mounted) {
       return;
     }
 
-    bloc.add(DeleteTask(task.id));
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    await RecordDeleteCoordinator.deleteTask(
+      context,
+      task: task,
+      bloc: bloc,
+      onDeleted: () {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+    );
   }
 
   Future<void> _save() async {
@@ -254,6 +234,13 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
     }
   }
 
+  RecurrenceRule? _buildRecurrenceRule() {
+    if (_dueDate == null || _recurrenceFrequency == RecurrenceFrequency.none) {
+      return null;
+    }
+    return RecurrenceRule(frequency: _recurrenceFrequency);
+  }
+
   Future<void> _saveEdit({
     required String title,
     required String calendarId,
@@ -266,7 +253,8 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       ..dueDate = _dueDate
       ..priority = _priority
       ..calendarId = calendarId
-      ..reminderAt = _reminderAt;
+      ..reminderAt = _reminderAt
+      ..recurrenceRule = _buildRecurrenceRule();
     task.markUpdated();
 
     final DashboardBloc? bloc = widget.dashboardBloc;
@@ -294,18 +282,18 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       dueDate: _dueDate,
       priority: _priority,
       calendarId: calendarId,
-      linkedEventId: widget.initialLinkedEventId,
       reminderAt: _reminderAt,
-    );
+    )..recurrenceRule = _buildRecurrenceRule();
     final Id taskId = await widget.repository.saveTask(task);
     task.id = taskId;
+    final TaskEventLinkService linkService =
+        context.read<TaskEventLinkService>();
     await _syncReminderForTask(task);
-    final Id? linkedEventId = widget.initialLinkedEventId;
-    final LocalCalendarEventRepository? localRepo =
-        widget.localCalendarRepository;
-    if (linkedEventId != null && localRepo != null) {
-      await localRepo.linkTask(eventId: linkedEventId, taskId: taskId);
-    }
+    await linkService.applyPostCreateRelations(
+      taskId: taskId,
+      linkedEventId: widget.initialLinkedEventId,
+      parentTaskId: widget.initialParentTaskId,
+    );
 
     final UiTemplate? template = widget.templateToApply;
     final TaskAttachmentRepository? attachmentRepo =
@@ -314,14 +302,6 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       await UiTemplateApplicator(
         attachmentRepository: attachmentRepo,
       ).applyToTask(taskId: taskId, template: template);
-    }
-
-    final Id? parentTaskId = widget.initialParentTaskId;
-    if (parentTaskId != null) {
-      await widget.repository.attachTaskToParent(
-        childTaskId: taskId,
-        parentTaskId: parentTaskId,
-      );
     }
 
     if (mounted) {
@@ -335,85 +315,59 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final EdgeInsets viewInsets = MediaQuery.viewInsetsOf(context);
     final bool isEditing = widget.isEditing;
     final ColorScheme colors = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: viewInsets.bottom),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      isEditing ? 'task_edit'.tr() : 'task_new'.tr(),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  if (isEditing)
-                    IconButton(
-                      tooltip: 'task_delete_tooltip'.tr(),
-                      onPressed: _saving ? null : _deleteTask,
-                      icon: Icon(
-                        Icons.delete_outline,
-                        color: colors.error,
-                      ),
-                    ),
-                ],
+    return FormSheetScaffold(
+      title: isEditing ? 'task_edit'.tr() : 'task_new'.tr(),
+      onDelete: isEditing ? _deleteTask : null,
+      deleteEnabled: !_saving,
+      headerChildren: <Widget>[
+        if (!isEditing && widget.templateToApply != null) ...<Widget>[
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Chip(
+              avatar: const Icon(Icons.layers_outlined, size: 18),
+              label: Text(
+                'task_template_applied'.tr(
+                  namedArgs: <String, String>{
+                    'title': widget.templateToApply!.title,
+                  },
+                ),
+                style: Theme.of(context).textTheme.labelMedium,
               ),
-              if (!isEditing && widget.templateToApply != null) ...<Widget>[
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Chip(
-                    avatar: const Icon(Icons.layers_outlined, size: 18),
-                    label: Text(
-                      'task_template_applied'.tr(
-                        namedArgs: <String, String>{
-                          'title': widget.templateToApply!.title,
-                        },
-                      ),
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                    backgroundColor: colors.surfaceContainerHighest,
-                    side: BorderSide.none,
-                  ),
+              backgroundColor: colors.surfaceContainerHighest,
+              side: BorderSide.none,
+            ),
+          ),
+        ],
+        if (!isEditing &&
+            widget.initialLinkedEventId != null &&
+            widget.linkedEventTitle != null &&
+            widget.linkedEventTitle!.trim().isNotEmpty) ...<Widget>[
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Chip(
+              label: Text(
+                'task_linked_meeting_label'.tr(
+                  namedArgs: <String, String>{
+                    'title': widget.linkedEventTitle!.trim(),
+                  },
                 ),
-              ],
-              if (!isEditing &&
-                  widget.initialLinkedEventId != null &&
-                  widget.linkedEventTitle != null &&
-                  widget.linkedEventTitle!.trim().isNotEmpty) ...<Widget>[
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Chip(
-                    label: Text(
-                      'task_linked_meeting_label'.tr(
-                        namedArgs: <String, String>{
-                          'title': widget.linkedEventTitle!.trim(),
-                        },
-                      ),
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: colors.primary,
                     ),
-                    backgroundColor: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest,
-                    side: BorderSide.none,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
+              ),
+              backgroundColor: colors.surfaceContainerHighest,
+              side: BorderSide.none,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+            ),
+          ),
+        ],
+      ],
+      children: <Widget>[
               TextField(
                 controller: _titleController,
                 decoration: InputDecoration(
@@ -432,7 +386,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
                 maxLines: isEditing ? 3 : 2,
               ),
               const SizedBox(height: 12),
-              TaskLinkedCalendarsField(
+              LinkedCalendarsField(
                 selectedCalendarId: _selectedCalendarId,
                 selectedCalendarIds: widget.selectedCalendarIds,
                 onCalendarSelected: (DeviceCalendarInfo calendar) {
@@ -488,6 +442,34 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
                   ],
                 ],
               ),
+              if (_dueDate != null) ...<Widget>[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<RecurrenceFrequency>(
+                  initialValue: _recurrenceFrequency,
+                  decoration: InputDecoration(
+                    labelText: 'task_field_recurrence'.tr(),
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: <RecurrenceFrequency>[
+                    RecurrenceFrequency.none,
+                    RecurrenceFrequency.daily,
+                    RecurrenceFrequency.weekly,
+                  ]
+                      .map(
+                        (RecurrenceFrequency frequency) =>
+                            DropdownMenuItem<RecurrenceFrequency>(
+                          value: frequency,
+                          child: Text(L10n.recurrenceLabel(frequency.name)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (RecurrenceFrequency? value) {
+                    if (value != null) {
+                      setState(() => _recurrenceFrequency = value);
+                    }
+                  },
+                ),
+              ],
               if (_reminderLoaded) ...<Widget>[
                 const SizedBox(height: 12),
                 ReminderAtField(
@@ -498,24 +480,14 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
                 ),
               ],
               const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(
-                        isEditing
-                            ? 'task_save_changes'.tr()
-                            : 'common_save'.tr(),
-                      ),
+              FormSheetSaveButton(
+                label: isEditing
+                    ? 'task_save_changes'.tr()
+                    : 'common_save'.tr(),
+                enabled: !_saving,
+                onPressed: _save,
               ),
-            ],
-          ),
-        ),
-      ),
+      ],
     );
   }
 }

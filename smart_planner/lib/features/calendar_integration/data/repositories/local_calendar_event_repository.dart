@@ -1,10 +1,14 @@
 import 'package:isar/isar.dart';
 import 'package:smart_planner/core/database/isar_database.dart';
+import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
+import 'package:smart_planner/features/calendar_integration/domain/entities/event_source.dart';
+import 'package:smart_planner/features/calendar_integration/domain/device_calendar_stale_purge.dart';
+import 'package:smart_planner/features/calendar_integration/domain/repositories/calendar_event_store.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 
 /// Isar persistence for local [CalendarEvent] records and task↔event links.
-class LocalCalendarEventRepository {
+class LocalCalendarEventRepository implements CalendarEventStore {
   LocalCalendarEventRepository({Isar? isar}) : _isar = isar;
 
   final Isar? _isar;
@@ -23,8 +27,16 @@ class LocalCalendarEventRepository {
           .findFirst();
 
   /// Saves a user-created or edited local event (not synced to device calendar).
-  Future<Id> saveLocalEvent(CalendarEvent event) =>
-      _db.writeTxn(() => _db.calendarEvents.put(event));
+  Future<Id> saveLocalEvent(CalendarEvent event) {
+    event.markUpdated();
+    return _db.writeTxn(() => _db.calendarEvents.put(event));
+  }
+
+  /// Restores a deleted row with the same [CalendarEvent.id] (undo delete).
+  Future<Id> restoreEvent(CalendarEvent event) {
+    event.markUpdated();
+    return _db.writeTxn(() => _db.calendarEvents.put(event));
+  }
 
   /// Persists device-calendar rows without dropping local link/recurrence metadata.
   Future<void> upsertDeviceEvents(List<CalendarEvent> fromDevice) async {
@@ -34,25 +46,96 @@ class LocalCalendarEventRepository {
 
     await _db.writeTxn(() async {
       for (final CalendarEvent incoming in fromDevice) {
-        final CalendarEvent? existing =
+        CalendarEvent? existing =
             await _db.calendarEvents
                 .filter()
                 .deviceEventIdEqualTo(incoming.deviceEventId)
                 .findFirst();
 
+        existing ??= await _findReconcilableLocalDuplicate(incoming);
+
         if (existing != null) {
+          if (existing.isLocalOnly) {
+            existing.deviceEventId = incoming.deviceEventId;
+          }
           existing
             ..title = incoming.title
             ..start = incoming.start
             ..end = incoming.end
             ..calendarId = incoming.calendarId
-            ..colorValue = incoming.colorValue;
+            ..colorValue = incoming.colorValue
+            ..source = EventSource.device;
+          if (incoming.googleEventId != null) {
+            existing.googleEventId = incoming.googleEventId;
+          }
+          if (incoming.recurrenceRuleJson != null) {
+            existing.recurrenceRuleJson = incoming.recurrenceRuleJson;
+          }
+          if (incoming.reminderMinutesBefore != null) {
+            existing.reminderMinutesBefore = incoming.reminderMinutesBefore;
+          }
+          if (incoming.linkedTaskIds.isNotEmpty) {
+            existing.linkedTaskIds = List<int>.from(incoming.linkedTaskIds);
+          }
+          existing.markUpdated();
           await _db.calendarEvents.put(existing);
         } else {
+          incoming.source = EventSource.device;
           await _db.calendarEvents.put(incoming);
         }
       }
     });
+  }
+
+  /// Removes device rows in the sync window missing from [fetchedInWindow].
+  @override
+  Future<int> purgeStaleDeviceEvents({
+    required List<CalendarEvent> fetchedInWindow,
+    required DateTime windowStart,
+    required DateTime windowEndExclusive,
+    required Set<String> syncedCalendarIds,
+  }) async {
+    if (syncedCalendarIds.isEmpty) {
+      return 0;
+    }
+
+    final List<CalendarEvent> allStored = await getAll();
+    final List<CalendarEvent> stale = DeviceCalendarStalePurge.rowsToRemove(
+      allStored: allStored,
+      fetchedInWindow: fetchedInWindow,
+      windowStart: windowStart,
+      windowEndExclusive: windowEndExclusive,
+      syncedCalendarIds: syncedCalendarIds,
+    );
+
+    var removed = 0;
+    for (final CalendarEvent event in stale) {
+      if (await deleteLocalEvent(event.id)) {
+        removed++;
+      }
+    }
+    return removed;
+  }
+
+  /// Matches app-created `local_*` rows to imported device events (same title/day).
+  Future<CalendarEvent?> _findReconcilableLocalDuplicate(
+    CalendarEvent incoming,
+  ) async {
+    final List<CalendarEvent> localRows = await _db.calendarEvents
+        .filter()
+        .deviceEventIdStartsWith('local_')
+        .findAll();
+    final String titleKey = incoming.title.trim().toLowerCase();
+    for (final CalendarEvent local in localRows) {
+      if (local.title.trim().toLowerCase() != titleKey) {
+        continue;
+      }
+      if (!AppDateUtils.isSameCalendarDay(local.start, incoming.start)) {
+        continue;
+      }
+      return local;
+    }
+    return null;
   }
 
   Future<void> linkTask({
@@ -74,6 +157,7 @@ class LocalCalendarEventRepository {
       if (!event.linkedTaskIds.contains(taskId)) {
         event.linkedTaskIds = <int>[...event.linkedTaskIds, taskId];
       }
+      event.markUpdated();
 
       await _db.tasks.put(task);
       await _db.calendarEvents.put(event);
@@ -103,6 +187,7 @@ class LocalCalendarEventRepository {
     if (event != null) {
       event.linkedTaskIds =
           event.linkedTaskIds.where((int id) => id != task.id).toList();
+      event.markUpdated();
       await _db.calendarEvents.put(event);
     }
   }

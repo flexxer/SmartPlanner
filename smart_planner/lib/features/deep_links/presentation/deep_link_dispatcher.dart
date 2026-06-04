@@ -1,22 +1,24 @@
 import 'dart:async';
 
+import 'package:isar/isar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_state.dart';
 import 'package:smart_planner/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:smart_planner/features/deep_links/data/deep_link_service.dart';
-import 'package:smart_planner/features/deep_links/domain/deep_link_create_action.dart';
+import 'package:smart_planner/features/deep_links/domain/deep_link_action.dart';
+import 'package:smart_planner/features/templates/data/repositories/ui_template_repository.dart';
+import 'package:smart_planner/features/templates/domain/entities/ui_template.dart';
 /// Listens for deep links and opens create sheets on the dashboard.
 class DeepLinkDispatcher extends StatefulWidget {
   const DeepLinkDispatcher({
-    required this.navigatorKey,
     required this.deepLinkService,
     required this.child,
     super.key,
   });
 
-  final GlobalKey<NavigatorState> navigatorKey;
   final DeepLinkService deepLinkService;
   final Widget child;
 
@@ -25,10 +27,8 @@ class DeepLinkDispatcher extends StatefulWidget {
 }
 
 class _DeepLinkDispatcherState extends State<DeepLinkDispatcher> {
-  StreamSubscription<DeepLinkCreateAction>? _subscription;
-  DeepLinkCreateAction? _pending;
-  int _dispatchAttempts = 0;
-  static const int _maxDispatchAttempts = 30;
+  StreamSubscription<DeepLinkAction>? _subscription;
+  DeepLinkAction? _pending;
 
   @override
   void initState() {
@@ -43,9 +43,11 @@ class _DeepLinkDispatcherState extends State<DeepLinkDispatcher> {
     super.dispose();
   }
 
-  void _onDeepLink(DeepLinkCreateAction action) {
+  void _onDeepLink(DeepLinkAction action) {
+    if (action is DeepLinkRefreshWidgetAction) {
+      return;
+    }
     _pending = action;
-    _dispatchAttempts = 0;
     _scheduleDispatch();
   }
 
@@ -54,77 +56,73 @@ class _DeepLinkDispatcherState extends State<DeepLinkDispatcher> {
   }
 
   Future<void> _dispatch() async {
-    final DeepLinkCreateAction? action = _pending;
-    if (action == null) {
+    final DeepLinkAction? action = _pending;
+    if (action == null || !mounted) {
       return;
     }
 
-    final BuildContext? navContext = widget.navigatorKey.currentContext;
-    if (navContext == null) {
-      _retryLater();
-      return;
-    }
-
-    if (!navContext.mounted) {
-      _retryLater();
-      return;
-    }
-
-    final NavigatorState? navigator = widget.navigatorKey.currentState;
-    if (navigator != null && navigator.canPop()) {
-      navigator.popUntil((Route<dynamic> route) => route.isFirst);
-    }
-
-    if (!navContext.mounted) {
-      _retryLater();
-      return;
-    }
-
-    final DashboardState dashboardState = navContext.read<DashboardBloc>().state;
+    final DashboardState dashboardState = context.read<DashboardBloc>().state;
     if (dashboardState is! DashboardLoaded) {
-      _retryLater();
       return;
     }
 
     _pending = null;
-    _dispatchAttempts = 0;
+
+    final NavigatorState navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.popUntil((Route<dynamic> route) => route.isFirst);
+    }
+
+    if (!mounted) {
+      return;
+    }
 
     final List<String> selectedCalendarIds = dashboardState.selectedCalendarIds;
 
     switch (action) {
+      case DeepLinkRefreshWidgetAction():
+        return;
       case DeepLinkCreateTaskAction():
         await DashboardScreen.openTaskFormSheet(
-          navContext,
+          context,
           initialTitle: action.title,
           initialPriority: action.priority,
-          initialDueDate: dashboardState.selectedDate,
+          initialDueDate: AppDateUtils.startOfDay(DateTime.now()),
           selectedCalendarIds: selectedCalendarIds,
         );
       case DeepLinkCreateEventAction():
-        final DateTime day = dashboardState.selectedDate;
         await DashboardScreen.openEventFormSheet(
-          navContext,
-          initialDay: day,
+          context,
+          initialDay: dashboardState.selectedDate,
           initialTitle: action.title,
           initialStart: action.start,
           initialEnd: action.end,
           selectedCalendarIds: selectedCalendarIds,
         );
+      case DeepLinkCreateTaskFromTemplateAction(:final Id templateId):
+        final UiTemplate? template =
+            await context.read<UiTemplateRepository>().getById(templateId);
+        if (!mounted || template == null) {
+          return;
+        }
+        await DashboardScreen.openTaskFormSheet(
+          context,
+          initialDueDate: AppDateUtils.startOfDay(dashboardState.selectedDate),
+          selectedCalendarIds: selectedCalendarIds,
+          templateToApply: template,
+        );
     }
-  }
-
-  void _retryLater() {
-    if (_pending == null) {
-      return;
-    }
-    _dispatchAttempts++;
-    if (_dispatchAttempts >= _maxDispatchAttempts) {
-      _pending = null;
-      return;
-    }
-    _scheduleDispatch();
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    return BlocListener<DashboardBloc, DashboardState>(
+      listenWhen: (DashboardState previous, DashboardState current) =>
+          current is DashboardLoaded && _pending != null,
+      listener: (BuildContext context, DashboardState state) {
+        unawaited(_dispatch());
+      },
+      child: widget.child,
+    );
+  }
 }

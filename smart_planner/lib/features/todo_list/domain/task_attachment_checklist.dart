@@ -1,4 +1,6 @@
+import 'package:smart_planner/features/calendar_integration/domain/entities/event_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_payloads.dart';
+import 'package:smart_planner/features/todo_list/domain/entities/attachment_ref.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.dart';
 
@@ -22,6 +24,33 @@ class TaskAttachmentChecklist {
   static bool toggleItem(TaskAttachment attachment, int itemLocalId) {
     final ChecklistAttachmentPayload checklist =
         TaskAttachmentCodec.checklist(attachment);
+    final int index = checklist.items.indexWhere(
+      (ChecklistItemPayload i) => i.localId == itemLocalId,
+    );
+    if (index < 0) {
+      return false;
+    }
+    final List<ChecklistItemPayload> updated =
+        List<ChecklistItemPayload>.from(checklist.items);
+    final ChecklistItemPayload current = updated[index];
+    updated[index] = ChecklistItemPayload(
+      localId: current.localId,
+      text: current.text,
+      isCompleted: !current.isCompleted,
+    );
+    attachment.payloadJson = TaskAttachmentCodec.encodeMap(
+      ChecklistAttachmentPayload(
+        title: checklist.title,
+        items: updated,
+      ).toJson(),
+    );
+    return true;
+  }
+
+  /// Toggles a checklist item on an [EventAttachment] (same payload format as tasks).
+  static bool toggleEventItem(EventAttachment attachment, int itemLocalId) {
+    final ChecklistAttachmentPayload checklist =
+        TaskAttachmentCodec.checklistRef(AttachmentRef.fromEvent(attachment));
     final int index = checklist.items.indexWhere(
       (ChecklistItemPayload i) => i.localId == itemLocalId,
     );

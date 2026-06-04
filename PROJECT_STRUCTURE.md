@@ -23,18 +23,34 @@ smart_planner/lib/
 ├── app.dart                           # MaterialApp, locale delegates, repositories
 │
 ├── core/                              # Shared infrastructure
-│   ├── app_initializer.dart           # Isar, notifications, workmanager, task seed
+│   ├── app_initializer.dart           # Isar, notifications, workmanager, task seed, [ItemReminderScheduler]
 │   ├── localization/                  # easy_localization helpers + language picker
 │   │   ├── app_locales.dart           # supported locales (en, ru, es)
 │   │   ├── locale_preferences_repository.dart  # manual language override (SharedPreferences)
 │   │   ├── l10n.dart                  # L10n.tr, overdueDays, priorityLabel, dateFormat
 │   │   └── language_picker_section.dart  # dropdown on CalendarSettingsPage
 │   ├── theme/app_theme.dart           # Light + dark Material 3 themes
-│   ├── database/isar_database.dart    # Isar singleton (Task, TaskAttachment, CalendarEvent)
-│   ├── network/google_calendar_api_client.dart  # OAuth stub (future)
+│   ├── database/isar_database.dart    # Isar singleton (tasks, events, sync, templates)
+│   ├── presentation/widgets/
+│   │   ├── settings_expandable_section.dart  # Grouped settings blocks
+│   │   ├── form_sheet_scaffold.dart          # Shared create/edit sheet layout
+│   │   ├── confirm_delete_record.dart        # Delete confirmation dialog
+│   │   ├── delete_undo_snackbar.dart         # 10s undo after delete
+│   │   └── calendar_picker_message.dart      # Calendar load error / permission UI
+│   ├── timezone/timezone_monitor.dart # Detect TZ change → reschedule reminders
 │   └── utils/app_date_utils.dart      # startOfDay, startOfWeek, dayKeyMs, strip ranges
 │
 ├── features/
+│   │
+│   ├── sync/                          # Sync-ready schema (future cloud sync)
+│   │   ├── domain/
+│   │   │   ├── entities/sync_account.dart   # Connected cloud account
+│   │   │   ├── entities/sync_record.dart    # localId ↔ remoteId, etag, pending op
+│   │   │   ├── sync_entity_type.dart
+│   │   │   └── sync_pending_op.dart
+│   │   └── data/
+│   │       ├── sync_account_repository.dart
+│   │       └── sync_record_repository.dart
 │   │
 │   ├── calendar_integration/
 │   │   ├── data/
@@ -43,10 +59,12 @@ smart_planner/lib/
 │   │   │   │   └── calendar_service.dart          # typedef export
 │   │   │   ├── repositories/device_calendar_repository.dart
 │   │   │   ├── repositories/local_calendar_event_repository.dart
+│   │   │   ├── repositories/event_attachment_repository.dart
 │   │   │   ├── calendar_preferences_repository.dart
-│   │   │   └── linked_calendars_loader.dart
+│   │   │   ├── linked_calendars_loader.dart
+│   │   │   └── task_event_link_service.dart       # task↔event link + parent attach
 │   │   ├── domain/
-│   │   │   ├── entities/          # CalendarEvent, DeviceCalendarInfo
+│   │   │   ├── entities/          # CalendarEvent, EventAttachment, DeviceCalendarInfo
 │   │   │   ├── calendar_context_colors.dart
 │   │   │   ├── exceptions/
 │   │   │   ├── repositories/calendar_repository.dart
@@ -58,8 +76,9 @@ smart_planner/lib/
 │   │       │   └── event_detail_screen.dart       # Full-screen event + linked tasks
 │   │       └── widgets/
 │   │           ├── event_form_sheet.dart          # Create + edit local events
+│   │           ├── linked_calendars_field.dart      # Chips or dropdown calendar picker
 │   │           ├── device_calendar_picker_field.dart
-│   │           ├── calendar_grid_week_view.dart
+│   │           ├── calendar_grid_week_view.dart   # Stateful; ScrollController → scroll to now
 │   │           └── calendar_grid_month_view.dart
 │   │
 │   ├── todo_list/
@@ -85,36 +104,47 @@ smart_planner/lib/
 │   │   │   ├── task_reopen.dart
 │   │   │   └── todo_list_domain.dart
 │   │   └── presentation/
-│   │       ├── bloc/              # CompletedTasksBloc (@deprecated)
 │   │       ├── pages/
-│   │       │   ├── task_detail_screen.dart    # Full-screen task details
-│   │       │   ├── completed_tasks_page.dart  # @deprecated; not in nav
-│   │       │   └── todo_list_page.dart       # Legacy placeholder (unused in nav)
+│   │       │   └── task_detail_screen.dart    # Full-screen task details
 │   │       └── widgets/
 │   │           ├── task_form_sheet.dart           # Create + edit tasks
-│   │           ├── task_linked_calendars_field.dart
+│   │           ├── task_relation_sheet.dart       # Link task↔event / parent↔child
+│   │           ├── task_badges_row.dart / task_badge_labels.dart / task_tile_list_context.dart
+│   │           ├── task_priority_icon.dart / task_priority_ui.dart
+│   │           ├── checklist_editor_section.dart  # Local state; bounded reorderable list
+│   │           ├── linked_task_list_tile.dart
+│   │           ├── attachment_coordinator.dart      # Add/edit/delete attachments (task + event)
 │   │           ├── postpone_task_sheet.dart
 │   │           ├── reopen_task_sheet.dart
 │   │           ├── task_expandable_tile.dart      # Compact dashboard row (navigates to detail)
 │   │           ├── task_detail_child_tasks_section.dart  # Reorderable subtasks on detail
-│   │           ├── task_child_tasks_section.dart  # Legacy list (detail uses reorderable variant)
-│   │           ├── task_linked_event_section.dart   # Legacy
 │   │           ├── location_map_picker_sheet.dart
-│   │           ├── link_task_sheet.dart
-│   │           ├── add_attachment_sheet.dart      # Create + edit attachments
+│   │           ├── add_attachment_sheet.dart      # Create + edit attachments (task or event)
 │   │           ├── attachment_action_sheet.dart   # Open / edit / delete menu
 │   │           ├── attachment_default_action.dart # Open/view handlers per type
-│   │           ├── task_attachments_section.dart
+│   │           ├── task_attachments_section.dart  # Shared on task + event detail
 │   │           ├── task_badge.dart
 │   │           ├── task_section_header.dart
 │   │           └── task_priority_ui.dart
+│   │
+│   ├── attachment_templates/
+│   │   ├── data/repositories/attachment_template_repository.dart
+│   │   ├── domain/                            # AttachmentTemplate, factory, applicator
+│   │   └── presentation/
+│   │       ├── pages/attachment_templates_page.dart  # Wrapper → TemplatesPage tab 1
+│   │       └── widgets/attachment_templates_tab.dart, attachment_template_form_sheet.dart
 │   │
 │   ├── templates/
 │   │   ├── data/repositories/ui_template_repository.dart
 │   │   ├── domain/                            # UiTemplate, factory, applicator
 │   │   └── presentation/
-│   │       ├── pages/templates_page.dart
-│   │       └── widgets/template_form_sheet.dart
+│   │       ├── pages/templates_page.dart      # Tabbed hub: tasks + attachments
+│   │       ├── widgets/task_templates_tab.dart, template_form_sheet.dart, template_picker_sheet.dart
+│   │
+│   ├── search/
+│   │   ├── data/global_search_service.dart
+│   │   ├── domain/search_result_item.dart
+│   │   └── presentation/pages/search_screen.dart
 │   │
 │   ├── deep_links/
 │   │   ├── data/deep_link_service.dart          # app_links: initial + stream
@@ -126,33 +156,50 @@ smart_planner/lib/
 │   ├── notifications/
 │   │   ├── notification_helper.dart           # Plugin init, channels, scheduled pushes
 │   │   ├── notification_channels.dart
-│   │   ├── background_service.dart            # workmanager; auto-postpone TODO
+│   │   ├── background_service.dart            # Workmanager: overdue digest + day-status refresh (15 min)
+│   │   ├── data/day_status_background_sync.dart
+│   │   ├── data/overdue_background_worker.dart
+│   │   ├── domain/day_status_locale_copy.dart  # i18n copy for background isolates
 │   │   ├── data/
-│   │   │   ├── notification_preferences_repository.dart  # day-status bar on/off
-│   │   │   └── day_status_notification_controller.dart   # Android FGS start/stop/sync
+│   │   │   ├── notification_preferences_repository.dart  # day-status bar, default reminders
+│   │   │   ├── day_status_notification_controller.dart   # Android FGS start/stop/sync
+│   │   │   ├── day_status_today_loader.dart              # Today snapshot for FGS + widget
+│   │   │   ├── day_status_home_widget_service.dart       # Android home widget payload
+│   │   │   ├── item_reminder_scheduler.dart              # Per-task/event OS alarms
+│   │   │   └── reminder_sync_service.dart                # Best-effort reminder sync after mutations
 │   │   ├── domain/
 │   │   │   ├── day_status_notification_content.dart
-│   │   │   └── day_status_notification_builder.dart      # title/body for today
+│   │   │   ├── day_status_notification_builder.dart
+│   │   │   ├── day_status_widget_payload.dart
+│   │   │   ├── reminder_schedule_time.dart
+│   │   │   └── task_reminder_defaults.dart
 │   │   └── presentation/widgets/
-│   │       ├── day_status_bar_settings_section.dart      # Switch on CalendarSettingsPage
-│   │       └── day_status_service_host.dart            # restore FGS after app start
+│   │       ├── day_status_bar_settings_section.dart
+│   │       ├── default_reminder_settings_section.dart
+│   │       ├── reminder_at_field.dart / reminder_picker_field.dart / reminder_detail_row.dart
+│   │       └── day_status_service_host.dart
 │   │
 │   └── dashboard/
 │       ├── data/
+│       │   ├── dashboard_dependencies.dart       # Repos/services bundle for dashboard
+│       │   ├── dashboard_data_loader.dart        # Load/reload tasks + calendar slices
+│       │   ├── dashboard_task_mutations.dart     # Task/attachment/link mutations
+│       │   ├── dashboard_calendar_mutations.dart # Local event delete
 │       │   └── dashboard_day_markers_repository.dart  # Week strip dots cache
 │       ├── domain/
+│       │   ├── dashboard_load_models.dart        # Snapshot DTOs for bloc emit
 │       │   ├── day_activity_marker.dart
 │       │   ├── dashboard_day_markers_builder.dart
 │       │   ├── compressed_events_strip_layout.dart
 │       │   └── event_time_status.dart
 │       └── presentation/
-│           ├── bloc/              # DashboardBloc, events, states
+│           ├── bloc/              # DashboardBloc (coordinator), helpers, events, states
+│           ├── record_delete_coordinator.dart   # Delete + undo snackbar wiring
 │           ├── widgets/
 │           │   ├── dashboard_week_date_strip.dart
 │           │   ├── dashboard_local_events_section.dart
 │           │   ├── dashboard_local_events_strip.dart
-│           │   ├── event_linked_tasks_sheet.dart
-│           │   └── link_calendar_event_sheet.dart
+│           │   └── dashboard_create_fab.dart
 │           └── dashboard_screen.dart            # DeepLinkDispatcher → DayStatusServiceHost
 │
 └── widgets/                         # Home-screen widget bridges (stubs)
@@ -173,6 +220,7 @@ smart_planner/test/
 ├── recurrence_evaluator_test.dart
 ├── recurrence_rule_test.dart
 ├── day_status_notification_builder_test.dart
+├── reminder_schedule_time_test.dart
 ├── deep_link_parser_test.dart
 └── widget_test.dart
 ```
@@ -195,16 +243,21 @@ smart_planner/test/
 
 | Component | Role |
 |-----------|------|
-| `DashboardBloc` | `tasks`, `undatedTasks`, `completedTasks`, `overdueTasks` (today), `calendarEvents`, `linkedCalendarsById`, `dayMarkers`; optional `DayStatusNotificationController` sync after successful load/reload |
+| `DashboardBloc` | Thin coordinator: routes events, emits `DashboardLoaded`; delegates load to `DashboardDataLoader`, mutations to `DashboardTaskMutations` / `DashboardCalendarMutations` |
+| `DashboardDataLoader` | Resolves calendar IDs; loads task snapshot, device events, local Isar strip, linked calendars |
+| `DashboardTaskMutations` | Toggle/postpone/delete task, attachments, task↔event links |
 | `DashboardLoaded` | Active/completed/undated/overdue task lists; `linkedCalendarsById` for context calendar badges |
 | `DashboardDayMarkersRepository` | One Isar + one calendar fetch per week range (cached) |
 | `DashboardWeekDateStrip` | Horizontal ~21-day strip; activity dots per day |
 | `DashboardLocalEventsStrip` | Compressed horizontal event cards; live now line (today) |
 | `CompressedEventsStripLayout` | Card/gap segment positions; focus scroll anchor |
 | `EventTimeStatus` / resolver | past / current / future styling on strip cards |
-| `LocalCalendarEventRepository` | Isar calendar events; device upsert; `linkTask` / `unlinkTask` |
+| `LocalCalendarEventRepository` | Implements `CalendarEventStore`; Isar events; `EventSource`, `updatedAt`; device upsert |
+| `CalendarEventStore` | Domain interface for calendar event persistence (test doubles) |
+| `TaskRepository` | Domain interface implemented by `TodoRepository` |
+| `SyncAccount` / `SyncRecord` | Isar collections for future Google sync (accounts + local↔remote mapping) |
+| `SyncRecordRepository` | CRUD + `markSynced` / `setPendingOp` for outbox pattern |
 | `DayActivityMarker` | `hasCalendarEvents`, `hasLocalTasks`, optional calendar color |
-| `CompletedTasksBloc` | @deprecated — not in AppBar nav |
 | `DashboardScreen` AppBar | Templates stub; calendars; refresh |
 | `TodoRepository` | Task CRUD; `getUncompletedTasksForDate`, `getUndatedTasks`, `getCompletedTasksForDate`, `getOverdueUncompletedTasks`, `deleteTask`, `reopenFromCompleted`, `reorderChildTasks`, `compareChildTasks` (`Task.sortOrder`) |
 | `TaskDateVisibility` | Dated tasks per day; undated tasks in dashboard backlog section only |
@@ -222,7 +275,6 @@ smart_planner/test/
 | `TaskBadge` | Optional `onTap` — linked event, subtasks, link-to-event |
 | `TaskDetailChildTasksSection` | `ReorderableListView` for active children; `ReorderChildTasks` |
 | `TaskTileSectionHeader` | Section titles (child tasks / attachments) |
-| `EventLinkedTasksSheet` | Legacy bottom sheet; superseded by `EventDetailScreen` for strip tap |
 | `TaskFormSheet` / `EventFormSheet` | Unified create/edit sheets; delete icon + confirm dialog in edit mode |
 | `AttachmentActionSheet` | Bottom sheet: open, edit (`AddAttachmentSheet`), delete (Undo snackbar) |
 | `AttachmentDefaultAction` | Per-type open/view (URL, maps, contact, image, note dialog) |
@@ -245,7 +297,9 @@ smart_planner/test/
 | `DayStatusNotificationBuilder` | Title with `done`/`total` when tasks exist, else plain title; body = current/next event |
 | `NotificationPreferencesRepository` | `day_status_bar_enabled` (default **false**); `day_status_bar_pinned` (default **true**) |
 | `DayStatusBarSettingsSection` | `SwitchListTile` on `CalendarSettingsPage`; calls `setDayStatusBarEnabled` |
-| `DayStatusServiceHost` | Post-frame `ensureStartedIfEnabled()` when feature is on |
+| `DayStatusServiceHost` | Bootstrap + `resumed` refresh; TZ change → `rescheduleAll()` |
+| `DayStatusBackgroundSync` | Workmanager: refresh FGS + home widget (locale copy, no UI context) |
+| `BackgroundTaskService` | Periodic overdue check (12h) + day-status/widget refresh (15 min) |
 | `DeepLinkService` | `app_links`: `getInitialLink` + `uriLinkStream` → `DeepLinkParser` |
 | `DeepLinkDispatcher` | Pops to dashboard, waits for `DashboardLoaded`, opens create sheet with prefilled fields |
 | `DeepLinkParser` | `daylinx://create?type=task\|event&title=…`; sanitizes title (max 200 chars) |
@@ -434,3 +488,11 @@ Example prompt:
 | 2026-05 | **Deep links** (`daylinx://create`, `app_links`, `DeepLinkDispatcher`, prefilled task/event sheets) |
 | 2026-05 | Product name **DayLinx** (`DayLinxApp`, `daylinx://`; formerly Dayline) |
 | 2026-05 | Dashboard **backlog** as top-level section (not collapsible); task empty state at scroll bottom |
+| 2026-05 | Phase 0 hygiene: removed deprecated completed archive UI, legacy sheets; unified `ItemReminderScheduler` via `AppInitializer` + DI |
+| 2026-05 | Phase 1 UI consolidation: `TaskBadgesRow`, `FormSheetScaffold`, `LinkedCalendarsField`, `AttachmentCoordinator`, `LinkedTaskListTile` |
+| 2026-05 | Phase 2 orchestration: `TaskEventLinkService`, `ReminderSyncService`; BLoC/UI wired through shared services |
+| 2026-05 | Phase 3: split `DashboardBloc` into `DashboardDataLoader`, `DashboardTaskMutations`, `DashboardCalendarMutations` |
+| 2026-05 | Phase 4 sync-ready schema: `SyncAccount`, `SyncRecord`, `EventSource`, `CalendarEvent.updatedAt`, `Task.googleTaskListId`, `TaskRepository` / `CalendarEventStore` interfaces |
+| 2026-05 | Phase 5 notifications: overdue Workmanager digest, recurring reminder slots, TZ reschedule, day-status/widget background refresh |
+| 2026-05 | Calendar via `device_calendar` only (Google when synced on device); removed Google Calendar API / OAuth |
+| 2026-05 | Device calendar write-back: `CalendarEventWriteService`, create/update/delete via `device_calendar` |

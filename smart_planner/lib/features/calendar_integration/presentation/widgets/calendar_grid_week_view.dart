@@ -7,7 +7,7 @@ import 'package:smart_planner/features/calendar_integration/domain/calendar_grid
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 
 /// Seven day columns with an hourly timeline (00:00–23:00) and positioned event blocks.
-class CalendarGridWeekView extends StatelessWidget {
+class CalendarGridWeekView extends StatefulWidget {
   const CalendarGridWeekView({
     required this.weekStart,
     required this.events,
@@ -25,17 +25,76 @@ class CalendarGridWeekView extends StatelessWidget {
   final void Function(CalendarEvent event) onEventLongPress;
   final double hourHeight;
 
-  static final DateFormat _weekdayFormat = DateFormat.E('ru');
+  @override
+  State<CalendarGridWeekView> createState() => _CalendarGridWeekViewState();
+}
+
+class _CalendarGridWeekViewState extends State<CalendarGridWeekView> {
+  final ScrollController _scrollController = ScrollController();
+
+  static final DateFormat _weekdayFormat = DateFormat('E', 'ru');
   static final DateFormat _hourFormat = DateFormat('HH:mm', 'ru');
 
   List<DateTime> get _weekDays => List<DateTime>.generate(
         7,
-        (int i) => AppDateUtils.startOfDay(weekStart.add(Duration(days: i))),
+        (int i) =>
+            AppDateUtils.startOfDay(widget.weekStart.add(Duration(days: i))),
       );
+
+  bool get _weekContainsToday {
+    final DateTime today = AppDateUtils.startOfDay(DateTime.now());
+    return _weekDays.any(
+      (DateTime day) => AppDateUtils.isSameCalendarDay(day, today),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCurrentTime());
+  }
+
+  @override
+  void didUpdateWidget(CalendarGridWeekView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!AppDateUtils.isSameCalendarDay(
+      oldWidget.weekStart,
+      widget.weekStart,
+    )) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCurrentTime());
+    }
+  }
+
+  void _scrollToCurrentTime() {
+    if (!_weekContainsToday || !_scrollController.hasClients) {
+      return;
+    }
+
+    final double viewportHeight =
+        _scrollController.position.viewportDimension;
+    final double target = CalendarGridLayout.scrollOffsetForTime(
+      time: DateTime.now(),
+      hourHeight: widget.hourHeight,
+      viewportHeight: viewportHeight,
+    );
+
+    _scrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final double timelineHeight = CalendarGridLayout.dayTimelineHeight(hourHeight);
+    final double timelineHeight =
+        CalendarGridLayout.dayTimelineHeight(widget.hourHeight);
     final ColorScheme colors = Theme.of(context).colorScheme;
 
     return Column(
@@ -43,13 +102,14 @@ class CalendarGridWeekView extends StatelessWidget {
         _WeekHeader(days: _weekDays, weekdayFormat: _weekdayFormat),
         Expanded(
           child: SingleChildScrollView(
+            controller: _scrollController,
             child: SizedBox(
               height: timelineHeight,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   _HourLabelsColumn(
-                    hourHeight: hourHeight,
+                    hourHeight: widget.hourHeight,
                     hourFormat: _hourFormat,
                   ),
                   Expanded(
@@ -59,13 +119,13 @@ class CalendarGridWeekView extends StatelessWidget {
                           Expanded(
                             child: _DayColumn(
                               day: day,
-                              events: events,
-                              hourHeight: hourHeight,
+                              events: widget.events,
+                              hourHeight: widget.hourHeight,
                               timelineHeight: timelineHeight,
                               colors: colors,
-                              onEmptySlotLongPress: onEmptySlotLongPress,
-                              onEventTap: onEventTap,
-                              onEventLongPress: onEventLongPress,
+                              onEmptySlotLongPress: widget.onEmptySlotLongPress,
+                              onEventTap: widget.onEventTap,
+                              onEventLongPress: widget.onEventLongPress,
                             ),
                           ),
                       ],

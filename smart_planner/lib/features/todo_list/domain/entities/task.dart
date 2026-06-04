@@ -1,4 +1,5 @@
 import 'package:isar/isar.dart';
+import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_rule.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_priority.dart';
 import 'package:smart_planner/features/todo_list/domain/task_overdue_rules.dart';
 
@@ -43,6 +44,9 @@ class Task {
   /// Future Google Tasks sync id.
   String? googleTaskId;
 
+  /// Google Tasks list id when synced via API (distinct from [calendarId]).
+  String? googleTaskListId;
+
   /// Local [CalendarEvent.id] when the task belongs to a meeting or recurrence instance.
   @Index()
   int? linkedEventId;
@@ -52,6 +56,9 @@ class Task {
 
   /// When to fire a local reminder; `null` = no reminder.
   DateTime? reminderAt;
+
+  /// JSON [RecurrenceRule] for repeating tasks (same format as calendar events).
+  String? recurrenceRuleJson;
 
   Task();
 
@@ -66,10 +73,25 @@ class Task {
     this.sortOrder = 0,
     this.calendarId = '',
     this.googleTaskId,
+    this.googleTaskListId,
     this.linkedEventId,
     this.reminderAt,
   }) : createDate = createDate ?? DateTime.now() {
     markUpdated();
+  }
+
+  @ignore
+  RecurrenceRule? get recurrenceRule {
+    final String? json = recurrenceRuleJson;
+    if (json == null || json.isEmpty) {
+      return null;
+    }
+    return RecurrenceRule.fromJsonString(json);
+  }
+
+  @ignore
+  set recurrenceRule(RecurrenceRule? rule) {
+    recurrenceRuleJson = rule?.toJsonString();
   }
 
   /// Calendar days past [dueDate] relative to now (see [TaskOverdueRules]).

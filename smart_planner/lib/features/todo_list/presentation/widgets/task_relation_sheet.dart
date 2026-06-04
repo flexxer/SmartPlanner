@@ -9,6 +9,7 @@ import 'package:smart_planner/features/templates/data/repositories/ui_template_r
 import 'package:smart_planner/features/templates/domain/entities/ui_template.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/todo_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
+import 'package:smart_planner/features/todo_list/presentation/widgets/linked_task_list_tile.dart';
 
 /// What the user is linking and to which anchor (parent task or calendar event).
 sealed class TaskRelationTarget {
@@ -174,10 +175,6 @@ class _TaskRelationSheetState extends State<TaskRelationSheet> {
     Navigator.of(context).pop(TaskRelationPickedEvent(event));
   }
 
-  String _formatDue(DateTime due) {
-    return L10n.dateFormat('dd.MM.yyyy', context: context).format(due);
-  }
-
   @override
   Widget build(BuildContext context) {
     final EdgeInsets viewInsets = MediaQuery.viewInsetsOf(context);
@@ -329,19 +326,9 @@ class _TaskRelationSheetState extends State<TaskRelationSheet> {
           const Divider(height: 1),
       itemBuilder: (BuildContext context, int index) {
         final Task task = _taskCandidates[index];
-        return ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(task.title),
-          subtitle: task.dueDate != null
-              ? Text(
-                  'due_label'.tr(
-                    namedArgs: <String, String>{
-                      'date': _formatDue(task.dueDate!),
-                    },
-                  ),
-                )
-              : Text('no_due_date'.tr()),
-          trailing: const Icon(Icons.chevron_right),
+        return LinkedTaskListTile(
+          task: task,
+          useCard: false,
           onTap: () => _pickExistingTask(task),
         );
       },

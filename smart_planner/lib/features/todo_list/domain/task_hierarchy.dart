@@ -89,3 +89,11 @@ class ChildTasksBundle {
 
   bool get allCompleted => totalCount > 0 && completedCount == totalCount;
 }
+
+/// Progress label for parent task badges (e.g. `2/5` subtasks done).
+String? childTaskProgressBadgeLabel(ChildTasksBundle? bundle) {
+  if (bundle == null || !bundle.hasChildren) {
+    return null;
+  }
+  return '${bundle.completedCount}/${bundle.totalCount}';
+}

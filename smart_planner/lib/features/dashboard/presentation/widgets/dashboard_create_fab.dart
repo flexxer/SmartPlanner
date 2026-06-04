@@ -6,11 +6,13 @@ class DashboardCreateFab extends StatelessWidget {
   const DashboardCreateFab({
     required this.onCreateTask,
     required this.onCreateEvent,
+    required this.onCreateTaskFromTemplate,
     super.key,
   });
 
   final VoidCallback onCreateTask;
   final VoidCallback onCreateEvent;
+  final VoidCallback onCreateTaskFromTemplate;
 
   Future<void> _showCreateMenu(BuildContext context) async {
     final String? choice = await showModalBottomSheet<String>(
@@ -41,6 +43,11 @@ class DashboardCreateFab extends StatelessWidget {
                 title: Text('dashboard_create_event'.tr()),
                 onTap: () => Navigator.of(sheetContext).pop('event'),
               ),
+              ListTile(
+                leading: const Icon(Icons.layers_outlined),
+                title: Text('dashboard_create_from_template'.tr()),
+                onTap: () => Navigator.of(sheetContext).pop('template'),
+              ),
             ],
           ),
         );
@@ -56,6 +63,8 @@ class DashboardCreateFab extends StatelessWidget {
         onCreateTask();
       case 'event':
         onCreateEvent();
+      case 'template':
+        onCreateTaskFromTemplate();
     }
   }
 

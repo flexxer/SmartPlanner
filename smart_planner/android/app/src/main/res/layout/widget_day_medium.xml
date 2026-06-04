@@ -18,6 +18,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
             android:text="DayLinx"
             android:textColor="@color/widget_header_text"
             android:textSize="13sp"
@@ -27,8 +29,35 @@
             android:id="@+id/widget_date_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
             android:textColor="@color/widget_muted_text"
             android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/widget_refresh"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:clickable="true"
+            android:contentDescription="@string/widget_refresh"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="↻"
+            android:textColor="@color/widget_accent"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_add"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:clickable="true"
+            android:contentDescription="@string/widget_add_task"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="+"
+            android:textColor="@color/widget_accent"
+            android:textSize="28sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <TextView
@@ -36,6 +65,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
+        android:clickable="true"
+        android:focusable="true"
         android:textColor="@color/widget_header_text"
         android:textSize="14sp"
         android:textStyle="bold" />
@@ -59,9 +90,18 @@
         android:padding="8dp">
 
         <TextView
+            android:id="@+id/widget_now_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/widget_accent"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <TextView
             android:id="@+id/widget_now_time"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:textColor="@color/widget_accent"
             android:textSize="11sp"
             android:textStyle="bold" />
@@ -158,7 +198,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
+        android:clickable="true"
         android:ellipsize="end"
+        android:focusable="true"
         android:maxLines="2"
         android:textColor="@color/widget_muted_text"
         android:textSize="11sp" />

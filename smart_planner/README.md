@@ -20,7 +20,9 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
 - **Local calendar events** — horizontal strip for the selected day
 
-  - Compressed timeline layout, gap markers for long breaks, **now** indicator on today
+  - All-day events as chips above the strip; timed events in compressed timeline layout
+
+  - Overlapping events stack vertically (later events offset down and to the right); gap markers for long breaks; **now** indicator on today
 
   - **Tap** event card → **`EventDetailScreen`**; **long-press** → edit (`EventFormSheet`); create from section header
 
@@ -62,9 +64,9 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
 - **Templates hub** (`TemplatesPage`, AppBar): tabs **Tasks** (UI blueprints) and **Attachments** (presets)
 
-- **Create / edit / delete** tasks and local events via **`TaskFormSheet`** / **`EventFormSheet`** (delete with confirmation in edit mode)
+- **Create / edit / delete** tasks and local events via **`TaskFormSheet`** / **`EventFormSheet`** (all-day events, cross-midnight end times, delete with confirmation in edit mode)
 
-- **AppBar:** search, templates (`TemplatesPage`), **settings** (language, **theme**, reminders, digests, midnight roll), **week/month time grid** (auto-scroll to current time when today is visible), refresh
+- **AppBar:** search, templates (`TemplatesPage`), **settings** (language, **theme**, reminders, digests, midnight roll), **calendar time grid** (day / 3-day / week / month; all-day row; overlapping events; long-press empty slot to create; auto-scroll to now), refresh
 
 - **Device calendar write-back** — create/edit/delete on writable calendars; read-only calendars save to Isar only; move event between calendars on edit; recurring delete (this occurrence vs series); import/read **only checked** calendars in settings
 
@@ -138,7 +140,7 @@ flutter test
 
 
 
-Includes: `task_date_visibility_test`, `task_overdue_rules_test`, `task_overdue_selection_test`, `task_reopen_test`, `task_hierarchy_test`, `task_attachment_*`, `dashboard_day_markers_builder_test`, `day_status_notification_builder_test`, `deep_link_parser_test`, `recurrence_*`, `compressed_events_strip_layout_test`, `widget_test`.
+Includes: `task_date_visibility_test`, `task_overdue_rules_test`, `task_overdue_selection_test`, `task_reopen_test`, `task_hierarchy_test`, `task_attachment_*`, `dashboard_day_markers_builder_test`, `day_status_notification_builder_test`, `deep_link_parser_test`, `recurrence_*`, `compressed_events_strip_layout_test`, `calendar_event_layout_test`, `widget_test`.
 
 
 
@@ -169,7 +171,7 @@ Includes: `task_date_visibility_test`, `task_overdue_rules_test`, `task_overdue_
 
 
 
-Key UI: `task_detail_screen.dart`, `event_detail_screen.dart`, `task_form_sheet.dart`, `event_form_sheet.dart`, `task_expandable_tile.dart`, `dashboard_local_events_strip.dart`, `attachment_action_sheet.dart`.
+Key UI: `task_detail_screen.dart`, `event_detail_screen.dart`, `task_form_sheet.dart`, `event_form_sheet.dart`, `task_expandable_tile.dart`, `dashboard_local_events_strip.dart`, `dashboard_all_day_events_row.dart`, `calendar_grid_week_view.dart`, `attachment_action_sheet.dart`.
 
 
 

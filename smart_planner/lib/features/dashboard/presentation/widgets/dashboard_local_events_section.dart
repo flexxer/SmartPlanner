@@ -2,7 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
+import 'package:smart_planner/features/calendar_integration/domain/calendar_event_occurrence.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
+import 'package:smart_planner/features/dashboard/domain/compressed_events_strip_layout.dart';
+import 'package:smart_planner/features/dashboard/presentation/widgets/dashboard_all_day_events_row.dart';
 import 'package:smart_planner/features/dashboard/presentation/widgets/dashboard_local_events_strip.dart';
 
 /// Header + horizontal strip or empty state for local calendar events.
@@ -30,6 +33,12 @@ class DashboardLocalEventsSection extends StatelessWidget {
         ? 'events_day_today'.tr()
         : L10n.dateFormat('d MMMM', context: context).format(selectedDate);
 
+    final List<CalendarEvent> allDay =
+        CalendarEventOccurrence.allDayEventsOnDay(events, selectedDate);
+    final List<CalendarEvent> timed =
+        CompressedEventsStripLayout.timedEventsForDay(events, selectedDate);
+    final bool hasAnyEvents = allDay.isNotEmpty || timed.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Column(
@@ -43,7 +52,7 @@ class DashboardLocalEventsSection extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          if (events.isEmpty)
+          if (!hasAnyEvents)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
@@ -53,7 +62,13 @@ class DashboardLocalEventsSection extends StatelessWidget {
                 ),
               ),
             )
-          else
+          else ...<Widget>[
+            DashboardAllDayEventsRow(
+              events: events,
+              selectedDate: selectedDate,
+              onEventTap: onEventTap,
+              onEventLongPress: onEventLongPress,
+            ),
             DashboardLocalEventsStrip(
               events: events,
               selectedDate: selectedDate,
@@ -61,6 +76,7 @@ class DashboardLocalEventsSection extends StatelessWidget {
               onEventTap: onEventTap,
               onEventLongPress: onEventLongPress,
             ),
+          ],
         ],
       ),
     );

@@ -206,6 +206,7 @@ class DeviceCalendarService {
     String? deviceEventId,
     RecurrenceRule? recurrence,
     int? reminderMinutesBefore,
+    bool allDay = false,
   }) async {
     if (!await ensurePermissions()) {
       throw CalendarPermissionDeniedException();
@@ -219,6 +220,7 @@ class DeviceCalendarService {
       deviceEventId: deviceEventId,
       recurrence: recurrence,
       reminderMinutesBefore: reminderMinutesBefore,
+      allDay: allDay,
     );
 
     final Result<String>? result =

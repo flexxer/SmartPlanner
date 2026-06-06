@@ -17,6 +17,7 @@ abstract final class DeviceCalendarEventBridge {
     String? deviceEventId,
     RecurrenceRule? recurrence,
     int? reminderMinutesBefore,
+    bool allDay = false,
   }) {
     final dc.Event event = dc.Event(
       calendarId,
@@ -24,7 +25,7 @@ abstract final class DeviceCalendarEventBridge {
       title: title,
       start: _toTz(start),
       end: _toTz(end),
-      allDay: false,
+      allDay: allDay,
       recurrenceRule: _toPluginRecurrence(recurrence),
       reminders: _toPluginReminders(reminderMinutesBefore),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_planner/features/calendar_integration/domain/calendar_event_overlap_layout.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/dashboard/domain/compressed_events_strip_layout.dart';
 
@@ -90,6 +91,55 @@ void main() {
       CompressedEventsStripLayout.cardWidth * 2 +
           CompressedEventsStripLayout.cardGap,
     );
+  });
+
+  test('overlapping events stack vertically with later events shifted right', () {
+    final DateTime day = DateTime(2026, 5, 23);
+    final CalendarEvent first = _event(
+      title: 'First',
+      start: day.add(const Duration(hours: 10)),
+      end: day.add(const Duration(hours: 11)),
+    );
+    final CalendarEvent second = _event(
+      title: 'Second',
+      start: day.add(const Duration(hours: 10, minutes: 30)),
+      end: day.add(const Duration(hours: 11, minutes: 30)),
+    );
+
+    final CompressedEventsStripLayout layout =
+        CompressedEventsStripLayout.build(
+      events: <CalendarEvent>[first, second],
+      selectedDate: day,
+      now: day.add(const Duration(hours: 9)),
+      isToday: false,
+    );
+
+    final List<CompressedEventSegment> cards =
+        layout.segments.whereType<CompressedEventSegment>().toList();
+    expect(cards, hasLength(2));
+    expect(cards[0].left, cards[1].left);
+    expect(cards[0].layerCount, 2);
+    expect(cards[0].layerIndex, 0);
+    expect(cards[1].layerIndex, 1);
+    expect(cards[0].event.start.isBefore(cards[1].event.start), isTrue);
+    expect(
+      StackedOverlapGeometry.forStrip(layerIndex: 0, layerCount: 2).left,
+      0,
+    );
+    expect(
+      StackedOverlapGeometry.forStrip(layerIndex: 1, layerCount: 2).left,
+      StackedOverlapGeometry.stripLayerOffsetX,
+    );
+    expect(
+      StackedOverlapGeometry.forStrip(layerIndex: 1, layerCount: 2).top,
+      StackedOverlapGeometry.stripLayerOffsetY,
+    );
+    expect(
+      layout.totalWidth,
+      StackedOverlapGeometry.stripSlotWidth(2),
+    );
+    expect(StackedOverlapGeometry.stripSlotWidth(2), 224);
+    expect(StackedOverlapGeometry.stripSlotHeight(2), 132);
   });
 }
 

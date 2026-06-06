@@ -35,7 +35,13 @@ Professionals, freelancers, and people with high cognitive load who juggle multi
 | Live “now” timeline on today’s event strip | **Implemented** | Pulsing indicator + auto-scroll; hidden when now is before the first event of the day |
 | Week strip activity badges | **Implemented** | Event count + task count (`TaskDateVisibility`); not reminder-only without due on that day |
 | Recurring events on dashboard | **Implemented** | Device instances per occurrence + `VisibleCalendarEventsMerger` expansion from stored rules |
-| Week time grid scroll to current time | **Implemented** | `CalendarGridWeekView` scrolls to now when the visible week includes today |
+| Overlapping timed events (dashboard strip) | **Implemented** | Staggered stack in `StackedOverlapGeometry.forStrip`: earlier on top-left, later below + shifted right; `CompressedEventsStripLayout` |
+| All-day events (dashboard + grid) | **Implemented** | Chip row above strip; dedicated grid row; `CalendarEventTimeUtils.isAllDay` |
+| Cross-midnight timed events | **Implemented** | Clipped per day in `CalendarEventOccurrence`; labels via `EventTimeRangeLabel` |
+| Calendar time grid (day / 3-day / week / month) | **Implemented** | `CalendarGridScreen` tabs; day & 3-day anchor on today; overlap columns in `CalendarGridWeekView` |
+| Grid long-press slot selection | **Implemented** | Hour snap + 15-min drag on `CalendarGridWeekView`; opens `EventFormSheet` |
+| Event form: all-day + cross-midnight end | **Implemented** | Toggle, end date for all-day, auto +1 day when end ≤ start |
+| Week time grid scroll to current time | **Implemented** | `CalendarGridWeekView` scrolls to now when the visible range includes today; now line above event blocks |
 
 ### 3.2 To-Do engine
 
@@ -139,8 +145,10 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 
 - Single source for day events (legacy “events on date” text block removed).
 - Section header: day label and **Create** event (calendar selection is AppBar only).
-- **Horizontal strip** (~116 dp): compressed layout — adjacent event cards, compact gap markers for long idle periods (≥90 min).
-- **Event card:** accent bar, **start–end time** (no decorative calendar icon), title, optional recurrence icon, linked-tasks badge.
+- **All-day row** (`DashboardAllDayEventsRow`): chips above the timed strip when the day has all-day events.
+- **Horizontal strip** (116 dp base height; grows when overlapping events stack): compressed layout — adjacent event cards, compact gap markers for long idle periods (≥90 min).
+- **Overlapping timed events:** cards in one slot are stacked **one under another**; each later-start event is offset **down and to the right** (toward later time on the strip). Full-width cards; slot expands in width and height.
+- **Event card:** accent bar, **start–end time** (`EventTimeRangeLabel` for cross-midnight), title, optional recurrence icon, linked-tasks badge.
 - **Today only:** past / current / future styling; pulsing **Now** chip on current event (`events_now_chip`); live **now** vertical indicator (updates every minute); auto-scroll to current or next event.
 - **Tap** card → **`EventDetailScreen`** (linked tasks, add task, AppBar edit).
 - **Long-press** card → `EventFormSheet` (edit mode).
@@ -191,7 +199,7 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 | Sheet | Create | Edit | Delete |
 |-------|--------|------|--------|
 | `TaskFormSheet` | Title **New task** (`task_new`); optional `dueDate`; calendar chips | Prefilled fields; `UpdateTask` via BLoC | `DeleteTask` + confirm dialog (`delete_dialog_*`) |
-| `EventFormSheet` | Title **New event** (`event_new`); default 10:00–11:00 on `initialDay` | Recurrence + times; `LoadDashboardData` after save | `DeleteCalendarEvent` + confirm dialog |
+| `EventFormSheet` | Title **New event** (`event_new`); default 10:00–11:00 on `initialDay`; **all-day** toggle; cross-midnight end | Recurrence + times; `LoadDashboardData` after save | `DeleteCalendarEvent` + confirm dialog |
 | `AddAttachmentSheet` | Pick type + form | `attachmentToEdit` prefills fields; `UpdateTaskAttachment` | — (delete via attachment action sheet) |
 
 Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `EditCalendarEventSheet` were removed in favor of the unified sheets. In-dashboard tile expansion was removed in favor of detail screens.
@@ -252,3 +260,4 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 | 2026-06-06 | Checklist `moveCompletedToEnd` setting; shared completion-list animations (`SlidingCompletionList`, `CollapsingCompletionTile`); linked tasks on event detail; dashboard tiles keyed by task id for stable BLoC reload |
 | 2026-06-06 | Lock screen widget spec (variant 1 «Pulse»); removed obsolete `REFACTORING_ROADMAP.md` and `ANDROID_HOME_WIDGET_SKETCH.md` |
 | 2026-06-06 | Theme picker (system / light / dark); tuned Material 3 palette and contrast; bordered UI sections |
+| 2026-06-06 | Calendar overlap layout: dashboard staggered strip, grid day/3-day/week/month tabs, all-day + cross-midnight events, long-press grid slots, `calendar_event_layout_test` |

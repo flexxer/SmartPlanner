@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:smart_planner/core/theme/app_color_utils.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_context_colors.dart';
+import 'package:smart_planner/features/calendar_integration/domain/calendar_event_overlap_layout.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_recurrence.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/dashboard/domain/compressed_events_strip_layout.dart';
 import 'package:smart_planner/features/dashboard/domain/event_time_status.dart';
+import 'package:smart_planner/features/dashboard/presentation/widgets/event_time_range_label.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_badge.dart';
 
 /// Horizontal strip of local calendar events with a live "now" timeline for today.
@@ -49,8 +51,8 @@ class DashboardLocalEventsStrip extends StatefulWidget {
 }
 
 class _DashboardLocalEventsStripState extends State<DashboardLocalEventsStrip> {
-  static const double _stripHeight = 116;
   static const double _horizontalPadding = 16;
+  static const double _baseStripHeight = StackedOverlapGeometry.stripBaseHeight;
 
   final ScrollController _scrollController = ScrollController();
   Timer? _nowTimer;
@@ -138,42 +140,60 @@ class _DashboardLocalEventsStripState extends State<DashboardLocalEventsStrip> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.events.isEmpty) {
+    if (CompressedEventsStripLayout.timedEventsForDay(
+      widget.events,
+      widget.selectedDate,
+    ).isEmpty) {
       return const SizedBox.shrink();
     }
 
     final CompressedEventsStripLayout layout = _layout;
+    final int maxLayers = StackedOverlapGeometry.maxColumnCount(
+      layout.segments
+          .whereType<CompressedEventSegment>()
+          .map((CompressedEventSegment s) => s.layerCount),
+    );
+    final double stripHeight =
+        StackedOverlapGeometry.stripSlotHeight(maxLayers);
+    final List<CompressedStripSegment> paintOrder =
+        List<CompressedStripSegment>.from(layout.segments)
+          ..sort((CompressedStripSegment a, CompressedStripSegment b) {
+            if (a is CompressedEventSegment && b is CompressedEventSegment) {
+              return a.layerIndex.compareTo(b.layerIndex);
+            }
+            return 0;
+          });
 
     return SizedBox(
-      height: _stripHeight,
+      height: stripHeight,
       child: SingleChildScrollView(
         controller: _scrollController,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
         child: SizedBox(
           width: layout.totalWidth,
-          height: _stripHeight,
+          height: stripHeight,
           child: Stack(
             clipBehavior: Clip.none,
             children: <Widget>[
-              for (final CompressedStripSegment segment in layout.segments)
+              for (final CompressedStripSegment segment in paintOrder)
                 switch (segment) {
-                  CompressedEventSegment(:final event, :final left, :final width) =>
-                    Positioned(
-                      left: left,
-                      top: 0,
-                      width: width,
-                      child: _LocalEventCard(
-                        event: event,
-                        timeFormat: widget.timeFormat,
-                        status: EventTimeStatusResolver.resolve(
-                          event: event,
-                          selectedDay: widget.selectedDate,
-                          now: _now,
-                        ),
-                        onTap: () => widget.onEventTap(event),
-                        onLongPress: () => widget.onEventLongPress(event),
-                      ),
+                  CompressedEventSegment(
+                    :final event,
+                    :final left,
+                    :final layerIndex,
+                    :final layerCount,
+                  ) =>
+                    _StripOverlappedEventCard(
+                      groupLeft: left,
+                      layerIndex: layerIndex,
+                      layerCount: layerCount,
+                      event: event,
+                      selectedDate: widget.selectedDate,
+                      timeFormat: widget.timeFormat,
+                      now: _now,
+                      onTap: () => widget.onEventTap(event),
+                      onLongPress: () => widget.onEventLongPress(event),
                     ),
                   CompressedGapSegment(:final from, :final to, :final left, :final width) =>
                     Positioned(
@@ -206,6 +226,64 @@ class _DashboardLocalEventsStripState extends State<DashboardLocalEventsStrip> {
   }
 }
 
+class _StripOverlappedEventCard extends StatelessWidget {
+  const _StripOverlappedEventCard({
+    required this.groupLeft,
+    required this.layerIndex,
+    required this.layerCount,
+    required this.event,
+    required this.selectedDate,
+    required this.timeFormat,
+    required this.now,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  final double groupLeft;
+  final int layerIndex;
+  final int layerCount;
+  final CalendarEvent event;
+  final DateTime selectedDate;
+  final DateFormat timeFormat;
+  final DateTime now;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    final ({
+      double left,
+      double top,
+      double width,
+      double backgroundOpacity,
+    }) geo = StackedOverlapGeometry.forStrip(
+      layerIndex: layerIndex,
+      layerCount: layerCount,
+    );
+
+    return Positioned(
+      left: groupLeft + geo.left,
+      top: geo.top,
+      width: geo.width,
+      height: StackedOverlapGeometry.stripBaseHeight,
+      child: _LocalEventCard(
+        event: event,
+        selectedDate: selectedDate,
+        timeFormat: timeFormat,
+        status: EventTimeStatusResolver.resolve(
+          event: event,
+          selectedDay: selectedDate,
+          now: now,
+        ),
+        backgroundOpacity: geo.backgroundOpacity,
+        stackElevation: layerIndex.toDouble(),
+        onTap: onTap,
+        onLongPress: onLongPress,
+      ),
+    );
+  }
+}
+
 /// Compact marker for a collapsed idle period between events.
 class _TimeGapMarker extends StatelessWidget {
   const _TimeGapMarker({required this.label});
@@ -218,7 +296,7 @@ class _TimeGapMarker extends StatelessWidget {
     final ColorScheme colors = theme.colorScheme;
 
     return SizedBox(
-      height: _DashboardLocalEventsStripState._stripHeight,
+      height: _DashboardLocalEventsStripState._baseStripHeight,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
@@ -332,22 +410,25 @@ class _NowTimeIndicatorState extends State<_NowTimeIndicator>
 class _LocalEventCard extends StatelessWidget {
   const _LocalEventCard({
     required this.event,
+    required this.selectedDate,
     required this.timeFormat,
     required this.status,
+    required this.backgroundOpacity,
     required this.onTap,
     required this.onLongPress,
+    this.compact = false,
+    this.stackElevation = 0,
   });
 
   final CalendarEvent event;
+  final DateTime selectedDate;
   final DateFormat timeFormat;
   final EventTimeStatus status;
+  final double backgroundOpacity;
+  final bool compact;
+  final double stackElevation;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
-
-  /// Start–end label for the strip card (no leading calendar icon).
-  static String timeRangeLabel(CalendarEvent event, DateFormat format) {
-    return '${format.format(event.start)} – ${format.format(event.end)}';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -362,8 +443,11 @@ class _LocalEventCard extends StatelessWidget {
     final int linkedCount = event.linkedTaskIds.length;
     final bool isPast = status == EventTimeStatus.past;
     final bool isCurrent = status == EventTimeStatus.current;
+    final bool continuesPrevious =
+        event.start.isBefore(AppDateUtils.startOfDay(selectedDate));
+    final bool continuesNext = event.end
+        .isAfter(AppDateUtils.startOfDay(selectedDate).add(const Duration(days: 1)));
 
-    final Color cardColor = colors.surface;
     final double cardOpacity = isPast ? 0.55 : 1;
     final Color titleColor = isPast
         ? colors.onSurface.withValues(alpha: 0.55)
@@ -371,98 +455,140 @@ class _LocalEventCard extends StatelessWidget {
     final Color timeColor = isPast
         ? AppColorUtils.accentLabel(accent, colors, muted: true)
         : AppColorUtils.accentLabel(accent, colors);
+    final ({Color background, Color foreground}) chipColors =
+        AppColorUtils.chipFromAccent(accent, colors);
+    final double horizontalPadding = compact ? 6 : 10;
+    final double verticalPadding = compact ? 6 : 8;
 
     return Opacity(
       opacity: cardOpacity,
-      child: SizedBox(
-        width: CompressedEventsStripLayout.cardWidth,
-        child: Material(
-          color: cardColor,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: isCurrent
-                  ? colors.primary
-                  : colors.outlineVariant,
-              width: isCurrent ? 2 : 1,
-            ),
+      child: Material(
+        color: chipColors.background.withValues(alpha: backgroundOpacity),
+        elevation: stackElevation,
+        shadowColor: colors.shadow.withValues(alpha: 0.3),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(compact ? 10 : 12),
+          side: BorderSide(
+            color: isCurrent ? colors.primary : colors.outlineVariant,
+            width: isCurrent ? 2 : 1,
           ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            onLongPress: onLongPress,
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Container(width: 5, color: accent),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                      child: Column(
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Container(width: compact ? 4 : 5, color: accent),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    verticalPadding,
+                    horizontalPadding,
+                    verticalPadding,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Expanded(
-                                child: Text(
-                                  timeRangeLabel(event, timeFormat),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.labelLarge?.copyWith(
-                                    color: timeColor,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
+                          Expanded(
+                            child: Text(
+                              EventTimeRangeLabel.format(
+                                event: event,
+                                selectedDay: selectedDate,
+                                timeFormat: timeFormat,
                               ),
-                              if (isRecurring)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 4),
-                                  child: Icon(
-                                    Icons.repeat,
-                                    size: 14,
-                                    color: colors.onSurfaceVariant.withValues(
-                                      alpha: isPast ? 0.5 : 1,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          if (isCurrent) ...<Widget>[
-                            const SizedBox(height: 4),
-                            _NowChip(colors: colors),
-                          ],
-                          if (linkedCount > 0) ...<Widget>[
-                            const SizedBox(height: 4),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TaskBadge(
-                                label: DashboardLocalEventsStrip
-                                    .linkedTasksLabel(linkedCount),
-                                backgroundColor: colors.secondaryContainer,
-                                foregroundColor: colors.onSecondaryContainer,
+                              maxLines: compact ? 2 : 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: (compact
+                                      ? theme.textTheme.labelSmall
+                                      : theme.textTheme.labelLarge)
+                                  ?.copyWith(
+                                color: timeColor,
+                                fontWeight: FontWeight.w700,
+                                height: compact ? 1.15 : null,
                               ),
                             ),
-                          ],
-                          const SizedBox(height: 4),
-                          Text(
-                            event.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: titleColor,
-                            ),
                           ),
+                          if (!compact && (continuesPrevious || continuesNext))
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4),
+                              child: Icon(
+                                continuesPrevious && continuesNext
+                                    ? Icons.swap_vert
+                                    : continuesNext
+                                        ? Icons.arrow_forward
+                                        : Icons.arrow_back,
+                                size: 14,
+                                color: colors.onSurfaceVariant.withValues(
+                                  alpha: isPast ? 0.5 : 1,
+                                ),
+                              ),
+                            ),
+                          if (!compact && isRecurring)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4),
+                              child: Icon(
+                                Icons.repeat,
+                                size: 14,
+                                color: colors.onSurfaceVariant.withValues(
+                                  alpha: isPast ? 0.5 : 1,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
-                    ),
+                      if (isCurrent && !compact) ...<Widget>[
+                        const SizedBox(height: 4),
+                        _NowChip(colors: colors),
+                      ],
+                      if (isCurrent && compact) ...<Widget>[
+                        const SizedBox(height: 2),
+                        Text(
+                          'events_now_chip'.tr(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                      if (!compact && linkedCount > 0) ...<Widget>[
+                        const SizedBox(height: 4),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TaskBadge(
+                            label: DashboardLocalEventsStrip
+                                .linkedTasksLabel(linkedCount),
+                            backgroundColor: colors.secondaryContainer,
+                            foregroundColor: colors.onSecondaryContainer,
+                          ),
+                        ),
+                      ],
+                      SizedBox(height: compact ? 2 : 4),
+                      Expanded(
+                        child: Text(
+                          event.title,
+                          maxLines: compact ? 3 : 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: titleColor,
+                            fontSize: compact ? 12 : null,
+                            height: compact ? 1.15 : null,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

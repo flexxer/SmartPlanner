@@ -26,6 +26,7 @@ class CalendarEventWriteService {
     RecurrenceRule? recurrence,
     int? reminderMinutesBefore,
     CalendarEvent? existing,
+    bool allDay = false,
   }) async {
     if (calendar.isReadOnly) {
       return _saveLocalOnly(
@@ -62,6 +63,7 @@ class CalendarEventWriteService {
       deviceEventId: movedToAnotherCalendar ? null : priorDeviceId,
       recurrence: recurrence,
       reminderMinutesBefore: reminderMinutesBefore,
+      allDay: allDay,
     );
 
     final CalendarEvent mirror = CalendarEvent.fromDevice(

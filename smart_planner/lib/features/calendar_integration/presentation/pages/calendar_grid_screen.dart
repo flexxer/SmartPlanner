@@ -20,7 +20,7 @@ import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_eve
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_state.dart';
 import 'package:smart_planner/features/dashboard/presentation/dashboard_screen.dart';
 
-/// Week / month time grid for calendar events with inline CRUD gestures.
+/// Day / multi-day / week / month time grid for calendar events.
 class CalendarGridScreen extends StatefulWidget {
   const CalendarGridScreen({super.key});
 
@@ -28,17 +28,23 @@ class CalendarGridScreen extends StatefulWidget {
   State<CalendarGridScreen> createState() => _CalendarGridScreenState();
 }
 
-enum _CalendarGridMode { week, month }
+enum _CalendarGridMode { day, threeDays, week, month }
 
 class _CalendarGridScreenState extends State<CalendarGridScreen> {
   _CalendarGridMode _mode = _CalendarGridMode.week;
-  late DateTime _weekStart;
+  late DateTime _rangeStart;
   late DateTime _focusedMonth;
   List<CalendarEvent> _storedEvents = <CalendarEvent>[];
   Map<int, DayActivityMarker> _dayMarkers = <int, DayActivityMarker>{};
   bool _loading = true;
   String? _loadError;
 
+  int get _timeViewDayCount => switch (_mode) {
+        _CalendarGridMode.day => 1,
+        _CalendarGridMode.threeDays => 3,
+        _CalendarGridMode.week => 7,
+        _CalendarGridMode.month => 0,
+      };
 
   @override
   void initState() {
@@ -47,7 +53,7 @@ class _CalendarGridScreenState extends State<CalendarGridScreen> {
     final DateTime anchor = state is DashboardLoaded
         ? state.selectedDate
         : DateTime.now();
-    _weekStart = AppDateUtils.startOfWeek(anchor);
+    _rangeStart = AppDateUtils.startOfWeek(anchor);
     _focusedMonth = DateTime(anchor.year, anchor.month, 1);
     _loadData();
   }
@@ -133,31 +139,50 @@ class _CalendarGridScreenState extends State<CalendarGridScreen> {
   }
 
   ({DateTime start, DateTime end}) _markerRange() {
-    if (_mode == _CalendarGridMode.week) {
-      final DateTime start = _weekStart;
-      final DateTime end = start.add(const Duration(days: 6));
-      return (start: start, end: end);
+    switch (_mode) {
+      case _CalendarGridMode.day:
+        return (start: _rangeStart, end: _rangeStart);
+      case _CalendarGridMode.threeDays:
+        return (
+          start: _rangeStart,
+          end: _rangeStart.add(const Duration(days: 2)),
+        );
+      case _CalendarGridMode.week:
+        return (
+          start: _rangeStart,
+          end: _rangeStart.add(const Duration(days: 6)),
+        );
+      case _CalendarGridMode.month:
+        final DateTime monthStart =
+            DateTime(_focusedMonth.year, _focusedMonth.month, 1);
+        final DateTime monthEnd =
+            DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0);
+        return (
+          start: monthStart.subtract(const Duration(days: 7)),
+          end: monthEnd.add(const Duration(days: 7)),
+        );
     }
-
-    final DateTime monthStart = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
-    final DateTime monthEnd = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0);
-    return (
-      start: monthStart.subtract(const Duration(days: 7)),
-      end: monthEnd.add(const Duration(days: 7)),
-    );
   }
 
   void _setMode(_CalendarGridMode mode) {
     if (_mode == mode) {
       return;
     }
-    setState(() => _mode = mode);
+    setState(() {
+      _mode = mode;
+      if (mode == _CalendarGridMode.week) {
+        _rangeStart = AppDateUtils.startOfWeek(_rangeStart);
+      } else if (mode == _CalendarGridMode.day ||
+          mode == _CalendarGridMode.threeDays) {
+        _rangeStart = AppDateUtils.startOfDay(DateTime.now());
+      }
+    });
     _loadData();
   }
 
-  void _shiftWeek(int deltaWeeks) {
+  void _shiftRange(int deltaDays) {
     setState(() {
-      _weekStart = _weekStart.add(Duration(days: 7 * deltaWeeks));
+      _rangeStart = _rangeStart.add(Duration(days: deltaDays));
     });
     _loadData();
   }
@@ -171,9 +196,9 @@ class _CalendarGridScreenState extends State<CalendarGridScreen> {
 
   void _onMonthDaySelected(DateTime day) {
     setState(() {
-      _weekStart = AppDateUtils.startOfWeek(day);
+      _rangeStart = AppDateUtils.startOfDay(day);
       _focusedMonth = DateTime(day.year, day.month, 1);
-      _mode = _CalendarGridMode.week;
+      _mode = _CalendarGridMode.day;
     });
     _loadData();
   }
@@ -230,14 +255,34 @@ class _CalendarGridScreenState extends State<CalendarGridScreen> {
     context.read<DashboardBloc>().add(const LoadDashboardData());
   }
 
-  String _weekTitle(BuildContext context) {
+  String _rangeTitle(BuildContext context) {
     final DateFormat format = L10n.dateFormat('d MMM', context: context);
-    final DateTime weekEnd = _weekStart.add(const Duration(days: 6));
-    return '${format.format(_weekStart)} – ${format.format(weekEnd)}';
+    switch (_mode) {
+      case _CalendarGridMode.day:
+        return format.format(_rangeStart);
+      case _CalendarGridMode.threeDays:
+        final DateTime end = _rangeStart.add(const Duration(days: 2));
+        return '${format.format(_rangeStart)} – ${format.format(end)}';
+      case _CalendarGridMode.week:
+        final DateTime weekEnd = _rangeStart.add(const Duration(days: 6));
+        return '${format.format(_rangeStart)} – ${format.format(weekEnd)}';
+      case _CalendarGridMode.month:
+        return L10n.dateFormat('MMMM yyyy', context: context)
+            .format(_focusedMonth);
+    }
   }
+
+  int get _navigationStepDays => switch (_mode) {
+        _CalendarGridMode.day => 1,
+        _CalendarGridMode.threeDays => 3,
+        _CalendarGridMode.week => 7,
+        _CalendarGridMode.month => 0,
+      };
 
   @override
   Widget build(BuildContext context) {
+    final bool showTimeNav = _mode != _CalendarGridMode.month;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('calendar_grid_title'.tr()),
@@ -257,6 +302,16 @@ class _CalendarGridScreenState extends State<CalendarGridScreen> {
             child: SegmentedButton<_CalendarGridMode>(
               segments: <ButtonSegment<_CalendarGridMode>>[
                 ButtonSegment<_CalendarGridMode>(
+                  value: _CalendarGridMode.day,
+                  label: Text('calendar_grid_day'.tr()),
+                  icon: const Icon(Icons.view_day_outlined),
+                ),
+                ButtonSegment<_CalendarGridMode>(
+                  value: _CalendarGridMode.threeDays,
+                  label: Text('calendar_grid_three_days'.tr()),
+                  icon: const Icon(Icons.view_column_outlined),
+                ),
+                ButtonSegment<_CalendarGridMode>(
                   value: _CalendarGridMode.week,
                   label: Text('calendar_grid_week'.tr()),
                   icon: const Icon(Icons.view_week_outlined),
@@ -275,26 +330,30 @@ class _CalendarGridScreenState extends State<CalendarGridScreen> {
               },
             ),
           ),
-          if (_mode == _CalendarGridMode.week)
+          if (showTimeNav)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Row(
                 children: <Widget>[
                   IconButton(
-                    tooltip: 'calendar_grid_prev_week'.tr(),
-                    onPressed: _loading ? null : () => _shiftWeek(-1),
+                    tooltip: 'calendar_grid_prev_period'.tr(),
+                    onPressed: _loading
+                        ? null
+                        : () => _shiftRange(-_navigationStepDays),
                     icon: const Icon(Icons.chevron_left),
                   ),
                   Expanded(
                     child: Text(
-                      _weekTitle(context),
+                      _rangeTitle(context),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
                   IconButton(
-                    tooltip: 'calendar_grid_next_week'.tr(),
-                    onPressed: _loading ? null : () => _shiftWeek(1),
+                    tooltip: 'calendar_grid_next_period'.tr(),
+                    onPressed: _loading
+                        ? null
+                        : () => _shiftRange(_navigationStepDays),
                     icon: const Icon(Icons.chevron_right),
                   ),
                 ],
@@ -311,19 +370,20 @@ class _CalendarGridScreenState extends State<CalendarGridScreen> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : _mode == _CalendarGridMode.week
-                    ? CalendarGridWeekView(
-                        weekStart: _weekStart,
-                        events: _storedEvents,
-                        onEmptySlotLongPress: _openCreateFromSlot,
-                        onEventTap: _openEventDetail,
-                        onEventLongPress: _openEditEvent,
-                      )
-                    : CalendarGridMonthView(
+                : _mode == _CalendarGridMode.month
+                    ? CalendarGridMonthView(
                         focusedDay: _focusedMonth,
                         dayMarkers: _dayMarkers,
                         onDaySelected: _onMonthDaySelected,
                         onPageChanged: _onMonthPageChanged,
+                      )
+                    : CalendarGridWeekView(
+                        rangeStart: _rangeStart,
+                        dayCount: _timeViewDayCount,
+                        events: _storedEvents,
+                        onEmptySlotLongPress: _openCreateFromSlot,
+                        onEventTap: _openEventDetail,
+                        onEventLongPress: _openEditEvent,
                       ),
           ),
         ],

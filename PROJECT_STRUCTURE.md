@@ -73,6 +73,10 @@ smart_planner/lib/
 │   │   ├── domain/
 │   │   │   ├── entities/          # CalendarEvent, EventAttachment, DeviceCalendarInfo
 │   │   │   ├── calendar_context_colors.dart
+│   │   │   ├── calendar_event_occurrence.dart       # Per-day bounds, all-day filter, cross-midnight clip
+│   │   │   ├── calendar_event_overlap_layout.dart   # Grid + strip overlap geometry (`StackedOverlapGeometry`)
+│   │   │   ├── calendar_event_time_utils.dart       # All-day detection, range normalization
+│   │   │   ├── calendar_grid_layout.dart            # Grid slot snapping (15 min, hour boundaries)
 │   │   │   ├── exceptions/
 │   │   │   ├── repositories/calendar_repository.dart
 │   │   │   └── calendar_integration_domain.dart
@@ -85,7 +89,7 @@ smart_planner/lib/
 │   │           ├── event_form_sheet.dart          # Create + edit local events
 │   │           ├── linked_calendars_field.dart      # Chips or dropdown calendar picker
 │   │           ├── device_calendar_picker_field.dart
-│   │           ├── calendar_grid_week_view.dart   # Stateful; ScrollController → scroll to now
+│   │           ├── calendar_grid_week_view.dart   # Day/3-day/week grid; overlap blocks; all-day row; long-press slots
 │   │           └── calendar_grid_month_view.dart
 │   │
 │   ├── todo_list/
@@ -207,7 +211,9 @@ smart_planner/lib/
 │           ├── widgets/
 │           │   ├── dashboard_week_date_strip.dart
 │           │   ├── dashboard_local_events_section.dart
+│           │   ├── dashboard_all_day_events_row.dart
 │           │   ├── dashboard_local_events_strip.dart
+│           │   ├── event_time_range_label.dart
 │           │   └── dashboard_create_fab.dart
 │           └── dashboard_screen.dart            # DeepLinkDispatcher → DayStatusServiceHost
 │
@@ -226,6 +232,7 @@ smart_planner/test/
 ├── task_overdue_selection_test.dart
 ├── task_reopen_test.dart
 ├── compressed_events_strip_layout_test.dart
+├── calendar_event_layout_test.dart
 ├── recurrence_evaluator_test.dart
 ├── recurrence_rule_test.dart
 ├── day_status_notification_builder_test.dart
@@ -258,8 +265,16 @@ smart_planner/test/
 | `DashboardLoaded` | Active/completed/undated/overdue task lists; `linkedCalendarsById` for context calendar badges |
 | `DashboardDayMarkersRepository` | One Isar + one calendar fetch per week range (cached) |
 | `DashboardWeekDateStrip` | Horizontal ~21-day strip; activity dots per day |
-| `DashboardLocalEventsStrip` | Compressed horizontal event cards; live now line (today) |
-| `CompressedEventsStripLayout` | Card/gap segment positions; focus scroll anchor |
+| `DashboardLocalEventsStrip` | Compressed horizontal event cards; staggered overlap stack; live now line (today) |
+| `DashboardAllDayEventsRow` | All-day event chips above the timed strip |
+| `CompressedEventsStripLayout` | Card/gap segment positions; overlap groups; focus scroll anchor |
+| `StackedOverlapGeometry` | Shared overlap layout: grid columns + dashboard strip stagger (`forGrid`, `forStrip`) |
+| `CalendarEventTimeUtils` | All-day detection, calendar-day overlap, all-day range normalization |
+| `CalendarEventOccurrence` | Timed bounds on a day; all-day list; cross-midnight clip flags |
+| `CalendarEventOverlapLayout` | Column assignment for concurrent events |
+| `EventTimeRangeLabel` | Localized time range; cross-midnight labels on strip/grid cards |
+| `CalendarGridScreen` | Tabs: 1 day, 3 days, week, month; opens `EventFormSheet` from grid |
+| `CalendarGridWeekView` | Time grid with all-day row, overlap blocks, now line, long-press slot create |
 | `EventTimeStatus` / resolver | past / current / future styling on strip cards |
 | `LocalCalendarEventRepository` | Implements `CalendarEventStore`; Isar events; `EventSource`, `updatedAt`; device upsert |
 | `CalendarEventStore` | Domain interface for calendar event persistence (test doubles) |
@@ -532,5 +547,6 @@ Example prompt:
 | 2026-05 | Device calendar write-back: `CalendarEventWriteService`, create/update/delete via `device_calendar` |
 | 2026-06-04 | Dashboard calendar UX: selected-calendar filter, recurring instance read/merge, now-line strip rules, week markers via `TaskDateVisibility` |
 | 2026-06-06 | Checklist `moveCompletedToEnd`; `SlidingCompletionList` / `CollapsingCompletionTile`; `checklist_attachment_body`, `linked_tasks_completion_list`; dashboard task tile `ValueKey` |
+| 2026-06-06 | Calendar overlap UX: `calendar_event_*` domain helpers, dashboard staggered strip, grid tabs + all-day row + long-press slots, `EventFormSheet` all-day/cross-midnight |
 | 2026-06-06 | Lock screen widget spec (`ANDROID_LOCK_SCREEN_WIDGET.md`); home widget paths in key-types table; removed sprint roadmap / home-widget sketch docs |
 | 2026-06-06 | **Theme settings** (system / light / dark); tuned `AppTheme` + `AppColorUtils`; bordered sections/cards; settings **Theme** section on `CalendarSettingsPage` |

@@ -5,6 +5,7 @@ import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/presentation/widgets/confirm_delete_record.dart';
 import 'package:smart_planner/core/presentation/widgets/form_sheet_scaffold.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_recurrence.dart';
+import 'package:smart_planner/features/calendar_integration/domain/calendar_event_time_utils.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/widgets/calendar_event_delete_dialog.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/widgets/linked_calendars_field.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
@@ -67,6 +68,8 @@ class _EventFormSheetState extends State<EventFormSheet> {
   late final TextEditingController _titleController;
   late DateTime _start;
   late DateTime _end;
+  late DateTime _allDayEndDay;
+  bool _isAllDay = false;
   String? _selectedCalendarId;
   DeviceCalendarInfo? _selectedCalendar;
   RecurrenceFrequency _recurrenceFrequency = RecurrenceFrequency.none;
@@ -83,8 +86,16 @@ class _EventFormSheetState extends State<EventFormSheet> {
     final CalendarEvent? existing = widget.eventToEdit;
     if (existing != null) {
       _titleController = TextEditingController(text: existing.title);
+      _isAllDay = CalendarEventTimeUtils.isAllDay(existing);
       _start = existing.start;
       _end = existing.end;
+      if (_isAllDay) {
+        _allDayEndDay = AppDateUtils.startOfDay(
+          existing.end.subtract(const Duration(minutes: 1)),
+        );
+      } else {
+        _allDayEndDay = AppDateUtils.startOfDay(_end);
+      }
       _selectedCalendarId = existing.calendarId;
       _recurrenceFrequency =
           existing.recurrenceRule?.frequency ?? RecurrenceFrequency.none;
@@ -103,6 +114,7 @@ class _EventFormSheetState extends State<EventFormSheet> {
         _start = day.add(const Duration(hours: 10));
         _end = day.add(const Duration(hours: 11));
       }
+      _allDayEndDay = day;
     }
     if (existing == null) {
       _loadDefaultReminder();
@@ -131,7 +143,7 @@ class _EventFormSheetState extends State<EventFormSheet> {
     super.dispose();
   }
 
-  Future<void> _pickDate() async {
+  Future<void> _pickStartDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: AppDateUtils.startOfDay(_start),
@@ -141,18 +153,64 @@ class _EventFormSheetState extends State<EventFormSheet> {
     if (picked == null || !mounted) {
       return;
     }
-    final Duration span = _end.difference(_start);
-    final DateTime newStart = DateTime(
-      picked.year,
-      picked.month,
-      picked.day,
-      _start.hour,
-      _start.minute,
-    );
-    final DateTime newEnd = newStart.add(span);
     setState(() {
-      _start = newStart;
-      _end = newEnd.isAfter(_start) ? newEnd : _start.add(const Duration(hours: 1));
+      if (_isAllDay) {
+        _start = AppDateUtils.startOfDay(picked);
+        if (_allDayEndDay.isBefore(_start)) {
+          _allDayEndDay = _start;
+        }
+        return;
+      }
+
+      final Duration span = _end.difference(_start);
+      _start = DateTime(
+        picked.year,
+        picked.month,
+        picked.day,
+        _start.hour,
+        _start.minute,
+      );
+      _end = _start.add(span);
+      if (!CalendarEventTimeUtils.isValidTimedRange(_start, _end)) {
+        _end = _start.add(const Duration(hours: 1));
+      }
+    });
+  }
+
+  Future<void> _pickAllDayEndDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _allDayEndDay,
+      firstDate: AppDateUtils.startOfDay(_start),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() => _allDayEndDay = AppDateUtils.startOfDay(picked));
+  }
+
+  Future<void> _pickEndDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: AppDateUtils.startOfDay(_end),
+      firstDate: AppDateUtils.startOfDay(_start),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _end = DateTime(
+        picked.year,
+        picked.month,
+        picked.day,
+        _end.hour,
+        _end.minute,
+      );
+      if (!CalendarEventTimeUtils.isValidTimedRange(_start, _end)) {
+        _end = _start.add(const Duration(hours: 1));
+      }
     });
   }
 
@@ -172,8 +230,14 @@ class _EventFormSheetState extends State<EventFormSheet> {
         time.hour,
         time.minute,
       );
-      if (!_end.isAfter(_start)) {
-        _end = _start.add(const Duration(hours: 1));
+      if (!CalendarEventTimeUtils.isValidTimedRange(_start, _end)) {
+        _end = DateTime(
+          _start.year,
+          _start.month,
+          _start.day,
+          time.hour,
+          time.minute,
+        ).add(const Duration(hours: 1));
       }
     });
   }
@@ -187,15 +251,39 @@ class _EventFormSheetState extends State<EventFormSheet> {
       return;
     }
     setState(() {
-      _end = DateTime(
+      DateTime candidate = DateTime(
         _end.year,
         _end.month,
         _end.day,
         time.hour,
         time.minute,
       );
+      if (!candidate.isAfter(_start)) {
+        candidate = DateTime(
+          _start.year,
+          _start.month,
+          _start.day,
+          time.hour,
+          time.minute,
+        ).add(const Duration(days: 1));
+      }
+      _end = candidate;
     });
   }
+
+  ({DateTime start, DateTime end}) _resolvedRange() {
+    if (_isAllDay) {
+      return CalendarEventTimeUtils.normalizeAllDayRange(
+        startDay: _start,
+        endDayInclusive: _allDayEndDay,
+      );
+    }
+    return (start: _start, end: _end);
+  }
+
+  bool get _endOnDifferentDay =>
+      !_isAllDay &&
+      !AppDateUtils.isSameCalendarDay(_start, _end);
 
   RecurrenceRule? _buildRecurrenceRule() {
     if (_recurrenceFrequency == RecurrenceFrequency.none) {
@@ -244,12 +332,20 @@ class _EventFormSheetState extends State<EventFormSheet> {
       );
       return;
     }
-    if (!_end.isAfter(_start)) {
+    if (_isAllDay) {
+      if (_allDayEndDay.isBefore(AppDateUtils.startOfDay(_start))) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('event_end_after_start'.tr())),
+        );
+        return;
+      }
+    } else if (!CalendarEventTimeUtils.isValidTimedRange(_start, _end)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('event_end_after_start'.tr())),
       );
       return;
     }
+
 
     setState(() => _saving = true);
 
@@ -293,15 +389,17 @@ class _EventFormSheetState extends State<EventFormSheet> {
     required String title,
     required DeviceCalendarInfo calendar,
   }) async {
+    final ({DateTime start, DateTime end}) range = _resolvedRange();
     final CalendarEventWriteService writer =
         context.read<CalendarEventWriteService>();
     final CalendarEvent event = await writer.save(
       title: title,
-      start: _start,
-      end: _end,
+      start: range.start,
+      end: range.end,
       calendar: calendar,
       recurrence: _buildRecurrenceRule(),
       reminderMinutesBefore: _reminderMinutes,
+      allDay: _isAllDay,
     );
     await _syncReminderForEvent(event);
     _showReadOnlyNoticeIfNeeded(calendar);
@@ -314,16 +412,18 @@ class _EventFormSheetState extends State<EventFormSheet> {
     required String title,
     required DeviceCalendarInfo calendar,
   }) async {
+    final ({DateTime start, DateTime end}) range = _resolvedRange();
     final CalendarEventWriteService writer =
         context.read<CalendarEventWriteService>();
     final CalendarEvent event = await writer.save(
       title: title,
-      start: _start,
-      end: _end,
+      start: range.start,
+      end: range.end,
       calendar: calendar,
       recurrence: _buildRecurrenceRule(),
       reminderMinutesBefore: _reminderMinutes,
       existing: widget.eventToEdit,
+      allDay: _isAllDay,
     );
     await _syncReminderForEvent(event);
     _showReadOnlyNoticeIfNeeded(calendar);
@@ -401,39 +501,86 @@ class _EventFormSheetState extends State<EventFormSheet> {
                 },
               ),
               const SizedBox(height: 12),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('event_field_all_day'.tr()),
+                value: _isAllDay,
+                onChanged: (bool value) {
+                  setState(() {
+                    _isAllDay = value;
+                    if (value) {
+                      _start = AppDateUtils.startOfDay(_start);
+                      _allDayEndDay = AppDateUtils.startOfDay(_start);
+                    }
+                  });
+                },
+              ),
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'event_field_date'.tr(),
+                  _isAllDay
+                      ? 'event_field_date'.tr()
+                      : 'event_field_start'.tr(),
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
               ),
               const SizedBox(height: 6),
               OutlinedButton.icon(
-                onPressed: _pickDate,
+                onPressed: _pickStartDate,
                 icon: const Icon(Icons.calendar_today_outlined),
                 label: Text(_formatDate(_start)),
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickStart,
-                      icon: const Icon(Icons.access_time),
-                      label: Text(_formatTime(_start)),
-                    ),
+              if (_isAllDay) ...<Widget>[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'event_field_end_date'.tr(),
+                    style: Theme.of(context).textTheme.labelLarge,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickEnd,
-                      icon: const Icon(Icons.access_time_filled),
-                      label: Text(_formatTime(_end)),
+                ),
+                const SizedBox(height: 6),
+                OutlinedButton.icon(
+                  onPressed: _pickAllDayEndDate,
+                  icon: const Icon(Icons.event_outlined),
+                  label: Text(_formatDate(_allDayEndDay)),
+                ),
+              ] else ...<Widget>[
+                const SizedBox(height: 8),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _pickStart,
+                        icon: const Icon(Icons.access_time),
+                        label: Text(_formatTime(_start)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _pickEnd,
+                        icon: const Icon(Icons.access_time_filled),
+                        label: Text(_formatTime(_end)),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_endOnDifferentDay) ...<Widget>[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _pickEndDate,
+                    icon: const Icon(Icons.event_outlined),
+                    label: Text(
+                      'event_end_date_label'.tr(
+                        namedArgs: <String, String>{
+                          'date': _formatDate(_end),
+                        },
+                      ),
                     ),
                   ),
                 ],
-              ),
+              ],
               const SizedBox(height: 12),
               DropdownButtonFormField<RecurrenceFrequency>(
                 initialValue: _recurrenceFrequency,

@@ -13,6 +13,7 @@ import 'package:smart_planner/features/todo_list/domain/entities/attachment_ref.
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment_type.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_checklist.dart';
+import 'package:smart_planner/core/theme/app_theme.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/attachment_action_sheet.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/checklist_attachment_body.dart';
@@ -302,7 +303,8 @@ class _AttachmentTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 0,
-      color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+      color: colors.surface,
+      shape: AppTheme.insetCardShape(colors),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => _showActions(context),

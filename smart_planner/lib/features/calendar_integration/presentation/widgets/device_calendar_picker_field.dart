@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
-
 /// Tappable field that opens a list sheet to pick a [DeviceCalendarInfo].
 ///
 /// Reliable inside modal bottom sheets (unlike [DropdownButtonFormField]).
@@ -109,39 +108,35 @@ class DeviceCalendarPickerField extends StatelessWidget {
     final String effectiveHint =
         hintText ?? 'event_form_select_calendar_hint'.tr();
 
-    return Material(
-      color: colors.surfaceContainerHighest.withValues(alpha: 0.35),
+    return InkWell(
+      onTap: () => _openPicker(context),
       borderRadius: BorderRadius.circular(4),
-      child: InkWell(
-        onTap: () => _openPicker(context),
-        borderRadius: BorderRadius.circular(4),
-        child: InputDecorator(
-          decoration: InputDecoration(
-            labelText: 'common_calendar'.tr(),
-            border: const OutlineInputBorder(),
-            suffixIcon: const Icon(Icons.arrow_drop_down),
-          ),
-          child: Row(
-            children: <Widget>[
-              if (selected != null)
-                CircleAvatar(
-                  radius: 8,
-                  backgroundColor: Color(_colorArgb(selected.colorValue)),
-                ),
-              if (selected != null) const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  selected?.name ?? effectiveHint,
-                  style: selected == null
-                      ? theme.textTheme.bodyLarge?.copyWith(
-                          color: colors.onSurfaceVariant,
-                        )
-                      : theme.textTheme.bodyLarge,
-                  overflow: TextOverflow.ellipsis,
-                ),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'common_calendar'.tr(),
+          border: const OutlineInputBorder(),
+          suffixIcon: const Icon(Icons.arrow_drop_down),
+        ),
+        child: Row(
+          children: <Widget>[
+            if (selected != null)
+              CircleAvatar(
+                radius: 8,
+                backgroundColor: Color(_colorArgb(selected.colorValue)),
               ),
-            ],
-          ),
+            if (selected != null) const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                selected?.name ?? effectiveHint,
+                style: selected == null
+                    ? theme.textTheme.bodyLarge?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      )
+                    : theme.textTheme.bodyLarge,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );

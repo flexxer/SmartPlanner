@@ -5,6 +5,9 @@
   "language_en": "English",
   "language_ru": "Русский",
   "language_es": "Español",
+  "theme_system": "Predeterminado del sistema",
+  "theme_light": "Claro",
+  "theme_dark": "Oscuro",
 
   "common_cancel": "Cancelar",
   "common_delete": "Eliminar",
@@ -106,6 +109,7 @@
   "calendar_settings_title": "Calendarios",
   "settings_page_title": "Ajustes",
   "settings_section_language": "Idioma",
+  "settings_section_theme": "Tema",
   "settings_section_reminders": "Recordatorios",
   "settings_section_notifications": "Notificaciones",
   "settings_section_calendars": "Calendarios",

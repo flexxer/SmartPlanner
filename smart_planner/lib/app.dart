@@ -10,6 +10,7 @@ import 'package:smart_planner/core/localization/locale_preferences_repository.da
 
 import 'package:smart_planner/core/app_initializer.dart';
 import 'package:smart_planner/core/theme/app_theme.dart';
+import 'package:smart_planner/core/theme/theme_preferences_repository.dart';
 
 import 'package:smart_planner/features/calendar_integration/data/calendar_preferences_repository.dart';
 
@@ -55,6 +56,8 @@ class DayLinxApp extends StatelessWidget {
 
     required this.localePreferences,
 
+    required this.themePreferences,
+
     this.deepLinkService,
 
     super.key,
@@ -64,6 +67,8 @@ class DayLinxApp extends StatelessWidget {
 
 
   final LocalePreferencesRepository localePreferences;
+
+  final ThemePreferencesRepository themePreferences;
 
   final DeepLinkService? deepLinkService;
 
@@ -213,6 +218,12 @@ class DayLinxApp extends StatelessWidget {
 
         ),
 
+        RepositoryProvider<ThemePreferencesRepository>.value(
+
+          value: themePreferences,
+
+        ),
+
         RepositoryProvider<NotificationPreferencesRepository>.value(
 
           value: notificationPreferences,
@@ -242,7 +253,13 @@ class DayLinxApp extends StatelessWidget {
 
       ],
 
-      child: MaterialApp(
+      child: ListenableBuilder(
+
+        listenable: themePreferences.themeMode,
+
+        builder: (BuildContext context, Widget? child) {
+
+          return MaterialApp(
 
         navigatorKey: rootNavigatorKey,
 
@@ -252,7 +269,7 @@ class DayLinxApp extends StatelessWidget {
 
         darkTheme: AppTheme.dark,
 
-        themeMode: ThemeMode.system,
+        themeMode: themePreferences.themeMode.value,
 
         locale: context.locale,
 
@@ -298,6 +315,10 @@ class DayLinxApp extends StatelessWidget {
           ),
 
         ),
+
+      );
+
+        },
 
       ),
 

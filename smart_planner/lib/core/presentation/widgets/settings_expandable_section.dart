@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_planner/core/theme/app_theme.dart';
 
 /// Full-width expandable block for grouped settings on [CalendarSettingsPage].
 class SettingsExpandableSection extends StatelessWidget {
@@ -20,25 +21,28 @@ class SettingsExpandableSection extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Material(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        child: Theme(
-          data: theme.copyWith(dividerColor: colors.surfaceContainerHighest),
-          child: ExpansionTile(
-            initiallyExpanded: initiallyExpanded,
-            tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-            childrenPadding: const EdgeInsets.only(bottom: 8),
-            shape: const Border(),
-            collapsedShape: const Border(),
-            title: Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+      child: DecoratedBox(
+        decoration: AppTheme.groupedSectionDecoration(colors),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
+          child: Theme(
+            data: theme.copyWith(dividerColor: colors.outlineVariant),
+            child: ExpansionTile(
+              initiallyExpanded: initiallyExpanded,
+              tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+              childrenPadding: const EdgeInsets.only(bottom: 8),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              title: Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
+              children: children,
             ),
-            children: children,
           ),
         ),
       ),

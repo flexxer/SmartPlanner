@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_planner/core/theme/app_theme.dart';
 
 /// Inline message with action for calendar picker error / permission states.
 class CalendarPickerMessage extends StatelessWidget {
@@ -42,10 +43,7 @@ class CalendarPickerMessage extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: AppTheme.insetCardDecoration(colors, borderRadius: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[

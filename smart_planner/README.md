@@ -64,7 +64,7 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
 - **Create / edit / delete** tasks and local events via **`TaskFormSheet`** / **`EventFormSheet`** (delete with confirmation in edit mode)
 
-- **AppBar:** search, templates (`TemplatesPage`), calendar settings (language, reminders, digests, midnight roll), **week/month time grid** (auto-scroll to current time when today is visible), refresh
+- **AppBar:** search, templates (`TemplatesPage`), **settings** (language, **theme**, reminders, digests, midnight roll), **week/month time grid** (auto-scroll to current time when today is visible), refresh
 
 - **Device calendar write-back** — create/edit/delete on writable calendars; read-only calendars save to Isar only; move event between calendars on edit; recurring delete (this occurrence vs series); import/read **only checked** calendars in settings
 
@@ -76,7 +76,7 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
 - **Morning / evening task digest** (optional, on by default): Workmanager notifications ~08:00 and ~19:00 with today's task count
 
-- **Light / dark theme** follows system settings
+- **Light / dark theme** — system default, or force light/dark in **Settings → Theme**
 
 - **Deep links (Android / iOS):** `daylinx://create?type=task&title=…&priority=2` or `type=event&start=14:00` opens the dashboard and the matching create sheet with prefilled fields (`app_links`)
 
@@ -150,9 +150,9 @@ Includes: `task_date_visibility_test`, `task_overdue_rules_test`, `task_overdue_
 
 |------|-------------|
 
-| `lib/app.dart` | `MaterialApp`, locale delegates, repositories, `ThemeMode.system`, `DashboardBloc` |
+| `lib/app.dart` | `MaterialApp`, locale delegates, repositories, persisted `ThemeMode`, `DashboardBloc` |
 
-| `lib/core/` | Isar DB, theme, init, `AppDateUtils`, `localization/`, `presentation/widgets/` (`SlidingCompletionList`, `CollapsingCompletionTile`) |
+| `lib/core/` | Isar DB, theme (`AppTheme`, `AppColorUtils`, theme preferences), init, `AppDateUtils`, `localization/`, `presentation/widgets/` |
 
 | `assets/translations/` | `en.json`, `ru.json`, `es.json` UI strings |
 

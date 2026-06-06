@@ -17,16 +17,16 @@ abstract final class TaskPriorityUi {
 
   static Color iconColor(TaskPriority priority, ColorScheme colors) {
     return switch (priority) {
-      TaskPriority.low => colors.onSurfaceVariant.withValues(alpha: 0.45),
-      TaskPriority.medium => colors.onSurfaceVariant,
-      TaskPriority.high => colors.tertiary,
+      TaskPriority.low => colors.onPrimaryContainer.withValues(alpha: 0.72),
+      TaskPriority.medium => colors.onSecondaryContainer,
+      TaskPriority.high => colors.onTertiaryContainer,
       TaskPriority.urgent => colors.error,
     };
   }
 
   static Color backgroundColor(TaskPriority priority, ColorScheme colors) {
     return switch (priority) {
-      TaskPriority.low => colors.surfaceContainerHighest,
+      TaskPriority.low => colors.primaryContainer,
       TaskPriority.medium => colors.secondaryContainer,
       TaskPriority.high => colors.tertiaryContainer,
       TaskPriority.urgent => colors.errorContainer,
@@ -35,7 +35,7 @@ abstract final class TaskPriorityUi {
 
   static Color foregroundColor(TaskPriority priority, ColorScheme colors) {
     return switch (priority) {
-      TaskPriority.low => colors.onSurfaceVariant,
+      TaskPriority.low => colors.onPrimaryContainer,
       TaskPriority.medium => colors.onSecondaryContainer,
       TaskPriority.high => colors.onTertiaryContainer,
       TaskPriority.urgent => colors.onErrorContainer,

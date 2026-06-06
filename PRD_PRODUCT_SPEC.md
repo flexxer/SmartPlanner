@@ -116,8 +116,8 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 | Architecture | Feature-driven Clean Architecture (`data` / `domain` / `presentation`) |
 | Calendar on device | `device_calendar` |
 | Local notifications | `flutter_local_notifications` + `timezone` |
-| Theming | **System light/dark** — `ThemeMode.system`, Material 3 light + dark (`AppTheme`) |
-| Localization | **easy_localization** — `assets/translations/en.json`, `ru.json`, `es.json`; default = device locale; manual override on **Calendars** settings screen |
+| Theming | **System / light / dark** — user choice on Settings; Material 3 (`AppTheme`); tuned contrast (`AppColorUtils`) |
+| Localization | **easy_localization** — `assets/translations/en.json`, `ru.json`, `es.json`; default = device locale; manual override on **Settings** screen |
 | Future AI modules | Keep domain layer free of UI/framework deps where possible |
 
 **Platform note:** Isar does **not** support Web. Run on Android/iOS/desktop, not Chrome.
@@ -183,7 +183,7 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 | Action | Purpose |
 |--------|---------|
 | Templates (`layers_outlined`) | Opens `TemplatesPage` (create/apply UI templates) |
-| Calendars | Device calendar selection + **language** dropdown (system / en / ru / es) |
+| Calendars | Opens **Settings** (`CalendarSettingsPage`): language, **theme**, reminders, notifications, device calendar selection |
 | Refresh | `LoadDashboardData` |
 
 ### Create / edit forms
@@ -203,12 +203,14 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 
 ### Appearance
 
-- Follows **device theme** (light / dark / system setting).
+- **Theme:** System default (follows OS), **Light**, or **Dark** — Settings → **Theme** dropdown; persisted across launches.
+- **Visual style:** Material 3 with tuned palette; grouped sections and cards use surface + outline border (no flat gray panels); calendar/task badges use contrast-aware accent colors.
+- **Language:** device locale when supported (`en` / `ru` / `es`), or manual override on the same Settings screen.
 
 ### Localization
 
 - **Default:** app language follows the **device locale** when it matches `en`, `ru`, or `es`; otherwise **English** fallback.
-- **Override:** **Calendars** screen → **Language** dropdown (System default / English / Russian / Spanish); persisted in SharedPreferences; UI updates immediately without restart.
+- **Override:** **Settings** screen → **Language** dropdown (System default / English / Russian / Spanish); persisted in SharedPreferences; UI updates immediately without restart.
 - **Day-status notification (Android):** same settings screen → **Show status bar in notifications** (`day_status_bar_enabled`) and **Pin above other notifications** (`day_status_bar_pinned`, default on); requires notification permission on Android 13+.
 - **Implementation:** all presentation strings use translation keys in `assets/translations/*.json`; helpers in `lib/core/localization/l10n.dart` for plurals, priorities, and `DateFormat`.
 - **Not localized:** demo seed tasks in `task_bootstrap.dart`; calendar-name heuristics in `calendar_context_colors.dart` (matching only).
@@ -221,9 +223,6 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 - Full Google Calendar OAuth write access
 - Cloud sync / multi-device backup
 - AI scheduling assistant
-- In-app manual theme override (system only for now; language override is in scope)
-
----
 
 ## 7. Revision history
 
@@ -252,3 +251,4 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 | 2026-06-04 | Calendar UX: selected calendars only; recurring instances + merger; now line before first event; week strip task counts aligned with dashboard |
 | 2026-06-06 | Checklist `moveCompletedToEnd` setting; shared completion-list animations (`SlidingCompletionList`, `CollapsingCompletionTile`); linked tasks on event detail; dashboard tiles keyed by task id for stable BLoC reload |
 | 2026-06-06 | Lock screen widget spec (variant 1 «Pulse»); removed obsolete `REFACTORING_ROADMAP.md` and `ANDROID_HOME_WIDGET_SKETCH.md` |
+| 2026-06-06 | Theme picker (system / light / dark); tuned Material 3 palette and contrast; bordered UI sections |

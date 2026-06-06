@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_planner/core/theme/app_color_utils.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_context_colors.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_recurrence.dart';
@@ -362,16 +363,14 @@ class _LocalEventCard extends StatelessWidget {
     final bool isPast = status == EventTimeStatus.past;
     final bool isCurrent = status == EventTimeStatus.current;
 
-    final Color cardColor = isPast
-        ? colors.surfaceContainerHighest
-        : colors.surfaceContainerLow;
+    final Color cardColor = colors.surface;
     final double cardOpacity = isPast ? 0.55 : 1;
     final Color titleColor = isPast
         ? colors.onSurface.withValues(alpha: 0.55)
         : colors.onSurface;
     final Color timeColor = isPast
-        ? accent.withValues(alpha: 0.5)
-        : accent;
+        ? AppColorUtils.accentLabel(accent, colors, muted: true)
+        : AppColorUtils.accentLabel(accent, colors);
 
     return Opacity(
       opacity: cardOpacity,
@@ -382,9 +381,12 @@ class _LocalEventCard extends StatelessWidget {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: isCurrent
-                ? BorderSide(color: colors.primary, width: 2)
-                : BorderSide.none,
+            side: BorderSide(
+              color: isCurrent
+                  ? colors.primary
+                  : colors.outlineVariant,
+              width: isCurrent ? 2 : 1,
+            ),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(

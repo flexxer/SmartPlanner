@@ -29,7 +29,12 @@ smart_planner/lib/
 │   │   ├── locale_preferences_repository.dart  # manual language override (SharedPreferences)
 │   │   ├── l10n.dart                  # L10n.tr, overdueDays, priorityLabel, dateFormat
 │   │   └── language_picker_section.dart  # dropdown on CalendarSettingsPage
-│   ├── theme/app_theme.dart           # Light + dark Material 3 themes
+│   ├── theme/
+│   │   ├── app_theme.dart                  # Light + dark Material 3 themes, section/card decorations
+│   │   ├── app_theme_mode.dart             # system / light / dark picker codes
+│   │   ├── app_color_utils.dart            # WCAG contrast helpers for accent badges & labels
+│   │   ├── theme_preferences_repository.dart  # persisted ThemeMode (SharedPreferences + ValueNotifier)
+│   │   └── theme_picker_section.dart       # dropdown on CalendarSettingsPage
 │   ├── database/isar_database.dart    # Isar singleton (tasks, events, sync, templates)
 │   ├── presentation/widgets/
 │   │   ├── settings_expandable_section.dart  # Grouped settings blocks
@@ -73,7 +78,7 @@ smart_planner/lib/
 │   │   │   └── calendar_integration_domain.dart
 │   │   └── presentation/
 │   │       ├── pages/
-│   │       │   ├── calendar_settings_page.dart    # Calendar picker + language dropdown
+│   │       │   ├── calendar_settings_page.dart    # Settings: language, theme, reminders, calendars
 │   │       │   ├── calendar_grid_screen.dart      # Week/month time grid
 │   │       │   └── event_detail_screen.dart       # Full-screen event + linked tasks
 │   │       └── widgets/
@@ -297,12 +302,16 @@ smart_planner/test/
 | `TaskAttachmentCodec` | JSON payload encode/decode; `summaryLabel` for tiles |
 | `TaskAttachmentChecklist` | Toggle items; `displayItems` / `partitionCompletedLast`; honors `moveCompletedToEnd` |
 | `ChecklistAttachmentPayload` | `title`, `items`, `moveCompletedToEnd` (default **true**) |
-| `AppTheme` | `light` / `dark`; app uses `ThemeMode.system` |
+| `AppTheme` | Tuned Material 3 `light` / `dark`; `groupedSectionDecoration`, `insetCardShape`; high-contrast containers |
+| `AppThemeMode` | Picker codes: system / light / dark |
+| `AppColorUtils` | `chipFromAccent`, `accentLabel` — readable badge & event-time colors on both themes |
+| `ThemePreferencesRepository` | Persists `ThemeMode` (`app_theme_mode`); `ValueNotifier` drives `MaterialApp` rebuild |
+| `ThemePickerSection` | Dropdown on `CalendarSettingsPage`; instant theme switch |
 | `LocalePreferencesRepository` | Persists manual language (`en` / `ru` / `es`); empty = follow device locale |
 | `LanguagePickerSection` | Dropdown on `CalendarSettingsPage`; calls `context.setLocale` / `resetLocale` |
 | `L10n` | `tr`, `overdueDays` (plural), `priorityLabel`, `recurrenceLabel`, `dateFormat` |
 | `TaskPriorityUi` | Badge colors; labels via `L10n.priorityLabel` |
-| `CalendarSettingsPage` | Device calendar multi-select + **language** + **day-status notification** toggle (Android) |
+| `CalendarSettingsPage` | **Language**, **theme**, reminders, notifications (Android), device calendar multi-select |
 | `NotificationHelper` | `flutter_local_notifications` init; Android channels (meetings, digest, overdue, **day status**) |
 | `DayStatusNotificationController` | Android foreground service via `startForegroundService` / `show` / `stopForegroundService`; always reflects **today** |
 | `DayStatusNotificationBuilder` | Title with `done`/`total` when tasks exist, else plain title; body = current/next event |
@@ -373,11 +382,20 @@ After any successful `DashboardLoaded` emit or `_emitReloadedTasks`, `DashboardB
 
 ## Theming
 
-Configured in `lib/app.dart`:
+Configured in `lib/app.dart` + `lib/core/theme/`:
 
-- `theme: AppTheme.light`
-- `darkTheme: AppTheme.dark`
-- `themeMode: ThemeMode.system`
+- `theme: AppTheme.light`, `darkTheme: AppTheme.dark`
+- `themeMode` from `ThemePreferencesRepository` (loaded in `main.dart`; `ListenableBuilder` rebuilds `MaterialApp`)
+- User override on **Settings** (`CalendarSettingsPage`) → **Theme** dropdown: **System default** / **Light** / **Dark** (`app_theme_mode` in SharedPreferences)
+
+`AppTheme` uses tuned `ColorScheme` values (not raw `fromSeed` defaults) for readable containers and text on both brightnesses. Grouped blocks and list cards use **`surface` + `outlineVariant` border** instead of flat gray `surfaceContainerHighest` fills.
+
+| Helper | Use |
+|--------|-----|
+| `AppTheme.groupedSectionDecoration` | Settings expansion sections, dashboard panels |
+| `AppTheme.insetCardShape` / `insetCardDecoration` | Task attachments, templates, linked tasks |
+| `AppColorUtils.chipFromAccent` | Calendar context badges, week-grid event blocks |
+| `AppColorUtils.accentLabel` | Event strip time labels on light backgrounds |
 
 Widgets should use `Theme.of(context).colorScheme` (not hardcoded colors) so light/dark stay consistent.
 
@@ -395,7 +413,8 @@ User-facing strings live in **`assets/translations/`** as JSON (`en.json`, `ru.j
 | No `BuildContext` | `L10n.tr('key')` in BLoC, services, codecs (after EasyLocalization init) |
 | Plurals | e.g. `'overdue_days'.plural(n)` via `L10n.overdueDays(days)` |
 | Dates | `L10n.dateFormat('d MMMM', context: context)` — uses active locale, not hardcoded `'ru'` |
-| Manual override | **Calendars** screen (`CalendarSettingsPage`) → **Language** dropdown: System / English / Russian / Spanish; persists to SharedPreferences key `app_locale_language_code` |
+| Manual override | **Settings** screen (`CalendarSettingsPage`) → **Language** dropdown: System / English / Russian / Spanish; persists to SharedPreferences key `app_locale_language_code` |
+| Theme override | Same screen → **Theme** dropdown: System / Light / Dark; persists to `app_theme_mode` |
 
 **Adding a string:** add the same key to all three JSON files, then use `.tr()` in presentation (or `L10n.tr` in domain/data when shown to the user). Do not hardcode UI copy in widgets.
 
@@ -514,3 +533,4 @@ Example prompt:
 | 2026-06-04 | Dashboard calendar UX: selected-calendar filter, recurring instance read/merge, now-line strip rules, week markers via `TaskDateVisibility` |
 | 2026-06-06 | Checklist `moveCompletedToEnd`; `SlidingCompletionList` / `CollapsingCompletionTile`; `checklist_attachment_body`, `linked_tasks_completion_list`; dashboard task tile `ValueKey` |
 | 2026-06-06 | Lock screen widget spec (`ANDROID_LOCK_SCREEN_WIDGET.md`); home widget paths in key-types table; removed sprint roadmap / home-widget sketch docs |
+| 2026-06-06 | **Theme settings** (system / light / dark); tuned `AppTheme` + `AppColorUtils`; bordered sections/cards; settings **Theme** section on `CalendarSettingsPage` |

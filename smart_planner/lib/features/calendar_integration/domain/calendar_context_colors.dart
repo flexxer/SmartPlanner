@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_planner/core/theme/app_color_utils.dart';
 
 /// Maps contextual calendar ids to Material 3 [ColorScheme] accents (MVP).
 class CalendarContextColors {
@@ -41,10 +42,8 @@ class CalendarContextColors {
       calendarId: calendarId,
       fallbackColorValue: fallbackColorValue,
     );
-    return (
-      background: accent.withValues(alpha: 0.22),
-      foreground: accent,
-    );
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return AppColorUtils.chipFromAccent(accent, colors);
   }
 
   static int _normalizeArgb(int value) {

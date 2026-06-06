@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
+import 'package:smart_planner/core/theme/app_color_utils.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_context_colors.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_occurrence.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_grid_layout.dart';
@@ -441,6 +442,8 @@ class _EventBlock extends StatelessWidget {
       calendarId: event.calendarId,
       fallbackColorValue: event.colorValue,
     );
+    final ({Color background, Color foreground}) chipColors =
+        AppColorUtils.chipFromAccent(accent, colors);
 
     return Positioned(
       top: top,
@@ -448,7 +451,7 @@ class _EventBlock extends StatelessWidget {
       right: 2,
       height: height,
       child: Material(
-        color: accent.withValues(alpha: 0.22),
+        color: chipColors.background,
         borderRadius: BorderRadius.circular(4),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -467,7 +470,7 @@ class _EventBlock extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: colors.onSurface,
+                    color: chipColors.foreground,
                   ),
             ),
           ),

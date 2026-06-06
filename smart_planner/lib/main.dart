@@ -5,6 +5,7 @@ import 'package:smart_planner/app.dart';
 import 'package:smart_planner/core/app_initializer.dart';
 import 'package:smart_planner/core/localization/app_locales.dart';
 import 'package:smart_planner/core/localization/locale_preferences_repository.dart';
+import 'package:smart_planner/core/theme/theme_preferences_repository.dart';
 import 'package:smart_planner/features/notifications/home_widget_background_callback.dart';
 import 'package:smart_planner/features/notifications/notification_helper.dart';
 
@@ -16,7 +17,10 @@ Future<void> main() async {
 
   final LocalePreferencesRepository localePreferences =
       LocalePreferencesRepository();
+  final ThemePreferencesRepository themePreferences =
+      ThemePreferencesRepository();
   final Locale? savedLocale = await localePreferences.getSavedLocale();
+  await themePreferences.load();
 
   runApp(
     EasyLocalization(
@@ -27,6 +31,7 @@ Future<void> main() async {
       useOnlyLangCode: true,
       child: DayLinxApp(
         localePreferences: localePreferences,
+        themePreferences: themePreferences,
       ),
     ),
   );

@@ -5,6 +5,9 @@
   "language_en": "English",
   "language_ru": "Русский",
   "language_es": "Español",
+  "theme_system": "Как в системе",
+  "theme_light": "Светлая",
+  "theme_dark": "Тёмная",
 
   "common_cancel": "Отмена",
   "common_delete": "Удалить",
@@ -108,6 +111,7 @@
   "calendar_settings_title": "Календари",
   "settings_page_title": "Настройки",
   "settings_section_language": "Язык",
+  "settings_section_theme": "Тема",
   "settings_section_reminders": "Напоминания",
   "settings_section_notifications": "Уведомления",
   "settings_section_calendars": "Календари",

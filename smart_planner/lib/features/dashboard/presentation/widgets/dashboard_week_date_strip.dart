@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
+import 'package:smart_planner/core/theme/app_theme.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/dashboard/domain/day_activity_marker.dart';
 
@@ -148,11 +149,11 @@ class _DayCell extends StatelessWidget {
         );
 
     final Color badgeBackground = isSelected
-        ? colors.primary.withValues(alpha: 0.22)
-        : colors.surfaceContainerHighest;
+        ? colors.primaryContainer
+        : colors.secondaryContainer;
     final Color badgeForeground = isSelected
         ? colors.onPrimaryContainer
-        : colors.onSurfaceVariant;
+        : colors.onSecondaryContainer;
 
     return Material(
       color: Colors.transparent,
@@ -165,9 +166,11 @@ class _DayCell extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSelected ? colors.primaryContainer : null,
             borderRadius: BorderRadius.circular(10),
-            border: isToday && !isSelected
-                ? Border.all(color: colors.outline)
-                : null,
+            border: isSelected
+                ? Border.all(color: colors.primary.withValues(alpha: 0.35))
+                : isToday
+                    ? Border.all(color: colors.primary, width: 1.5)
+                    : Border.all(color: AppTheme.groupedSectionBorder(colors)),
           ),
           child: Stack(
             children: <Widget>[

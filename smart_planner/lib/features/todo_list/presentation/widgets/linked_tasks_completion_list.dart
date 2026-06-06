@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/presentation/widgets/sliding_completion_list.dart';
+import 'package:smart_planner/core/theme/app_theme.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 
 /// Linked tasks on event detail with slide-to-end completion animation.
@@ -132,7 +133,8 @@ class _LinkedTaskRow extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 0,
-      color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+      color: colors.surface,
+      shape: AppTheme.insetCardShape(colors),
       child: InkWell(
         onTap: onOpen,
         child: Padding(

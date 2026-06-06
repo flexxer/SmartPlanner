@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
+import 'package:smart_planner/core/theme/app_theme.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
@@ -918,24 +919,45 @@ class _DateSelectorBar extends StatelessWidget {
                 icon: const Icon(Icons.chevron_left),
               ),
               Expanded(
-                child: Material(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppTheme.groupedSectionFill(
+                      Theme.of(context).colorScheme,
+                    ),
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () => _pickDate(context, bloc, selectedDate),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          const Icon(Icons.calendar_today, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            label,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ],
+                    border: Border.all(
+                      color: AppTheme.groupedSectionBorder(
+                        Theme.of(context).colorScheme,
+                      ),
+                    ),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => _pickDate(context, bloc, selectedDate),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Icon(
+                              Icons.calendar_today,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              label,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1021,47 +1043,54 @@ class _OverdueTasksPanel extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Material(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        child: Theme(
-          data: theme.copyWith(
-            dividerColor: colors.surfaceContainerHighest,
-          ),
-          child: ExpansionTile(
-            initiallyExpanded: true,
-            tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-            childrenPadding: EdgeInsets.zero,
-            shape: const Border(),
-            collapsedShape: const Border(),
-            title: Text(
-              'overdue_section'.tr(namedArgs: <String, String>{
-                'count': '$count',
-              }),
-              style: titleStyle,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppTheme.groupedSectionFill(colors),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.groupedSectionBorder(colors)),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
+          child: Theme(
+            data: theme.copyWith(
+              dividerColor: colors.outlineVariant,
             ),
-            iconColor: colors.error,
-            collapsedIconColor: colors.error,
-            children: <Widget>[
-              for (final Task task in overdueTasks)
-                _DashboardTaskTile(
-                  key: _DashboardTaskTile.keyFor(
-                    task,
-                    TaskTileListContext.dashboardOverdue,
+            child: ExpansionTile(
+              initiallyExpanded: true,
+              tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+              childrenPadding: EdgeInsets.zero,
+              shape: const Border(),
+              collapsedShape: const Border(),
+              title: Text(
+                'overdue_section'.tr(namedArgs: <String, String>{
+                  'count': '$count',
+                }),
+                style: titleStyle,
+              ),
+              iconColor: colors.error,
+              collapsedIconColor: colors.error,
+              children: <Widget>[
+                for (final Task task in overdueTasks)
+                  _DashboardTaskTile(
+                    key: _DashboardTaskTile.keyFor(
+                      task,
+                      TaskTileListContext.dashboardOverdue,
+                    ),
+                    task: task,
+                    tileContext: _TaskTileContext(
+                      selectedDate: selectedDate,
+                      calendarEvents: calendarEvents,
+                      localCalendarEventById: localCalendarEventById,
+                      childTasksByParentId: childTasksByParentId,
+                      attachmentsByTaskId: attachmentsByTaskId,
+                      linkedCalendarsById: linkedCalendarsById,
+                    ),
+                    listContext: TaskTileListContext.dashboardOverdue,
                   ),
-                  task: task,
-                  tileContext: _TaskTileContext(
-                    selectedDate: selectedDate,
-                    calendarEvents: calendarEvents,
-                    localCalendarEventById: localCalendarEventById,
-                    childTasksByParentId: childTasksByParentId,
-                    attachmentsByTaskId: attachmentsByTaskId,
-                    linkedCalendarsById: linkedCalendarsById,
-                  ),
-                  listContext: TaskTileListContext.dashboardOverdue,
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -1246,49 +1275,56 @@ class _CompletedTasksPanel extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Material(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        child: Theme(
-          data: theme.copyWith(
-            dividerColor: colors.surfaceContainerHighest,
-          ),
-          child: ExpansionTile(
-            initiallyExpanded: false,
-            tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-            childrenPadding: EdgeInsets.zero,
-            shape: const Border(),
-            collapsedShape: const Border(),
-            title: Text(
-              'completed_section'.tr(namedArgs: <String, String>{
-                'count': '$count',
-              }),
-              style: titleStyle,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppTheme.groupedSectionFill(colors),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.groupedSectionBorder(colors)),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
+          child: Theme(
+            data: theme.copyWith(
+              dividerColor: colors.outlineVariant,
             ),
-            iconColor: colors.onSurfaceVariant,
-            collapsedIconColor: colors.onSurfaceVariant,
-            children: <Widget>[
-              for (final Task task in completedTasks)
-                _DashboardTaskTile(
-                  key: _DashboardTaskTile.keyFor(
-                    task,
-                    TaskTileListContext.dashboardDueOnSelectedDay,
-                    completed: true,
+            child: ExpansionTile(
+              initiallyExpanded: false,
+              tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+              childrenPadding: EdgeInsets.zero,
+              shape: const Border(),
+              collapsedShape: const Border(),
+              title: Text(
+                'completed_section'.tr(namedArgs: <String, String>{
+                  'count': '$count',
+                }),
+                style: titleStyle,
+              ),
+              iconColor: colors.onSurfaceVariant,
+              collapsedIconColor: colors.onSurfaceVariant,
+              children: <Widget>[
+                for (final Task task in completedTasks)
+                  _DashboardTaskTile(
+                    key: _DashboardTaskTile.keyFor(
+                      task,
+                      TaskTileListContext.dashboardDueOnSelectedDay,
+                      completed: true,
+                    ),
+                    task: task,
+                    tileContext: _TaskTileContext(
+                      selectedDate: selectedDate,
+                      calendarEvents: calendarEvents,
+                      localCalendarEventById: localCalendarEventById,
+                      childTasksByParentId: childTasksByParentId,
+                      attachmentsByTaskId: attachmentsByTaskId,
+                      linkedCalendarsById: linkedCalendarsById,
+                    ),
+                    listContext: TaskTileListContext.dashboardDueOnSelectedDay,
+                    dimAsCompleted: true,
                   ),
-                  task: task,
-                  tileContext: _TaskTileContext(
-                    selectedDate: selectedDate,
-                    calendarEvents: calendarEvents,
-                    localCalendarEventById: localCalendarEventById,
-                    childTasksByParentId: childTasksByParentId,
-                    attachmentsByTaskId: attachmentsByTaskId,
-                    linkedCalendarsById: linkedCalendarsById,
-                  ),
-                  listContext: TaskTileListContext.dashboardDueOnSelectedDay,
-                  dimAsCompleted: true,
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

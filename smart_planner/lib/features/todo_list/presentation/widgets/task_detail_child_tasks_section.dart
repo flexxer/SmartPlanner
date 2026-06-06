@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/presentation/widgets/collapsing_completion_tile.dart';
+import 'package:smart_planner/core/theme/app_theme.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_section_header.dart';
 
@@ -144,7 +145,8 @@ class _ReorderableChildRow extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
           elevation: 0,
-          color: colors.surfaceContainerHighest.withValues(alpha: 0.45),
+          color: colors.surface,
+          shape: AppTheme.insetCardShape(colors),
           child: InkWell(
             onTap: onOpen,
             child: Padding(

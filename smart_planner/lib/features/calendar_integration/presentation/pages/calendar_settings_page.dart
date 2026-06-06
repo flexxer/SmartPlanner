@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:smart_planner/core/localization/language_picker_section.dart';
+import 'package:smart_planner/core/theme/theme_picker_section.dart';
 
 import 'package:smart_planner/core/presentation/widgets/settings_expandable_section.dart';
 
@@ -266,6 +267,20 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
           children: const <Widget>[
 
             LanguagePickerSection(),
+
+          ],
+
+        ),
+
+        SettingsExpandableSection(
+
+          title: 'settings_section_theme'.tr(),
+
+          initiallyExpanded: true,
+
+          children: const <Widget>[
+
+            ThemePickerSection(),
 
           ],
 

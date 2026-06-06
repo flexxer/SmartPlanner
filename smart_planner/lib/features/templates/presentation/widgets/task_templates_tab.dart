@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:smart_planner/core/theme/app_theme.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_state.dart';
 import 'package:smart_planner/features/dashboard/presentation/dashboard_screen.dart';
@@ -247,10 +248,8 @@ class _TaskTemplateListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
 
-    return Material(
-      color: colors.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(12),
-      clipBehavior: Clip.antiAlias,
+    return DecoratedBox(
+      decoration: AppTheme.insetCardDecoration(colors),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
         child: Row(

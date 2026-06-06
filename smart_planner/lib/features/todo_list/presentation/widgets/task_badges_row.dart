@@ -312,9 +312,9 @@ class TaskBadgesRow extends StatelessWidget {
 
           label: 'task_to_event'.tr(),
 
-          backgroundColor: colors.surfaceContainerHighest,
+          backgroundColor: colors.secondaryContainer,
 
-          foregroundColor: colors.onSurfaceVariant,
+          foregroundColor: colors.onSecondaryContainer,
 
           icon: Icons.link,
 

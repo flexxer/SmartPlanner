@@ -14,11 +14,13 @@ class ChecklistEditorSection extends StatefulWidget {
   const ChecklistEditorSection({
     required this.titleController,
     required this.initialItems,
+    this.initialMoveCompletedToEnd = true,
     super.key,
   });
 
   final TextEditingController titleController;
   final List<ChecklistItemPayload> initialItems;
+  final bool initialMoveCompletedToEnd;
 
   @override
   ChecklistEditorSectionState createState() => ChecklistEditorSectionState();
@@ -30,10 +32,14 @@ class ChecklistEditorSectionState extends State<ChecklistEditorSection> {
   final TextEditingController _editController = TextEditingController();
   final FocusNode _editFocusNode = FocusNode();
   int? _editingLocalId;
+  late bool _moveCompletedToEnd;
+
+  bool get moveCompletedToEnd => _moveCompletedToEnd;
 
   @override
   void initState() {
     super.initState();
+    _moveCompletedToEnd = widget.initialMoveCompletedToEnd;
     _itemsNotifier = ValueNotifier<List<ChecklistItemPayload>>(
       List<ChecklistItemPayload>.from(widget.initialItems),
     );
@@ -185,6 +191,22 @@ class ChecklistEditorSectionState extends State<ChecklistEditorSection> {
             labelText: 'attachment_field_name'.tr(),
             border: const OutlineInputBorder(),
           ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'attachment_settings'.tr(),
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 4),
+        CheckboxListTile(
+          value: _moveCompletedToEnd,
+          onChanged: (bool? value) {
+            setState(() => _moveCompletedToEnd = value ?? true);
+          },
+          title: Text('attachment_checklist_move_completed_to_end'.tr()),
+          controlAffinity: ListTileControlAffinity.leading,
+          contentPadding: EdgeInsets.zero,
+          dense: true,
         ),
         const SizedBox(height: 12),
         ValueListenableBuilder<List<ChecklistItemPayload>>(

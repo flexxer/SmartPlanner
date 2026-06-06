@@ -21,6 +21,25 @@ class TaskAttachmentChecklist {
     return maxId + 1;
   }
 
+  /// Items in display order (uncompleted first when [moveCompletedToEnd] is on).
+  static List<ChecklistItemPayload> displayItems(
+    ChecklistAttachmentPayload checklist,
+  ) {
+    if (!checklist.moveCompletedToEnd) {
+      return checklist.items;
+    }
+    return partitionCompletedLast(checklist.items);
+  }
+
+  static List<ChecklistItemPayload> partitionCompletedLast(
+    List<ChecklistItemPayload> items,
+  ) {
+    return <ChecklistItemPayload>[
+      ...items.where((ChecklistItemPayload i) => !i.isCompleted),
+      ...items.where((ChecklistItemPayload i) => i.isCompleted),
+    ];
+  }
+
   static bool toggleItem(TaskAttachment attachment, int itemLocalId) {
     final ChecklistAttachmentPayload checklist =
         TaskAttachmentCodec.checklist(attachment);
@@ -38,10 +57,14 @@ class TaskAttachmentChecklist {
       text: current.text,
       isCompleted: !current.isCompleted,
     );
+    final List<ChecklistItemPayload> items = checklist.moveCompletedToEnd
+        ? partitionCompletedLast(updated)
+        : updated;
     attachment.payloadJson = TaskAttachmentCodec.encodeMap(
       ChecklistAttachmentPayload(
         title: checklist.title,
-        items: updated,
+        items: items,
+        moveCompletedToEnd: checklist.moveCompletedToEnd,
       ).toJson(),
     );
     return true;
@@ -65,10 +88,14 @@ class TaskAttachmentChecklist {
       text: current.text,
       isCompleted: !current.isCompleted,
     );
+    final List<ChecklistItemPayload> items = checklist.moveCompletedToEnd
+        ? partitionCompletedLast(updated)
+        : updated;
     attachment.payloadJson = TaskAttachmentCodec.encodeMap(
       ChecklistAttachmentPayload(
         title: checklist.title,
-        items: updated,
+        items: items,
+        moveCompletedToEnd: checklist.moveCompletedToEnd,
       ).toJson(),
     );
     return true;

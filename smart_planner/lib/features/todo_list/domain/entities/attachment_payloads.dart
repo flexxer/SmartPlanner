@@ -214,14 +214,19 @@ class ChecklistAttachmentPayload {
   const ChecklistAttachmentPayload({
     this.title,
     required this.items,
+    this.moveCompletedToEnd = true,
   });
 
   final String? title;
   final List<ChecklistItemPayload> items;
 
+  /// When true, completed items are shown after all uncompleted items.
+  final bool moveCompletedToEnd;
+
   Map<String, dynamic> toJson() => <String, dynamic>{
         'title': title,
         'items': items.map((ChecklistItemPayload i) => i.toJson()).toList(),
+        'moveCompletedToEnd': moveCompletedToEnd,
       };
 
   factory ChecklistAttachmentPayload.fromJson(Map<String, dynamic> json) {
@@ -235,6 +240,7 @@ class ChecklistAttachmentPayload {
               )
               .toList() ??
           <ChecklistItemPayload>[],
+      moveCompletedToEnd: json['moveCompletedToEnd'] as bool? ?? true,
     );
   }
 }

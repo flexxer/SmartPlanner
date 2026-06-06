@@ -2,10 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
+import 'package:smart_planner/core/presentation/widgets/collapsing_completion_tile.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_section_header.dart';
 
-/// Reorderable active child tasks under a parent [Task].
+/// Child tasks under a parent [Task] with completion animations.
 class TaskDetailChildTasksSection extends StatelessWidget {
   const TaskDetailChildTasksSection({
     required this.activeChildren,
@@ -62,8 +63,8 @@ class TaskDetailChildTasksSection extends StatelessWidget {
               color: colors.onSurfaceVariant,
               fontStyle: FontStyle.italic,
             ),
-          )
-        else
+          ),
+        if (activeChildren.isNotEmpty)
           ReorderableListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -95,7 +96,6 @@ class TaskDetailChildTasksSection extends StatelessWidget {
           ...completedChildren.map(
             (Task child) => _CompletedChildRow(
               child: child,
-              dueFormat: dueFormat,
               onToggleComplete: () => onToggleChildComplete(child.id),
               onOpen: () => onOpenChild(child),
             ),
@@ -137,73 +137,79 @@ class _ReorderableChildRow extends StatelessWidget {
     final String? dueLabel =
         child.dueDate != null ? dueFormat.format(child.dueDate!) : null;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: 0,
-      color: colors.surfaceContainerHighest.withValues(alpha: 0.45),
-      child: InkWell(
-        onTap: onOpen,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              ReorderableDragStartListener(
-                index: index,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    Icons.drag_handle,
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Checkbox(
-                  value: false,
-                  onChanged: (_) => onToggleComplete(),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      child.title,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
+    return CollapsingCompletionTile(
+      key: ValueKey<String>('child-active-${child.id}'),
+      onAfterCollapse: onToggleComplete,
+      builder: (VoidCallback onToggle) {
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          elevation: 0,
+          color: colors.surfaceContainerHighest.withValues(alpha: 0.45),
+          child: InkWell(
+            onTap: onOpen,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  ReorderableDragStartListener(
+                    index: index,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.drag_handle,
+                        color: colors.onSurfaceVariant,
                       ),
                     ),
-                    if (dueLabel != null)
-                      Text(
-                        'due_label'.tr(
-                          namedArgs: <String, String>{'date': dueLabel},
+                  ),
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Checkbox(
+                      value: false,
+                      onChanged: (_) => onToggle(),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          child.title,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                  ],
-                ),
+                        if (dueLabel != null)
+                          Text(
+                            'due_label'.tr(
+                              namedArgs: <String, String>{'date': dueLabel},
+                            ),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: onDetach,
+                    icon: Icon(
+                      Icons.link_off,
+                      size: 18,
+                      color: colors.onSurfaceVariant,
+                    ),
+                    tooltip: 'child_tasks_unlink_tooltip'.tr(),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
               ),
-              IconButton(
-                onPressed: onDetach,
-                icon: Icon(
-                  Icons.link_off,
-                  size: 18,
-                  color: colors.onSurfaceVariant,
-                ),
-                tooltip: 'child_tasks_unlink_tooltip'.tr(),
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -211,13 +217,11 @@ class _ReorderableChildRow extends StatelessWidget {
 class _CompletedChildRow extends StatelessWidget {
   const _CompletedChildRow({
     required this.child,
-    required this.dueFormat,
     required this.onToggleComplete,
     required this.onOpen,
   });
 
   final Task child;
-  final DateFormat dueFormat;
   final VoidCallback onToggleComplete;
   final VoidCallback onOpen;
 
@@ -226,38 +230,41 @@ class _CompletedChildRow extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colors = theme.colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: InkWell(
-        onTap: onOpen,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-          child: Row(
-            children: <Widget>[
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Checkbox(
-                  value: true,
-                  onChanged: (_) => onToggleComplete(),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  child.title,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    decoration: TextDecoration.lineThrough,
-                    color: colors.onSurfaceVariant,
+    return CollapsingCompletionTile(
+      key: ValueKey<String>('child-done-${child.id}'),
+      onAfterCollapse: onToggleComplete,
+      builder: (VoidCallback onToggle) {
+        return InkWell(
+          onTap: onOpen,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+            child: Row(
+              children: <Widget>[
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Checkbox(
+                    value: true,
+                    onChanged: (_) => onToggle(),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    child.title,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      decoration: TextDecoration.lineThrough,
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

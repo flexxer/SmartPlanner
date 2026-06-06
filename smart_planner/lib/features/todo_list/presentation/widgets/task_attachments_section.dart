@@ -15,6 +15,7 @@ import 'package:smart_planner/features/todo_list/domain/entities/task_attachment
 import 'package:smart_planner/features/todo_list/domain/task_attachment_checklist.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/attachment_action_sheet.dart';
+import 'package:smart_planner/features/todo_list/presentation/widgets/checklist_attachment_body.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_section_header.dart';
 
 /// Attachments block on task or event detail screens.
@@ -375,7 +376,7 @@ class _AttachmentBody extends StatelessWidget {
       TaskAttachmentType.url => const SizedBox.shrink(),
       TaskAttachmentType.location => _LocationBody(attachment: attachment),
       TaskAttachmentType.note => _NoteBody(attachment: attachment),
-      TaskAttachmentType.checklist => _ChecklistBody(
+      TaskAttachmentType.checklist => ChecklistAttachmentBody(
           attachment: attachment,
           onToggleItem: onToggleNoteItem,
         ),
@@ -547,65 +548,6 @@ class _NoteBody extends StatelessWidget {
       );
     }
     return Text(note.body, style: Theme.of(context).textTheme.bodyMedium);
-  }
-}
-
-class _ChecklistBody extends StatelessWidget {
-  const _ChecklistBody({
-    required this.attachment,
-    required this.onToggleItem,
-  });
-
-  final AttachmentRef attachment;
-  final void Function(int localId) onToggleItem;
-
-  @override
-  Widget build(BuildContext context) {
-    final ChecklistAttachmentPayload checklist =
-        TaskAttachmentCodec.checklistRef(attachment);
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colors = theme.colorScheme;
-
-    if (checklist.items.isEmpty) {
-      return Text(
-        'attachment_no_checklist_items'.tr(),
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontStyle: FontStyle.italic,
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: checklist.items.map(
-        (ChecklistItemPayload item) => Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: Checkbox(
-                value: item.isCompleted,
-                onChanged: (_) => onToggleItem(item.localId),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            ),
-            Expanded(
-              child: Text(
-                item.text,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  decoration:
-                      item.isCompleted ? TextDecoration.lineThrough : null,
-                  color: item.isCompleted
-                      ? colors.onSurfaceVariant
-                      : colors.onSurface,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ).toList(),
-    );
   }
 }
 

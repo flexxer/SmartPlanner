@@ -86,7 +86,7 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 | **URL** | Title + URL fields | **Open** → browser; title shown in card header |
 | **Location** | Optional place name; **OSM map picker** with **Nominatim search** and reverse geocode; current location | **Open** → map app chooser (`map_launcher`) or geo fallback |
 | **Note** | Title + body | **Open** → full-text dialog |
-| **Checklist** | Title; items with **+** next to input; pending line saved on Save without pressing + | Checkboxes inline (toggle without opening sheet); progress badge on parent tile |
+| **Checklist** | Title; items with **+** next to input; pending line saved on Save without pressing +; **Attachment settings** checkbox **Move completed items to the end** (default **on**, stored as `moveCompletedToEnd` in payload JSON) | Checkboxes inline (toggle without opening sheet); uncompleted items stay on top when setting is on; slide + strikethrough animation via `SlidingCompletionList`; progress badge on parent tile |
 
 **Attachment actions (all types):** tap attachment card → bottom sheet — **Open / View**, **Edit** (`AddAttachmentSheet` with `attachmentToEdit`), **Delete** (SnackBar **Undo** / `RestoreTaskAttachment`). Edit save → `UpdateTaskAttachment` in `DashboardBloc`.
 
@@ -249,3 +249,4 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 | 2026-06 | Device calendar write-back; removed Google OAuth from scope; midnight overdue roll + settings toggle |
 | 2026-06 | Android home widget MVP (medium 4×2, shared day-status payload, widget deep links) |
 | 2026-06-04 | Calendar UX: selected calendars only; recurring instances + merger; now line before first event; week strip task counts aligned with dashboard |
+| 2026-06-06 | Checklist `moveCompletedToEnd` setting; shared completion-list animations (`SlidingCompletionList`, `CollapsingCompletionTile`); linked tasks on event detail; dashboard tiles keyed by task id for stable BLoC reload |

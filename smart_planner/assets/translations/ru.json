@@ -221,6 +221,8 @@
   "attachment_checklist_item_hint": "Текст пункта",
   "attachment_checklist_add_bottom_hint": "Новый пункт",
   "attachment_checklist_empty_hint": "Добавляйте пункты ниже. Перетаскивайте для сортировки.",
+  "attachment_settings": "Настройки вложения",
+  "attachment_checklist_move_completed_to_end": "Перемещать выполненные элементы в конец",
   "attachment_add_item_tooltip": "Добавить пункт",
   "attachment_remove_item_tooltip": "Удалить пункт",
   "attachment_select_contact": "Выберите контакт",

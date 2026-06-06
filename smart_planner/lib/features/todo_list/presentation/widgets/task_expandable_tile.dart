@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_planner/core/presentation/widgets/collapsing_completion_tile.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
@@ -59,7 +60,7 @@ class TaskExpandableTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            _TaskCompletionTapTarget(
+            CompletionToggleTarget(
               isCompleted: task.isCompleted,
               onToggle: onToggleComplete,
             ),
@@ -146,47 +147,6 @@ class TaskExpandableTile extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TaskCompletionTapTarget extends StatelessWidget {
-  const _TaskCompletionTapTarget({
-    required this.isCompleted,
-    required this.onToggle,
-  });
-
-  final bool isCompleted;
-  final VoidCallback onToggle;
-
-  static const double _minTouchTarget = 48;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onToggle,
-        customBorder: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(12),
-          ),
-        ),
-        child: SizedBox(
-          width: _minTouchTarget,
-          height: _minTouchTarget,
-          child: Center(
-            child: IgnorePointer(
-              child: Checkbox(
-                value: isCompleted,
-                onChanged: (_) {},
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              ),
-            ),
-          ),
         ),
       ),
     );

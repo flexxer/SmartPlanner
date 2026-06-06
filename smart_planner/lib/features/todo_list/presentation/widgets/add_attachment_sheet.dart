@@ -91,6 +91,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   final TextEditingController _noteBodyController = TextEditingController();
   final TextEditingController _checklistTitleController = TextEditingController();
   List<ChecklistItemPayload> _initialChecklistItems = <ChecklistItemPayload>[];
+  bool _initialMoveCompletedToEnd = true;
   final GlobalKey<ChecklistEditorSectionState> _checklistKey =
       GlobalKey<ChecklistEditorSectionState>();
   List<AttachmentTemplate> _templates = <AttachmentTemplate>[];
@@ -185,6 +186,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
           _checklistTitleController.text = title;
         }
         _initialChecklistItems = List<ChecklistItemPayload>.from(checklist.items);
+        _initialMoveCompletedToEnd = checklist.moveCompletedToEnd;
     }
   }
 
@@ -740,10 +742,14 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
       return null;
     }
     final String title = _checklistTitleController.text.trim();
+    final bool moveCompletedToEnd =
+        _checklistKey.currentState?.moveCompletedToEnd ??
+            _initialMoveCompletedToEnd;
     return TaskAttachmentCodec.encodeMap(
       ChecklistAttachmentPayload(
         title: title.isEmpty ? null : title,
         items: items,
+        moveCompletedToEnd: moveCompletedToEnd,
       ).toJson(),
     );
   }
@@ -1079,6 +1085,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
           key: _checklistKey,
           titleController: _checklistTitleController,
           initialItems: _initialChecklistItems,
+          initialMoveCompletedToEnd: _initialMoveCompletedToEnd,
         ),
       ];
 }

@@ -40,6 +40,7 @@ class _AttachmentTemplateFormSheetState extends State<AttachmentTemplateFormShee
   final GlobalKey<ChecklistEditorSectionState> _checklistKey =
       GlobalKey<ChecklistEditorSectionState>();
   List<ChecklistItemPayload> _initialChecklistItems = <ChecklistItemPayload>[];
+  bool _initialMoveCompletedToEnd = true;
   double? _latitude;
   double? _longitude;
   String? _placeName;
@@ -94,6 +95,7 @@ class _AttachmentTemplateFormSheetState extends State<AttachmentTemplateFormShee
             ChecklistAttachmentPayload.fromJson(decoded);
         _checklistTitleController.text = checklist.title ?? '';
         _initialChecklistItems = List<ChecklistItemPayload>.from(checklist.items);
+        _initialMoveCompletedToEnd = checklist.moveCompletedToEnd;
       case TaskAttachmentType.location:
         final LocationAttachmentPayload location =
             LocationAttachmentPayload.fromJson(decoded);
@@ -166,6 +168,9 @@ class _AttachmentTemplateFormSheetState extends State<AttachmentTemplateFormShee
                 : _checklistTitleController.text.trim(),
             items: _checklistKey.currentState?.collectItems() ??
                 _initialChecklistItems,
+            moveCompletedToEnd:
+                _checklistKey.currentState?.moveCompletedToEnd ??
+                    _initialMoveCompletedToEnd,
           ).toJson(),
         ),
       TaskAttachmentType.location => _latitude != null && _longitude != null
@@ -347,6 +352,7 @@ class _AttachmentTemplateFormSheetState extends State<AttachmentTemplateFormShee
             key: _checklistKey,
             titleController: _checklistTitleController,
             initialItems: _initialChecklistItems,
+            initialMoveCompletedToEnd: _initialMoveCompletedToEnd,
           ),
         ],
       _ => <Widget>[],

@@ -9,7 +9,7 @@ import 'package:smart_planner/features/calendar_integration/data/repositories/lo
 import 'package:smart_planner/features/calendar_integration/domain/entities/event_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_ref.dart';
 import 'package:smart_planner/features/todo_list/presentation/attachment_coordinator.dart';
-import 'package:smart_planner/features/todo_list/presentation/widgets/linked_task_list_tile.dart';
+import 'package:smart_planner/features/todo_list/presentation/widgets/linked_tasks_completion_list.dart';
 import 'package:smart_planner/features/notifications/domain/reminder_schedule_time.dart';
 import 'package:smart_planner/features/notifications/presentation/widgets/reminder_detail_row.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_attachments_section.dart';
@@ -350,19 +350,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   ),
                 )
               else
-                ..._linkedTasks.map(
-                  (Task task) => LinkedTaskListTile(
-                    task: task,
-                    onToggleComplete: (Id taskId) {
-                      context.read<DashboardBloc>().add(
-                            ToggleTaskCompletion(taskId),
-                          );
-                    },
-                    onTap: () => DashboardScreen.openTaskDetail(
-                      context,
-                      taskId: task.id,
-                      selectedDate: widget.selectedDate,
-                    ),
+                LinkedTasksCompletionList(
+                  tasks: _linkedTasks,
+                  onToggleComplete: (Id taskId) {
+                    context.read<DashboardBloc>().add(
+                          ToggleTaskCompletion(taskId),
+                        );
+                  },
+                  onOpenTask: (Task task) => DashboardScreen.openTaskDetail(
+                    context,
+                    taskId: task.id,
+                    selectedDate: widget.selectedDate,
                   ),
                 ),
               const SizedBox(height: 12),

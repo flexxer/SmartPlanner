@@ -36,7 +36,9 @@ smart_planner/lib/
 │   │   ├── form_sheet_scaffold.dart          # Shared create/edit sheet layout
 │   │   ├── confirm_delete_record.dart        # Delete confirmation dialog
 │   │   ├── delete_undo_snackbar.dart         # 10s undo after delete
-│   │   └── calendar_picker_message.dart      # Calendar load error / permission UI
+│   │   ├── calendar_picker_message.dart      # Calendar load error / permission UI
+│   │   ├── sliding_completion_list.dart      # Slide-to-end + strikethrough for checkbox lists
+│   │   └── collapsing_completion_tile.dart   # Collapse animation for variable-height rows
 │   ├── timezone/timezone_monitor.dart # Detect TZ change → reschedule reminders
 │   └── utils/app_date_utils.dart      # startOfDay, startOfWeek, dayKeyMs, strip ranges
 │
@@ -111,7 +113,9 @@ smart_planner/lib/
 │   │           ├── task_relation_sheet.dart       # Link task↔event / parent↔child
 │   │           ├── task_badges_row.dart / task_badge_labels.dart / task_tile_list_context.dart
 │   │           ├── task_priority_icon.dart / task_priority_ui.dart
-│   │           ├── checklist_editor_section.dart  # Local state; bounded reorderable list
+│   │           ├── checklist_editor_section.dart  # Local state; bounded reorderable list; attachment settings
+│   │           ├── checklist_attachment_body.dart   # Inline checklist on detail (SlidingCompletionList)
+│   │           ├── linked_tasks_completion_list.dart  # Event linked tasks with slide animation
 │   │           ├── linked_task_list_tile.dart
 │   │           ├── attachment_coordinator.dart      # Add/edit/delete attachments (task + event)
 │   │           ├── postpone_task_sheet.dart
@@ -273,7 +277,12 @@ smart_planner/test/
 | `TaskDetailScreen` | Full task UI: description, badges, reorderable subtasks, attachments, postpone, AppBar → `TaskFormSheet` |
 | `EventDetailScreen` | Full event UI: time, calendar, linked tasks, add task, AppBar → `EventFormSheet` |
 | `TaskBadge` | Optional `onTap` — linked event, subtasks, link-to-event |
-| `TaskDetailChildTasksSection` | `ReorderableListView` for active children; `ReorderChildTasks` |
+| `TaskDetailChildTasksSection` | `ReorderableListView` for active children; completed block with slide animation; `CollapsingCompletionTile` on toggle |
+| `SlidingCompletionList` | Shared slide-to-end list for checklist + linked tasks; dynamic row height via `completionCheckboxRowExtent` |
+| `ChecklistAttachmentBody` | Checklist attachment body on task/event detail; respects `moveCompletedToEnd` in payload |
+| `LinkedTasksCompletionList` | Linked tasks on `EventDetailScreen` with completion slide |
+| `CollapsingCompletionTile` | Variable-height collapse before completion toggle (child subtasks) |
+| `CompletionToggleTarget` | Shared checkbox tap zone on dashboard task tiles |
 | `TaskTileSectionHeader` | Section titles (child tasks / attachments) |
 | `TaskFormSheet` / `EventFormSheet` | Unified create/edit sheets; delete icon + confirm dialog in edit mode |
 | `AttachmentActionSheet` | Bottom sheet: open, edit (`AddAttachmentSheet`), delete (Undo snackbar) |
@@ -286,6 +295,8 @@ smart_planner/test/
 | `LocationMapPickerSheet` | OSM map tap-to-select + Nominatim search |
 | `TaskAttachmentRepository` | Isar CRUD for attachments; `nextSortOrder` |
 | `TaskAttachmentCodec` | JSON payload encode/decode; `summaryLabel` for tiles |
+| `TaskAttachmentChecklist` | Toggle items; `displayItems` / `partitionCompletedLast`; honors `moveCompletedToEnd` |
+| `ChecklistAttachmentPayload` | `title`, `items`, `moveCompletedToEnd` (default **true**) |
 | `AppTheme` | `light` / `dark`; app uses `ThemeMode.system` |
 | `LocalePreferencesRepository` | Persists manual language (`en` / `ru` / `es`); empty = follow device locale |
 | `LanguagePickerSection` | Dropdown on `CalendarSettingsPage`; calls `context.setLocale` / `resetLocale` |
@@ -497,3 +508,4 @@ Example prompt:
 | 2026-05 | Calendar via `device_calendar` only (Google when synced on device); removed Google Calendar API / OAuth |
 | 2026-05 | Device calendar write-back: `CalendarEventWriteService`, create/update/delete via `device_calendar` |
 | 2026-06-04 | Dashboard calendar UX: selected-calendar filter, recurring instance read/merge, now-line strip rules, week markers via `TaskDateVisibility` |
+| 2026-06-06 | Checklist `moveCompletedToEnd`; `SlidingCompletionList` / `CollapsingCompletionTile`; `checklist_attachment_body`, `linked_tasks_completion_list`; dashboard task tile `ValueKey` |

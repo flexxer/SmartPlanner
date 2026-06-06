@@ -52,9 +52,13 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
 - **Task attachments** (local, multiple per task): contact, photo, URL, location (Nominatim), note, checklist
 
+  - **Checklist** — inline checkboxes on detail; optional **Move completed items to the end** in attachment settings (default on); slide animation when toggling
+
   - **Attachment templates** (user-defined): quick-add chips in `AddAttachmentSheet`; manage under **Templates** → Attachments tab
 
   - Tap attachment → action sheet: **Open / View**, **Edit** (`AddAttachmentSheet`), **Delete** (SnackBar Undo), **Save as template**
+
+- **Completion animations** — shared `SlidingCompletionList` (checklists, event linked tasks) and `CollapsingCompletionTile` (child subtasks); dashboard toggles via BLoC with stable per-task keys
 
 - **Templates hub** (`TemplatesPage`, AppBar): tabs **Tasks** (UI blueprints) and **Attachments** (presets)
 
@@ -148,7 +152,7 @@ Includes: `task_date_visibility_test`, `task_overdue_rules_test`, `task_overdue_
 
 | `lib/app.dart` | `MaterialApp`, locale delegates, repositories, `ThemeMode.system`, `DashboardBloc` |
 
-| `lib/core/` | Isar DB, theme, init, `AppDateUtils`, `localization/` |
+| `lib/core/` | Isar DB, theme, init, `AppDateUtils`, `localization/`, `presentation/widgets/` (`SlidingCompletionList`, `CollapsingCompletionTile`) |
 
 | `assets/translations/` | `en.json`, `ru.json`, `es.json` UI strings |
 

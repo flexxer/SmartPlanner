@@ -219,6 +219,8 @@
   "attachment_checklist_item_hint": "Item text",
   "attachment_checklist_add_bottom_hint": "New item",
   "attachment_checklist_empty_hint": "Add items below. Drag to reorder.",
+  "attachment_settings": "Attachment settings",
+  "attachment_checklist_move_completed_to_end": "Move completed items to the end",
   "attachment_add_item_tooltip": "Add item",
   "attachment_remove_item_tooltip": "Remove item",
   "attachment_select_contact": "Select a contact",

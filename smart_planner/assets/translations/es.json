@@ -219,6 +219,8 @@
   "attachment_checklist_item_hint": "Texto del elemento",
   "attachment_checklist_add_bottom_hint": "Nuevo elemento",
   "attachment_checklist_empty_hint": "Añade elementos abajo. Arrastra para reordenar.",
+  "attachment_settings": "Ajustes del adjunto",
+  "attachment_checklist_move_completed_to_end": "Mover los elementos completados al final",
   "attachment_add_item_tooltip": "Añadir elemento",
   "attachment_remove_item_tooltip": "Eliminar elemento",
   "attachment_select_contact": "Selecciona un contacto",

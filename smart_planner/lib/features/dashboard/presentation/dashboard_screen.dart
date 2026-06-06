@@ -257,6 +257,10 @@ class DashboardScreen extends StatelessWidget {
         SliverList(
           delegate: SliverChildBuilderDelegate(
             (BuildContext context, int index) => _DashboardTaskTile(
+              key: _DashboardTaskTile.keyFor(
+                activeDated[index],
+                TaskTileListContext.dashboardDueOnSelectedDay,
+              ),
               task: activeDated[index],
               tileContext: tileContext,
               listContext: TaskTileListContext.dashboardDueOnSelectedDay,
@@ -276,6 +280,10 @@ class DashboardScreen extends StatelessWidget {
         SliverList(
           delegate: SliverChildBuilderDelegate(
             (BuildContext context, int index) => _DashboardTaskTile(
+              key: _DashboardTaskTile.keyFor(
+                undatedTasks[index],
+                TaskTileListContext.dashboardBacklog,
+              ),
               task: undatedTasks[index],
               tileContext: tileContext,
               listContext: TaskTileListContext.dashboardBacklog,
@@ -1038,6 +1046,10 @@ class _OverdueTasksPanel extends StatelessWidget {
             children: <Widget>[
               for (final Task task in overdueTasks)
                 _DashboardTaskTile(
+                  key: _DashboardTaskTile.keyFor(
+                    task,
+                    TaskTileListContext.dashboardOverdue,
+                  ),
                   task: task,
                   tileContext: _TaskTileContext(
                     selectedDate: selectedDate,
@@ -1063,7 +1075,18 @@ class _DashboardTaskTile extends StatelessWidget {
     required this.tileContext,
     required this.listContext,
     this.dimAsCompleted = false,
+    super.key,
   });
+
+  static Key keyFor(
+    Task task,
+    TaskTileListContext listContext, {
+    bool completed = false,
+  }) {
+    return ValueKey<String>(
+      'dash-${listContext.name}-${task.id}-${completed ? 'done' : 'active'}',
+    );
+  }
 
   final Task task;
   final _TaskTileContext tileContext;
@@ -1248,6 +1271,11 @@ class _CompletedTasksPanel extends StatelessWidget {
             children: <Widget>[
               for (final Task task in completedTasks)
                 _DashboardTaskTile(
+                  key: _DashboardTaskTile.keyFor(
+                    task,
+                    TaskTileListContext.dashboardDueOnSelectedDay,
+                    completed: true,
+                  ),
                   task: task,
                   tileContext: _TaskTileContext(
                     selectedDate: selectedDate,

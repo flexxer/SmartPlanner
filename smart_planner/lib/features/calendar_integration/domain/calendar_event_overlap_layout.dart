@@ -118,9 +118,39 @@ abstract final class StackedOverlapGeometry {
   static const double stripCardWidth = 200;
   /// Later overlapping events shift right (toward later time / midnight).
   static const double stripLayerOffsetX = 24;
-  /// Each subsequent event sits below the previous one.
-  static const double stripLayerOffsetY = 16;
+  /// Gap between non-overlapping rows in a multi-event slot.
+  static const double stripRowGap = 4;
   static const double stripBaseHeight = 116;
+  static const double stripMinCardHeight = 44;
+  /// Extra height budget per additional overlapping event (sublinear growth).
+  static const double stripOverlapHeightStep = 16;
+  static const double stripOverlapMaxExtraHeight = 44;
+
+  static double stripOverlapBudget(int layerCount) {
+    if (layerCount <= 1) {
+      return stripBaseHeight;
+    }
+    final double extra = math.min(
+      (layerCount - 1) * stripOverlapHeightStep,
+      stripOverlapMaxExtraHeight,
+    );
+    return stripBaseHeight + extra;
+  }
+
+  static double stripCardHeight(int layerCount) {
+    if (layerCount <= 1) {
+      return stripBaseHeight;
+    }
+    final double gaps = (layerCount - 1) * stripRowGap;
+    final double budget = stripOverlapBudget(layerCount);
+    return math.max(
+      stripMinCardHeight,
+      (budget - gaps) / layerCount,
+    );
+  }
+
+  static double stripRowStep(int layerCount) =>
+      stripCardHeight(layerCount) + stripRowGap;
 
   static double _layerOpacity({
     required int columnIndex,
@@ -168,24 +198,24 @@ abstract final class StackedOverlapGeometry {
     );
   }
 
-  /// Staggered stack: earliest on top-left, later events below and to the right.
+  /// Non-overlapping rows: earliest top-left, later events below + shifted right.
   static ({
     double left,
     double top,
     double width,
+    double height,
     double backgroundOpacity,
   }) forStrip({
     required int layerIndex,
     required int layerCount,
   }) {
+    final double cardHeight = stripCardHeight(layerCount);
     return (
       left: layerIndex * stripLayerOffsetX,
-      top: layerIndex * stripLayerOffsetY,
+      top: layerIndex * stripRowStep(layerCount),
       width: stripCardWidth,
-      backgroundOpacity: _layerOpacity(
-        columnIndex: layerIndex,
-        columnCount: layerCount,
-      ),
+      height: cardHeight,
+      backgroundOpacity: 0.94,
     );
   }
 
@@ -200,7 +230,8 @@ abstract final class StackedOverlapGeometry {
     if (layerCount <= 1) {
       return stripBaseHeight;
     }
-    return stripBaseHeight + (layerCount - 1) * stripLayerOffsetY;
+    return layerCount * stripCardHeight(layerCount) +
+        (layerCount - 1) * stripRowGap;
   }
 
   static int maxColumnCount(Iterable<int> counts) {

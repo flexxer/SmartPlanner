@@ -93,7 +93,7 @@ void main() {
     );
   });
 
-  test('overlapping events stack vertically with later events shifted right', () {
+  test('overlapping events use separate rows with later events shifted right', () {
     final DateTime day = DateTime(2026, 5, 23);
     final CalendarEvent first = _event(
       title: 'First',
@@ -132,7 +132,11 @@ void main() {
     );
     expect(
       StackedOverlapGeometry.forStrip(layerIndex: 1, layerCount: 2).top,
-      StackedOverlapGeometry.stripLayerOffsetY,
+      StackedOverlapGeometry.stripRowStep(2),
+    );
+    expect(
+      StackedOverlapGeometry.forStrip(layerIndex: 1, layerCount: 2).height,
+      StackedOverlapGeometry.stripCardHeight(2),
     );
     expect(
       layout.totalWidth,
@@ -140,6 +144,7 @@ void main() {
     );
     expect(StackedOverlapGeometry.stripSlotWidth(2), 224);
     expect(StackedOverlapGeometry.stripSlotHeight(2), 132);
+    expect(StackedOverlapGeometry.stripCardHeight(2), 64);
   });
 }
 

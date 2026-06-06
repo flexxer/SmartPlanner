@@ -255,6 +255,7 @@ class _StripOverlappedEventCard extends StatelessWidget {
       double left,
       double top,
       double width,
+      double height,
       double backgroundOpacity,
     }) geo = StackedOverlapGeometry.forStrip(
       layerIndex: layerIndex,
@@ -265,7 +266,7 @@ class _StripOverlappedEventCard extends StatelessWidget {
       left: groupLeft + geo.left,
       top: geo.top,
       width: geo.width,
-      height: StackedOverlapGeometry.stripBaseHeight,
+      height: geo.height,
       child: _LocalEventCard(
         event: event,
         selectedDate: selectedDate,
@@ -276,7 +277,8 @@ class _StripOverlappedEventCard extends StatelessWidget {
           now: now,
         ),
         backgroundOpacity: geo.backgroundOpacity,
-        stackElevation: layerIndex.toDouble(),
+        compact: layerCount > 1,
+        cardHeight: geo.height,
         onTap: onTap,
         onLongPress: onLongPress,
       ),
@@ -417,6 +419,7 @@ class _LocalEventCard extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     this.compact = false,
+    this.cardHeight,
     this.stackElevation = 0,
   });
 
@@ -426,6 +429,7 @@ class _LocalEventCard extends StatelessWidget {
   final EventTimeStatus status;
   final double backgroundOpacity;
   final bool compact;
+  final double? cardHeight;
   final double stackElevation;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
@@ -458,7 +462,10 @@ class _LocalEventCard extends StatelessWidget {
     final ({Color background, Color foreground}) chipColors =
         AppColorUtils.chipFromAccent(accent, colors);
     final double horizontalPadding = compact ? 6 : 10;
-    final double verticalPadding = compact ? 6 : 8;
+    final double verticalPadding = compact
+        ? (cardHeight != null && cardHeight! < 56 ? 4 : 5)
+        : 8;
+    final bool tight = compact && cardHeight != null && cardHeight! < 56;
 
     return Opacity(
       opacity: cardOpacity,
@@ -502,7 +509,7 @@ class _LocalEventCard extends StatelessWidget {
                                 selectedDay: selectedDate,
                                 timeFormat: timeFormat,
                               ),
-                              maxLines: compact ? 2 : 1,
+                                  maxLines: tight ? 1 : (compact ? 2 : 1),
                               overflow: TextOverflow.ellipsis,
                               style: (compact
                                       ? theme.textTheme.labelSmall
@@ -546,7 +553,7 @@ class _LocalEventCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         _NowChip(colors: colors),
                       ],
-                      if (isCurrent && compact) ...<Widget>[
+                      if (isCurrent && compact && !tight) ...<Widget>[
                         const SizedBox(height: 2),
                         Text(
                           'events_now_chip'.tr(),
@@ -574,7 +581,7 @@ class _LocalEventCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           event.title,
-                          maxLines: compact ? 3 : 2,
+                          maxLines: tight ? 1 : (compact ? 2 : 2),
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,

@@ -22,7 +22,7 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
   - All-day events as chips above the strip; timed events in compressed timeline layout
 
-  - Overlapping events stack vertically (later events offset down and to the right); gap markers for long breaks; **now** indicator on today
+  - Overlapping events in separate rows (no tile overlap); later events offset down and to the right; row height scales with overlap count; gap markers for long breaks; **now** indicator on today
 
   - **Tap** event card → **`EventDetailScreen`**; **long-press** → edit (`EventFormSheet`); create from section header
 

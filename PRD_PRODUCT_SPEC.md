@@ -35,7 +35,7 @@ Professionals, freelancers, and people with high cognitive load who juggle multi
 | Live “now” timeline on today’s event strip | **Implemented** | Pulsing indicator + auto-scroll; hidden when now is before the first event of the day |
 | Week strip activity badges | **Implemented** | Event count + task count (`TaskDateVisibility`); not reminder-only without due on that day |
 | Recurring events on dashboard | **Implemented** | Device instances per occurrence + `VisibleCalendarEventsMerger` expansion from stored rules |
-| Overlapping timed events (dashboard strip) | **Implemented** | Staggered stack in `StackedOverlapGeometry.forStrip`: earlier on top-left, later below + shifted right; `CompressedEventsStripLayout` |
+| Overlapping timed events (dashboard strip) | **Implemented** | Separate non-overlapping rows in `StackedOverlapGeometry.forStrip`: earlier top-left, later below + shifted right; card height scales with overlap count; `CompressedEventsStripLayout` |
 | All-day events (dashboard + grid) | **Implemented** | Chip row above strip; dedicated grid row; `CalendarEventTimeUtils.isAllDay` |
 | Cross-midnight timed events | **Implemented** | Clipped per day in `CalendarEventOccurrence`; labels via `EventTimeRangeLabel` |
 | Calendar time grid (day / 3-day / week / month) | **Implemented** | `CalendarGridScreen` tabs; day & 3-day anchor on today; overlap columns in `CalendarGridWeekView` |
@@ -146,8 +146,8 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 - Single source for day events (legacy “events on date” text block removed).
 - Section header: day label and **Create** event (calendar selection is AppBar only).
 - **All-day row** (`DashboardAllDayEventsRow`): chips above the timed strip when the day has all-day events.
-- **Horizontal strip** (116 dp base height; grows when overlapping events stack): compressed layout — adjacent event cards, compact gap markers for long idle periods (≥90 min).
-- **Overlapping timed events:** cards in one slot are stacked **one under another**; each later-start event is offset **down and to the right** (toward later time on the strip). Full-width cards; slot expands in width and height.
+- **Horizontal strip** (116 dp for a single event; sublinear height growth for overlap groups): compressed layout — adjacent event cards, compact gap markers for long idle periods (≥90 min).
+- **Overlapping timed events:** separate rows in one slot (tiles do **not** cover each other). Earlier event top-left; each later-start event on the next row, shifted **right** toward later time. Row height shrinks as overlap count grows (`stripCardHeight` / `stripOverlapBudget`); compact typography in multi-event slots.
 - **Event card:** accent bar, **start–end time** (`EventTimeRangeLabel` for cross-midnight), title, optional recurrence icon, linked-tasks badge.
 - **Today only:** past / current / future styling; pulsing **Now** chip on current event (`events_now_chip`); live **now** vertical indicator (updates every minute); auto-scroll to current or next event.
 - **Tap** card → **`EventDetailScreen`** (linked tasks, add task, AppBar edit).
@@ -261,3 +261,4 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 | 2026-06-06 | Lock screen widget spec (variant 1 «Pulse»); removed obsolete `REFACTORING_ROADMAP.md` and `ANDROID_HOME_WIDGET_SKETCH.md` |
 | 2026-06-06 | Theme picker (system / light / dark); tuned Material 3 palette and contrast; bordered UI sections |
 | 2026-06-06 | Calendar overlap layout: dashboard staggered strip, grid day/3-day/week/month tabs, all-day + cross-midnight events, long-press grid slots, `calendar_event_layout_test` |
+| 2026-06-06 | Dashboard overlap strip: non-overlapping rows, right shift for later events, scaled card height by overlap count |

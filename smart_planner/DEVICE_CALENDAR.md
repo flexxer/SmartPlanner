@@ -46,7 +46,7 @@ Edits made in Google Calendar appear after sync reaches the device calendar, the
 - Device rows are upserted via `LocalCalendarEventRepository.upsertDeviceEvents` with `EventSource.device`.
 - Visible list merge: `VisibleCalendarEventsMerger` in `lib/features/dashboard/domain/` (per-day and range; expands recurring stored rows).
 - Calendar id resolution: `LinkedCalendarIdsResolver.resolve` / `resolveForDeviceSync` (user selection only; no “import all device calendars” expansion).
-- Event strip layout: `CompressedEventsStripLayout` + `StackedOverlapGeometry.forStrip` — overlapping timed events stack in one slot (earlier top-left, later down/right); “now” line hidden when current time is before the first event of the day.
+- Event strip layout: `CompressedEventsStripLayout` + `StackedOverlapGeometry.forStrip` — overlapping timed events in one slot as **separate rows** (earlier top-left, later below + shifted right; tiles do not overlap); card height from `stripCardHeight(layerCount)`; “now” line hidden when current time is before the first event of the day.
 - All-day events: `CalendarEventTimeUtils.isAllDay`; dashboard chips (`DashboardAllDayEventsRow`); excluded from timed strip segments.
 - Cross-midnight timed events: clipped per calendar day in `CalendarEventOccurrence`; labels in `EventTimeRangeLabel`.
 - Time grid: `CalendarGridScreen` (day / 3-day / week / month); overlap columns via `StackedOverlapGeometry.forGrid`; long-press empty slot → `EventFormSheet` (hour snap, 15-min duration steps).

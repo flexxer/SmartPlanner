@@ -100,6 +100,7 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 | Push: morning/evening task digest | **Implemented** | Workmanager ~08:00 / ~19:00 (`TaskDailyDigestWorker`); toggles in Settings |
 | Android ongoing **day-status** notification (foreground service) | **Implemented** | Opt-in on **Calendars** settings; `DayStatusNotificationController` + `flutter_local_notifications` FGS (`specialUse`); title = today’s task progress, body = current/next event; synced from `DashboardBloc`; default **off** |
 | Android home widget: day schedule + focus tasks | **Implemented** | Medium 4×2 (`DayLinxWidgetProvider`); same payload as day-status via `DayStatusHomeWidgetService`; ↻ refresh + add task; complete-from-widget = planned |
+| Android lock screen widget: today pulse (event + progress) | **Planned** | Variant 1 «Pulse» — 2 lines, read-only; Android 14+ Glance `keyguard`; spec `ANDROID_LOCK_SCREEN_WIDGET.md`; reuses `DayStatusTodayLoader` |
 | Background check for overdue tasks | **Implemented** | `workmanager`: overdue digest (`OverdueBackgroundWorker`, 12h); midnight roll + digest refresh; day-status/widget refresh (15 min) |
 | Custom URL scheme deep links (`daylinx://create`) | **Implemented** | `app_links`; opens dashboard + `TaskFormSheet` / `EventFormSheet` with prefilled `title`, `priority`, `start` |
 
@@ -250,3 +251,4 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 | 2026-06 | Android home widget MVP (medium 4×2, shared day-status payload, widget deep links) |
 | 2026-06-04 | Calendar UX: selected calendars only; recurring instances + merger; now line before first event; week strip task counts aligned with dashboard |
 | 2026-06-06 | Checklist `moveCompletedToEnd` setting; shared completion-list animations (`SlidingCompletionList`, `CollapsingCompletionTile`); linked tasks on event detail; dashboard tiles keyed by task id for stable BLoC reload |
+| 2026-06-06 | Lock screen widget spec (variant 1 «Pulse»); removed obsolete `REFACTORING_ROADMAP.md` and `ANDROID_HOME_WIDGET_SKETCH.md` |

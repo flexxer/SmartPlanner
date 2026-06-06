@@ -9,24 +9,32 @@ Copy everything below the line into a new chat.
 You are continuing work on **DayLinx** (Flutter app in `smart_planner/`, repo root `SmartPlanner/`).
 
 ### Read first
-1. `REFACTORING_ROADMAP.md` — sprints A–E done  
-2. `PROJECT_STRUCTURE.md` — architecture  
-3. `PRD_PRODUCT_SPEC.md` — product status  
+1. `ANDROID_LOCK_SCREEN_WIDGET.md` — **your default task** (variant 1 «Pulse»)
+2. `PROJECT_STRUCTURE.md` — architecture and key paths
+3. `PRD_PRODUCT_SPEC.md` — product status (§3.3 notifications/widgets)
 4. `smart_planner/DEVICE_CALENDAR.md` — device calendar only (no OAuth)
 
 ### What is already done
-- Phases 0–5 + **Sprints A–E** (write-back, widget, templates, product polish)  
-- Device calendar read/write, `VisibleCalendarEventsMerger` (selected calendars + recurring expansion), recurring task rules, morning/evening digest WM  
-- Dashboard UX fixes (2026-06-04): disabled calendars hidden, week strip counts, now line before first event — see `DEVICE_CALENDAR.md`  
-- ~90 tests pass (`flutter test`)
+- Phases 0–5; device calendar read/write; templates; morning/evening digest; midnight overdue roll
+- Android **home widget** MVP (`DayLinxWidgetProvider`, medium 4×2, shared `DayStatusTodayLoader`)
+- Android **day-status** foreground notification (opt-in)
+- Checklist `moveCompletedToEnd`; `SlidingCompletionList` / `CollapsingCompletionTile`; dashboard tile `ValueKey` stability
+- ~90+ tests (`flutter test`)
 
 ### Your task (default)
-Only if the user asks — **Sprint F** cloud sync is deferred. Otherwise fix bugs or small features they specify.
+Implement **Android lock screen widget variant 1** per `ANDROID_LOCK_SCREEN_WIDGET.md`:
+- `DayStatusLockScreenPayloadBuilder` + tests
+- `DayStatusLockScreenWidgetService` + Glance provider (API 34+)
+- Sync from same triggers as home widget
+- Read-only, 2 lines max, tap → dashboard today
+
+Only if the user asks for something else — follow their instruction. Cloud sync is **not** planned.
 
 ### Rules
-- Minimize scope; match existing code style  
-- Do **not** re-add Google Calendar API unless explicitly asked  
-- Do **not** commit unless asked  
-- Run `flutter test` before finishing  
+- Minimize scope; match existing code style
+- Reuse `DayStatusTodayLoader` / `DayStatusLocaleCopy` — no duplicate event logic
+- Do **not** re-add Google Calendar API unless explicitly asked
+- Do **not** commit unless asked
+- Run `flutter test` before finishing
 
 ## End of prompt

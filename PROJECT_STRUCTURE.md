@@ -310,6 +310,10 @@ smart_planner/test/
 | `DayStatusBarSettingsSection` | `SwitchListTile` on `CalendarSettingsPage`; calls `setDayStatusBarEnabled` |
 | `DayStatusServiceHost` | Bootstrap + `resumed` refresh; TZ change → `rescheduleAll()` |
 | `DayStatusBackgroundSync` | Workmanager: refresh FGS + home widget (locale copy, no UI context) |
+| `DayStatusHomeWidgetService` | Pushes `DayStatusWidgetPayload` to `DayLinxWidgetProvider` via `home_widget` |
+| `DayStatusWidgetPayload` / `DayStatusWidgetPayloadBuilder` | Home widget fields (`dw_*` keys in SharedPreferences) |
+| `DayLinxWidgetProvider` | Android home widget (`widget_day_medium.xml`); refresh + add-task deep links |
+| **Lock screen widget (planned)** | Spec: `ANDROID_LOCK_SCREEN_WIDGET.md` — `DayStatusLockScreenPayload` (`ls_*`), Glance `keyguard`, API 34+ |
 | `BackgroundTaskService` | Periodic overdue check (12h) + day-status/widget refresh (15 min) |
 | `DeepLinkService` | `app_links`: `getInitialLink` + `uriLinkStream` → `DeepLinkParser` |
 | `DeepLinkDispatcher` | Pops to dashboard, waits for `DashboardLoaded`, opens create sheet with prefilled fields |
@@ -509,3 +513,4 @@ Example prompt:
 | 2026-05 | Device calendar write-back: `CalendarEventWriteService`, create/update/delete via `device_calendar` |
 | 2026-06-04 | Dashboard calendar UX: selected-calendar filter, recurring instance read/merge, now-line strip rules, week markers via `TaskDateVisibility` |
 | 2026-06-06 | Checklist `moveCompletedToEnd`; `SlidingCompletionList` / `CollapsingCompletionTile`; `checklist_attachment_body`, `linked_tasks_completion_list`; dashboard task tile `ValueKey` |
+| 2026-06-06 | Lock screen widget spec (`ANDROID_LOCK_SCREEN_WIDGET.md`); home widget paths in key-types table; removed sprint roadmap / home-widget sketch docs |

@@ -10,7 +10,10 @@
 |----------|-------------|
 | [PRD_PRODUCT_SPEC.md](PRD_PRODUCT_SPEC.md) | Product requirements and current UX |
 | [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | Architecture, folder tree, key components |
+| [ANDROID_LOCK_SCREEN_WIDGET.md](ANDROID_LOCK_SCREEN_WIDGET.md) | Lock screen widget spec (variant 1 «Pulse», planned) |
+| [AGENT_HANDOFF_PROMPT.md](AGENT_HANDOFF_PROMPT.md) | Copy-paste prompt for a new Cursor agent session |
 | [smart_planner/README.md](smart_planner/README.md) | Build, run, and test instructions |
+| [smart_planner/DEVICE_CALENDAR.md](smart_planner/DEVICE_CALENDAR.md) | Device calendar read/write behavior |
 
 ## Quick start
 

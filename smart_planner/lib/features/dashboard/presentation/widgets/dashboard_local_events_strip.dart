@@ -122,7 +122,7 @@ class _DashboardLocalEventsStripState extends State<DashboardLocalEventsStrip> {
 
     final double viewportWidth = _scrollController.position.viewportDimension;
     final double maxScroll = _scrollController.position.maxScrollExtent;
-    final double target = (focusLeft - viewportWidth * 0.25).clamp(0, maxScroll);
+    final double target = (focusLeft - viewportWidth * 0.25).clamp(0.0, maxScroll);
 
     _scrollController.animateTo(
       target,
@@ -181,11 +181,15 @@ class _DashboardLocalEventsStripState extends State<DashboardLocalEventsStrip> {
                   CompressedEventSegment(
                     :final event,
                     :final left,
+                    :final width,
+                    :final offsetInGroup,
                     :final layerIndex,
                     :final layerCount,
                   ) =>
                     _StripOverlappedEventCard(
                       groupLeft: left,
+                      offsetInGroup: offsetInGroup,
+                      cardWidth: width,
                       layerIndex: layerIndex,
                       layerCount: layerCount,
                       event: event,
@@ -229,6 +233,8 @@ class _DashboardLocalEventsStripState extends State<DashboardLocalEventsStrip> {
 class _StripOverlappedEventCard extends StatelessWidget {
   const _StripOverlappedEventCard({
     required this.groupLeft,
+    required this.offsetInGroup,
+    required this.cardWidth,
     required this.layerIndex,
     required this.layerCount,
     required this.event,
@@ -240,6 +246,8 @@ class _StripOverlappedEventCard extends StatelessWidget {
   });
 
   final double groupLeft;
+  final double offsetInGroup;
+  final double cardWidth;
   final int layerIndex;
   final int layerCount;
   final CalendarEvent event;
@@ -263,9 +271,9 @@ class _StripOverlappedEventCard extends StatelessWidget {
     );
 
     return Positioned(
-      left: groupLeft + geo.left,
+      left: groupLeft + offsetInGroup + geo.left,
       top: geo.top,
-      width: geo.width,
+      width: cardWidth,
       height: geo.height,
       child: _LocalEventCard(
         event: event,

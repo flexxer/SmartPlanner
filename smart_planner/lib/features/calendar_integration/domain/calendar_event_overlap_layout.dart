@@ -116,6 +116,9 @@ abstract final class StackedOverlapGeometry {
   static const double minGridBlockWidth = 4;
 
   static const double stripCardWidth = 200;
+  static const double stripPixelsPerHour = 50;
+  static const double stripPixelsPerMinute = stripPixelsPerHour / 60;
+  static const double stripMinSpanWidth = stripPixelsPerHour;
   /// Later overlapping events shift right (toward later time / midnight).
   static const double stripLayerOffsetX = 24;
   /// Gap between non-overlapping rows in a multi-event slot.
@@ -219,11 +222,20 @@ abstract final class StackedOverlapGeometry {
     );
   }
 
-  static double stripSlotWidth(int layerCount) {
-    if (layerCount <= 1) {
-      return stripCardWidth;
+  static double stripSlotWidth({
+    required Duration clusterDuration,
+    required int columnCount,
+    double pixelsPerMinute = stripPixelsPerMinute,
+    double minSpanWidth = stripMinSpanWidth,
+  }) {
+    final double timeWidth = math.max(
+      minSpanWidth,
+      clusterDuration.inMinutes * pixelsPerMinute,
+    );
+    if (columnCount <= 1) {
+      return timeWidth;
     }
-    return stripCardWidth + (layerCount - 1) * stripLayerOffsetX;
+    return timeWidth + (columnCount - 1) * stripLayerOffsetX;
   }
 
   static double stripSlotHeight(int layerCount) {

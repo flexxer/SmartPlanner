@@ -20,8 +20,8 @@ You are continuing work on **DayLinx** (Flutter app in `smart_planner/`, repo ro
 - Android **home widget** MVP (`DayLinxWidgetProvider`, medium 4×2, shared `DayStatusTodayLoader`)
 - Android **day-status** foreground notification (opt-in)
 - Checklist `moveCompletedToEnd`; `SlidingCompletionList` / `CollapsingCompletionTile`; dashboard tile `ValueKey` stability
-- Calendar overlap UX: dashboard event strip (non-overlapping rows, scaled height, right shift for later events), grid day/3-day/week/month tabs, all-day + cross-midnight events, long-press grid slot create
-- ~106 tests (`flutter test`)
+- Calendar overlap UX: dashboard event strip (time-proportional layout ~50 px/hour; non-overlapping events share a row; overlapping rows with scaled height and right shift), grid day/3-day/week/month tabs, all-day + cross-midnight events, long-press grid slot create
+- ~108 tests (`flutter test`)
 
 ### Your task (default)
 Implement **Android lock screen widget variant 1** per `ANDROID_LOCK_SCREEN_WIDGET.md`:

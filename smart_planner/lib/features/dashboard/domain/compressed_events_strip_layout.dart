@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:smart_planner/core/utils/app_date_utils.dart';
+import 'package:smart_planner/features/calendar_integration/domain/calendar_event_occurrence.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_overlap_layout.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_time_utils.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
@@ -17,12 +18,13 @@ sealed class CompressedStripSegment {
   final double width;
 }
 
-/// Event card at [left] with fixed [width].
+/// Event card at [left] with time-scaled [width] inside its overlap group.
 final class CompressedEventSegment extends CompressedStripSegment {
   const CompressedEventSegment({
     required this.event,
     required super.left,
     required super.width,
+    this.offsetInGroup = 0,
     this.columnIndex = 0,
     this.columnCount = 1,
     this.layerIndex = 0,
@@ -30,14 +32,15 @@ final class CompressedEventSegment extends CompressedStripSegment {
   });
 
   final CalendarEvent event;
+  /// Horizontal offset within the group slot (time-proportional).
+  final double offsetInGroup;
   final int columnIndex;
   final int columnCount;
-  /// Visual stack order by start time within an overlap group (0 = earliest).
+  /// Overlap row index — non-overlapping events share the same row.
   final int layerIndex;
   final int layerCount;
 
-  double get cardWidthInGroup => width / columnCount;
-  double get cardLeftInGroup => left + columnIndex * cardWidthInGroup;
+  double get cardLeft => left + offsetInGroup;
 }
 
 /// Collapsed time jump between two events (shows duration label).
@@ -67,9 +70,9 @@ class CompressedEventsStripLayout {
     this.focusScrollLeft,
   });
 
-  static const double cardWidth = 200;
   static const double cardGap = 10;
   static const double gapMarkerWidth = 56;
+  static const double stripMinEventWidth = 56;
 
   /// Gaps longer than this become a compact duration marker.
   static const int compressThresholdMinutes = 90;
@@ -115,7 +118,8 @@ class CompressedEventsStripLayout {
       );
     }
 
-    final List<_OverlapGroup> groups = _buildOverlapGroups(sorted);
+    final List<_OverlapGroup> groups =
+        _buildOverlapGroups(sorted, selectedDate);
     final List<CompressedStripSegment> segments = <CompressedStripSegment>[];
     double x = 0;
 
@@ -131,21 +135,38 @@ class CompressedEventsStripLayout {
         );
       }
 
-      final int layerCount = group.events.length;
-      for (int layer = 0; layer < layerCount; layer++) {
+      final Duration clusterDuration =
+          group.clusterEnd.difference(group.clusterStart);
+      final double timeSpanWidth = _timeSpanWidth(clusterDuration);
+      for (final _GroupedEvent grouped in group.events) {
+        final CalendarEventDayBounds bounds = grouped.bounds;
         segments.add(
           CompressedEventSegment(
-            event: group.events[layer].event,
+            event: grouped.event,
             left: x,
-            width: StackedOverlapGeometry.stripCardWidth,
-            columnIndex: group.events[layer].columnIndex,
+            width: _eventWidth(
+              start: bounds.start,
+              end: bounds.end,
+              clusterDuration: clusterDuration,
+              timeSpanWidth: timeSpanWidth,
+            ),
+            offsetInGroup: _eventOffset(
+              start: bounds.start,
+              clusterStart: group.clusterStart,
+              clusterDuration: clusterDuration,
+              timeSpanWidth: timeSpanWidth,
+            ),
+            columnIndex: grouped.columnIndex,
             columnCount: group.columnCount,
-            layerIndex: layer,
-            layerCount: layerCount,
+            layerIndex: grouped.columnIndex,
+            layerCount: group.columnCount,
           ),
         );
       }
-      x += StackedOverlapGeometry.stripSlotWidth(layerCount);
+      x += StackedOverlapGeometry.stripSlotWidth(
+        clusterDuration: clusterDuration,
+        columnCount: group.columnCount,
+      );
     }
 
     double? nowLeft;
@@ -176,7 +197,10 @@ class CompressedEventsStripLayout {
     );
   }
 
-  static List<_OverlapGroup> _buildOverlapGroups(List<CalendarEvent> sorted) {
+  static List<_OverlapGroup> _buildOverlapGroups(
+    List<CalendarEvent> sorted,
+    DateTime day,
+  ) {
     final List<_OverlapGroup> groups = <_OverlapGroup>[];
     List<CalendarEvent>? currentEvents;
 
@@ -187,21 +211,64 @@ class CompressedEventsStripLayout {
       }
 
       final DateTime clusterEnd = currentEvents
-          .map((CalendarEvent e) => e.end)
+          .map(
+            (CalendarEvent e) =>
+                CalendarEventOccurrence.timedBoundsOnDay(e, day)!.end,
+          )
           .reduce((DateTime a, DateTime b) => a.isAfter(b) ? a : b);
 
-      if (event.start.isBefore(clusterEnd)) {
+      final DateTime eventStart =
+          CalendarEventOccurrence.timedBoundsOnDay(event, day)!.start;
+
+      if (eventStart.isBefore(clusterEnd)) {
         currentEvents.add(event);
       } else {
-        groups.add(_OverlapGroup.fromEvents(currentEvents));
+        groups.add(_OverlapGroup.fromEvents(currentEvents, day));
         currentEvents = <CalendarEvent>[event];
       }
     }
 
     if (currentEvents != null) {
-      groups.add(_OverlapGroup.fromEvents(currentEvents));
+      groups.add(_OverlapGroup.fromEvents(currentEvents, day));
     }
     return groups;
+  }
+
+  static double _timeSpanWidth(Duration clusterDuration) {
+    return math.max(
+      StackedOverlapGeometry.stripMinSpanWidth,
+      clusterDuration.inMinutes * StackedOverlapGeometry.stripPixelsPerMinute,
+    );
+  }
+
+  static double _eventOffset({
+    required DateTime start,
+    required DateTime clusterStart,
+    required Duration clusterDuration,
+    required double timeSpanWidth,
+  }) {
+    final int clusterMinutes = clusterDuration.inMinutes;
+    if (clusterMinutes <= 0) {
+      return 0;
+    }
+    final Duration offset =
+        start.isBefore(clusterStart) ? Duration.zero : start.difference(clusterStart);
+    return offset.inMinutes / clusterMinutes * timeSpanWidth;
+  }
+
+  static double _eventWidth({
+    required DateTime start,
+    required DateTime end,
+    required Duration clusterDuration,
+    required double timeSpanWidth,
+  }) {
+    final int clusterMinutes = clusterDuration.inMinutes;
+    if (clusterMinutes <= 0) {
+      return stripMinEventWidth;
+    }
+    final double proportional =
+        end.difference(start).inMinutes / clusterMinutes * timeSpanWidth;
+    return math.max(stripMinEventWidth, proportional);
   }
 
   static double _appendGapIfNeeded({
@@ -241,9 +308,14 @@ class CompressedEventsStripLayout {
           if (!now.isBefore(from) && now.isBefore(to)) {
             return left + width / 2;
           }
-        case CompressedEventSegment(:final event, :final left, :final width):
+        case CompressedEventSegment(
+          :final event,
+          :final left,
+          :final width,
+          :final offsetInGroup,
+        ):
           if (!now.isBefore(event.start) && !now.isAfter(event.end)) {
-            return left + width / 2;
+            return left + offsetInGroup + width / 2;
           }
       }
     }
@@ -258,7 +330,7 @@ class CompressedEventsStripLayout {
           .whereType<CompressedEventSegment>()
           .lastOrNull;
       if (lastSegment != null) {
-        return lastSegment.left + cardWidth;
+        return lastSegment.left + lastSegment.offsetInGroup + lastSegment.width;
       }
     }
 
@@ -283,7 +355,7 @@ class CompressedEventsStripLayout {
         for (final CompressedStripSegment segment in segments) {
           if (segment is CompressedEventSegment &&
               segment.event.id == event.id) {
-            return segment.left;
+            return segment.left + segment.offsetInGroup;
           }
         }
       }
@@ -316,19 +388,27 @@ final class _OverlapGroup {
     required this.columnCount,
   });
 
-  factory _OverlapGroup.fromEvents(List<CalendarEvent> events) {
+  factory _OverlapGroup.fromEvents(List<CalendarEvent> events, DateTime day) {
+    final Map<CalendarEvent, CalendarEventDayBounds> boundsByEvent =
+        <CalendarEvent, CalendarEventDayBounds>{
+      for (final CalendarEvent event in events)
+        event: CalendarEventOccurrence.timedBoundsOnDay(event, day)!,
+    };
+
     events.sort(
-      (CalendarEvent a, CalendarEvent b) => a.start.compareTo(b.start),
+      (CalendarEvent a, CalendarEvent b) =>
+          boundsByEvent[a]!.start.compareTo(boundsByEvent[b]!.start),
     );
 
     final List<List<CalendarEvent>> columns = <List<CalendarEvent>>[];
     final Map<CalendarEvent, int> columnIndex = <CalendarEvent, int>{};
 
     for (final CalendarEvent event in events) {
+      final CalendarEventDayBounds bounds = boundsByEvent[event]!;
       bool placed = false;
       for (int i = 0; i < columns.length; i++) {
-        final CalendarEvent last = columns[i].last;
-        if (!last.end.isAfter(event.start)) {
+        final CalendarEventDayBounds lastBounds = boundsByEvent[columns[i].last]!;
+        if (!lastBounds.end.isAfter(bounds.start)) {
           columns[i].add(event);
           columnIndex[event] = i;
           placed = true;
@@ -344,15 +424,15 @@ final class _OverlapGroup {
     int columnCount = 1;
     for (final CalendarEvent event in events) {
       for (final CalendarEvent other in events) {
-        if (_eventsOverlap(event, other)) {
+        if (boundsByEvent[event]!.overlaps(boundsByEvent[other]!)) {
           columnCount = math.max(columnCount, columnIndex[other]! + 1);
         }
       }
     }
 
-    final DateTime clusterStart = events.first.start;
+    final DateTime clusterStart = boundsByEvent[events.first]!.start;
     final DateTime clusterEnd = events
-        .map((CalendarEvent e) => e.end)
+        .map((CalendarEvent e) => boundsByEvent[e]!.end)
         .reduce((DateTime a, DateTime b) => a.isAfter(b) ? a : b);
 
     return _OverlapGroup(
@@ -360,6 +440,7 @@ final class _OverlapGroup {
           .map(
             (CalendarEvent event) => _GroupedEvent(
               event: event,
+              bounds: boundsByEvent[event]!,
               columnIndex: columnIndex[event]!,
             ),
           )
@@ -379,13 +460,11 @@ final class _OverlapGroup {
 final class _GroupedEvent {
   const _GroupedEvent({
     required this.event,
+    required this.bounds,
     required this.columnIndex,
   });
 
   final CalendarEvent event;
+  final CalendarEventDayBounds bounds;
   final int columnIndex;
-}
-
-bool _eventsOverlap(CalendarEvent a, CalendarEvent b) {
-  return a.start.isBefore(b.end) && a.end.isAfter(b.start);
 }

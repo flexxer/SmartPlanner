@@ -265,10 +265,10 @@ smart_planner/test/
 | `DashboardLoaded` | Active/completed/undated/overdue task lists; `linkedCalendarsById` for context calendar badges |
 | `DashboardDayMarkersRepository` | One Isar + one calendar fetch per week range (cached) |
 | `DashboardWeekDateStrip` | Horizontal ~21-day strip; activity dots per day |
-| `DashboardLocalEventsStrip` | Compressed horizontal event cards; overlap rows (scaled height, right shift); live now line (today) |
+| `DashboardLocalEventsStrip` | Time-proportional horizontal event cards; overlap rows (scaled height, right shift); live now line (today) |
 | `DashboardAllDayEventsRow` | All-day event chips above the timed strip |
-| `CompressedEventsStripLayout` | Card/gap segment positions; overlap groups; focus scroll anchor |
-| `StackedOverlapGeometry` | Shared overlap layout: grid columns + dashboard strip rows (`forGrid`, `forStrip`, `stripCardHeight`) |
+| `CompressedEventsStripLayout` | Time-scaled card/gap segments; overlap groups (column index → row); focus scroll anchor |
+| `StackedOverlapGeometry` | Shared overlap layout: grid columns + strip rows; `stripPixelsPerHour` (50), `forGrid`, `forStrip`, `stripCardHeight` |
 | `CalendarEventTimeUtils` | All-day detection, calendar-day overlap, all-day range normalization |
 | `CalendarEventOccurrence` | Timed bounds on a day; all-day list; cross-midnight clip flags |
 | `CalendarEventOverlapLayout` | Column assignment for concurrent events |
@@ -551,5 +551,6 @@ Example prompt:
 | 2026-06-06 | Checklist `moveCompletedToEnd`; `SlidingCompletionList` / `CollapsingCompletionTile`; `checklist_attachment_body`, `linked_tasks_completion_list`; dashboard task tile `ValueKey` |
 | 2026-06-06 | Calendar overlap UX: `calendar_event_*` domain helpers, dashboard staggered strip, grid tabs + all-day row + long-press slots, `EventFormSheet` all-day/cross-midnight |
 | 2026-06-06 | Dashboard overlap strip: non-overlapping rows, scaled card height by overlap count |
+| 2026-06-08 | Dashboard event strip: time-proportional card width/offset (50 px/hour); non-overlapping sequential events share overlap row; layout tests in `compressed_events_strip_layout_test` |
 | 2026-06-06 | Lock screen widget spec (`ANDROID_LOCK_SCREEN_WIDGET.md`); home widget paths in key-types table; removed sprint roadmap / home-widget sketch docs |
 | 2026-06-06 | **Theme settings** (system / light / dark); tuned `AppTheme` + `AppColorUtils`; bordered sections/cards; settings **Theme** section on `CalendarSettingsPage` |

@@ -40,8 +40,8 @@ dependencies:
   device_calendar: ^4.3.2
   
   # Локальная база данных (быстрая, поддерживает связи)
-  isar: ^3.1.0+1
-  isar_flutter_libs: ^3.1.0+1
+  isar_community: ^3.3.2
+  isar_community_flutter_libs: ^3.3.2
 
   # Местные пуш-уведомления и фоновые задачи
   flutter_local_notifications: ^17.0.0
@@ -75,7 +75,7 @@ dev_dependencies:
     sdk: flutter
   
   # Генераторы кода для БД
-  isar_generator: ^3.1.0+1
+  isar_community_generator: ^3.3.2
   build_runner: ^2.4.8
 
   # The "flutter_lints" package below contains a set of recommended lints to

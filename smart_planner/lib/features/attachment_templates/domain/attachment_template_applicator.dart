@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/attachment_templates/domain/entities/attachment_template.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/event_attachment_repository.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/event_attachment.dart';

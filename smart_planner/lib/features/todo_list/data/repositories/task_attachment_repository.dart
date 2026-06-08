@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/database/isar_database.dart';
 import 'package:smart_planner/features/todo_list/data/attachment_file_store.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_payloads.dart';

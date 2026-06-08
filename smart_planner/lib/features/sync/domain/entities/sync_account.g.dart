@@ -41,8 +41,9 @@ const SyncAccountSchema = CollectionSchema(
       id: 4,
       name: r'provider',
       type: IsarType.string,
-    )
+    ),
   },
+
   estimateSize: _syncAccountEstimateSize,
   serialize: _syncAccountSerialize,
   deserialize: _syncAccountDeserialize,
@@ -59,7 +60,7 @@ const SyncAccountSchema = CollectionSchema(
           name: r'provider',
           type: IndexType.hash,
           caseSensitive: true,
-        )
+        ),
       ],
     ),
     r'accountEmail': IndexSchema(
@@ -72,16 +73,17 @@ const SyncAccountSchema = CollectionSchema(
           name: r'accountEmail',
           type: IndexType.hash,
           caseSensitive: true,
-        )
+        ),
       ],
-    )
+    ),
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _syncAccountGetId,
   getLinks: _syncAccountGetLinks,
   attach: _syncAccountAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _syncAccountEstimateSize(
@@ -161,7 +163,10 @@ List<IsarLinkBase<dynamic>> _syncAccountGetLinks(SyncAccount object) {
 }
 
 void _syncAccountAttach(
-    IsarCollection<dynamic> col, Id id, SyncAccount object) {
+  IsarCollection<dynamic> col,
+  Id id,
+  SyncAccount object,
+) {
   object.id = id;
 }
 
@@ -178,15 +183,13 @@ extension SyncAccountQueryWhere
     on QueryBuilder<SyncAccount, SyncAccount, QWhereClause> {
   QueryBuilder<SyncAccount, SyncAccount, QAfterWhereClause> idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: id,
-        upper: id,
-      ));
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterWhereClause> idNotEqualTo(
-      Id id) {
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -208,8 +211,10 @@ extension SyncAccountQueryWhere
     });
   }
 
-  QueryBuilder<SyncAccount, SyncAccount, QAfterWhereClause> idGreaterThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<SyncAccount, SyncAccount, QAfterWhereClause> idGreaterThan(
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -217,8 +222,10 @@ extension SyncAccountQueryWhere
     });
   }
 
-  QueryBuilder<SyncAccount, SyncAccount, QAfterWhereClause> idLessThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<SyncAccount, SyncAccount, QAfterWhereClause> idLessThan(
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -233,101 +240,123 @@ extension SyncAccountQueryWhere
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerId,
-        includeLower: includeLower,
-        upper: upperId,
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterWhereClause> providerEqualTo(
-      String provider) {
+    String provider,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'provider',
-        value: [provider],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'provider', value: [provider]),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterWhereClause> providerNotEqualTo(
-      String provider) {
+    String provider,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'provider',
-              lower: [],
-              upper: [provider],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'provider',
-              lower: [provider],
-              includeLower: false,
-              upper: [],
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'provider',
+                lower: [],
+                upper: [provider],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'provider',
+                lower: [provider],
+                includeLower: false,
+                upper: [],
+              ),
+            );
       } else {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'provider',
-              lower: [provider],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'provider',
-              lower: [],
-              upper: [provider],
-              includeUpper: false,
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'provider',
+                lower: [provider],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'provider',
+                lower: [],
+                upper: [provider],
+                includeUpper: false,
+              ),
+            );
       }
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterWhereClause> accountEmailEqualTo(
-      String accountEmail) {
+    String accountEmail,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'accountEmail',
-        value: [accountEmail],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(
+          indexName: r'accountEmail',
+          value: [accountEmail],
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterWhereClause>
-      accountEmailNotEqualTo(String accountEmail) {
+  accountEmailNotEqualTo(String accountEmail) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'accountEmail',
-              lower: [],
-              upper: [accountEmail],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'accountEmail',
-              lower: [accountEmail],
-              includeLower: false,
-              upper: [],
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'accountEmail',
+                lower: [],
+                upper: [accountEmail],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'accountEmail',
+                lower: [accountEmail],
+                includeLower: false,
+                upper: [],
+              ),
+            );
       } else {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'accountEmail',
-              lower: [accountEmail],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'accountEmail',
-              lower: [],
-              upper: [accountEmail],
-              includeUpper: false,
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'accountEmail',
+                lower: [accountEmail],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'accountEmail',
+                lower: [],
+                upper: [accountEmail],
+                includeUpper: false,
+              ),
+            );
       }
     });
   }
@@ -336,53 +365,56 @@ extension SyncAccountQueryWhere
 extension SyncAccountQueryFilter
     on QueryBuilder<SyncAccount, SyncAccount, QFilterCondition> {
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      accountEmailEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  accountEmailEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'accountEmail',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'accountEmail',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      accountEmailGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'accountEmail',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      accountEmailLessThan(
+  accountEmailGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'accountEmail',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'accountEmail',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      accountEmailBetween(
+  accountEmailLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'accountEmail',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
+  accountEmailBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -390,153 +422,158 @@ extension SyncAccountQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'accountEmail',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'accountEmail',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      accountEmailStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  accountEmailStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'accountEmail',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'accountEmail',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      accountEmailEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  accountEmailEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'accountEmail',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'accountEmail',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      accountEmailContains(String value, {bool caseSensitive = true}) {
+  accountEmailContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'accountEmail',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'accountEmail',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      accountEmailMatches(String pattern, {bool caseSensitive = true}) {
+  accountEmailMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'accountEmail',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'accountEmail',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      accountEmailIsEmpty() {
+  accountEmailIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'accountEmail',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'accountEmail', value: ''),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      accountEmailIsNotEmpty() {
+  accountEmailIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'accountEmail',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'accountEmail', value: ''),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      displayNameIsNull() {
+  displayNameIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'displayName',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'displayName'),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      displayNameIsNotNull() {
+  displayNameIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'displayName',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'displayName'),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      displayNameEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
+  displayNameEqualTo(String? value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'displayName',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'displayName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      displayNameGreaterThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'displayName',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      displayNameLessThan(
+  displayNameGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'displayName',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'displayName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      displayNameBetween(
+  displayNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'displayName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
+  displayNameBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -544,94 +581,96 @@ extension SyncAccountQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'displayName',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'displayName',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      displayNameStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  displayNameStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'displayName',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'displayName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      displayNameEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  displayNameEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'displayName',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'displayName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      displayNameContains(String value, {bool caseSensitive = true}) {
+  displayNameContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'displayName',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'displayName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      displayNameMatches(String pattern, {bool caseSensitive = true}) {
+  displayNameMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'displayName',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'displayName',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      displayNameIsEmpty() {
+  displayNameIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'displayName',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'displayName', value: ''),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      displayNameIsNotEmpty() {
+  displayNameIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'displayName',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'displayName', value: ''),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition> idEqualTo(
-      Id value) {
+    Id value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
     });
   }
 
@@ -640,11 +679,13 @@ extension SyncAccountQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -653,11 +694,13 @@ extension SyncAccountQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -668,97 +711,97 @@ extension SyncAccountQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      isEnabledEqualTo(bool value) {
+  isEnabledEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'isEnabled',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'isEnabled', value: value),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      lastSyncedAtIsNull() {
+  lastSyncedAtIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'lastSyncedAt',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'lastSyncedAt'),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      lastSyncedAtIsNotNull() {
+  lastSyncedAtIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'lastSyncedAt',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'lastSyncedAt'),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      lastSyncedAtEqualTo(DateTime? value) {
+  lastSyncedAtEqualTo(DateTime? value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'lastSyncedAt',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'lastSyncedAt', value: value),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      lastSyncedAtGreaterThan(
-    DateTime? value, {
-    bool include = false,
-  }) {
+  lastSyncedAtGreaterThan(DateTime? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'lastSyncedAt',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'lastSyncedAt',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      lastSyncedAtLessThan(
-    DateTime? value, {
-    bool include = false,
-  }) {
+  lastSyncedAtLessThan(DateTime? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'lastSyncedAt',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'lastSyncedAt',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      lastSyncedAtBetween(
+  lastSyncedAtBetween(
     DateTime? lower,
     DateTime? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'lastSyncedAt',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'lastSyncedAt',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
@@ -767,43 +810,49 @@ extension SyncAccountQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'provider',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'provider',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      providerGreaterThan(
+  providerGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'provider',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'provider',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      providerLessThan(
+  providerLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'provider',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'provider',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -815,85 +864,88 @@ extension SyncAccountQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'provider',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'provider',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      providerStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  providerStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'provider',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'provider',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      providerEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  providerEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'provider',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'provider',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      providerContains(String value, {bool caseSensitive = true}) {
+  providerContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'provider',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'provider',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition> providerMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
+    String pattern, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'provider',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'provider',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      providerIsEmpty() {
+  providerIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'provider',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'provider', value: ''),
+      );
     });
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterFilterCondition>
-      providerIsNotEmpty() {
+  providerIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'provider',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'provider', value: ''),
+      );
     });
   }
 }
@@ -913,7 +965,7 @@ extension SyncAccountQuerySortBy
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterSortBy>
-      sortByAccountEmailDesc() {
+  sortByAccountEmailDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'accountEmail', Sort.desc);
     });
@@ -950,7 +1002,7 @@ extension SyncAccountQuerySortBy
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterSortBy>
-      sortByLastSyncedAtDesc() {
+  sortByLastSyncedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastSyncedAt', Sort.desc);
     });
@@ -978,7 +1030,7 @@ extension SyncAccountQuerySortThenBy
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterSortBy>
-      thenByAccountEmailDesc() {
+  thenByAccountEmailDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'accountEmail', Sort.desc);
     });
@@ -1027,7 +1079,7 @@ extension SyncAccountQuerySortThenBy
   }
 
   QueryBuilder<SyncAccount, SyncAccount, QAfterSortBy>
-      thenByLastSyncedAtDesc() {
+  thenByLastSyncedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastSyncedAt', Sort.desc);
     });
@@ -1048,15 +1100,17 @@ extension SyncAccountQuerySortThenBy
 
 extension SyncAccountQueryWhereDistinct
     on QueryBuilder<SyncAccount, SyncAccount, QDistinct> {
-  QueryBuilder<SyncAccount, SyncAccount, QDistinct> distinctByAccountEmail(
-      {bool caseSensitive = true}) {
+  QueryBuilder<SyncAccount, SyncAccount, QDistinct> distinctByAccountEmail({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'accountEmail', caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<SyncAccount, SyncAccount, QDistinct> distinctByDisplayName(
-      {bool caseSensitive = true}) {
+  QueryBuilder<SyncAccount, SyncAccount, QDistinct> distinctByDisplayName({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'displayName', caseSensitive: caseSensitive);
     });
@@ -1074,8 +1128,9 @@ extension SyncAccountQueryWhereDistinct
     });
   }
 
-  QueryBuilder<SyncAccount, SyncAccount, QDistinct> distinctByProvider(
-      {bool caseSensitive = true}) {
+  QueryBuilder<SyncAccount, SyncAccount, QDistinct> distinctByProvider({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'provider', caseSensitive: caseSensitive);
     });
@@ -1109,7 +1164,7 @@ extension SyncAccountQueryProperty
   }
 
   QueryBuilder<SyncAccount, DateTime?, QQueryOperations>
-      lastSyncedAtProperty() {
+  lastSyncedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'lastSyncedAt');
     });

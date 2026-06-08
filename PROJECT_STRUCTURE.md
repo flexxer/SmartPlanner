@@ -441,7 +441,7 @@ User-facing strings live in **`assets/translations/`** as JSON (`en.json`, `ru.j
 
 - **Flutter** SDK ^3.12
 - **flutter_bloc** — state
-- **isar** + **isar_generator** — local DB
+- **isar_community** + **isar_community_generator** + **isar_community_flutter_libs** — local DB (community fork; Android 16 KB page size support)
 - **device_calendar** — Android/iOS calendar read
 - **flutter_local_notifications**, **timezone**, **workmanager**
 - **easy_localization** — JSON translations (`assets/translations/`)
@@ -470,11 +470,13 @@ Permissions and queries in `android/app/src/main/AndroidManifest.xml`:
 Build configuration:
 
 - `android/app/build.gradle.kts` — `compileSdk = 36`
-- `android/namespace_fix.gradle` — AGP 8+ namespace for library plugins; **compileSdk 36** for all Android library subprojects (e.g. `map_launcher`, `isar_flutter_libs`)
+- `android/namespace_fix.gradle` — AGP 8+ namespace for library plugins; **compileSdk 36** for all Android library subprojects (e.g. `map_launcher`, `isar_community_flutter_libs`)
 - Core library desugaring enabled for notifications
 - **Warning at build time:** some plugins still apply Kotlin Gradle Plugin (KGP) separately; safe to ignore until plugin updates
 
 **Do not use Web target** for this project (Isar limitation).
+
+**Android 16 KB page size:** native `libisar.so` must use ELF alignment ≥ 16 KB (`2**14`). Use `isar_community` 3.3.2+ (not abandoned `isar` 3.1.x). Import: `package:isar_community/isar.dart`. Verify with `llvm-objdump -p lib/arm64-v8a/libisar.so | grep LOAD` on a built APK.
 
 ---
 
@@ -484,7 +486,7 @@ From `smart_planner/`:
 
 ```bash
 flutter pub get
-dart run build_runner build --delete-conflicting-outputs
+dart run build_runner build
 ```
 
 ---

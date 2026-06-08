@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/event_attachment_repository.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/event_attachment.dart';
 import 'package:smart_planner/features/todo_list/data/attachment_file_store.dart';

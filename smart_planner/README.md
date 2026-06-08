@@ -101,6 +101,7 @@ Calendar **events** (device + local Isar) ≠ local **tasks** (Isar); not Google
 - Flutter SDK ^3.12 (stable recommended)
 
 - Android or iOS device/emulator (**not Web** — Isar does not support Web)
+- Android 15+ / OneUI 8.5+: local DB uses **isar_community** 3.3.2+ for 16 KB memory page compatibility
 
 - **Internet** optional — required for OpenStreetMap tiles and Nominatim when adding a location
 
@@ -116,7 +117,7 @@ cd smart_planner
 
 flutter pub get
 
-dart run build_runner build --delete-conflicting-outputs
+dart run build_runner build
 
 flutter run
 

@@ -28,18 +28,15 @@ const AttachmentTemplateSchema = CollectionSchema(
       name: r'sortOrder',
       type: IsarType.long,
     ),
-    r'title': PropertySchema(
-      id: 2,
-      name: r'title',
-      type: IsarType.string,
-    ),
+    r'title': PropertySchema(id: 2, name: r'title', type: IsarType.string),
     r'type': PropertySchema(
       id: 3,
       name: r'type',
       type: IsarType.byte,
       enumMap: _AttachmentTemplatetypeEnumValueMap,
-    )
+    ),
   },
+
   estimateSize: _attachmentTemplateEstimateSize,
   serialize: _attachmentTemplateSerialize,
   deserialize: _attachmentTemplateDeserialize,
@@ -56,16 +53,17 @@ const AttachmentTemplateSchema = CollectionSchema(
           name: r'title',
           type: IndexType.value,
           caseSensitive: false,
-        )
+        ),
       ],
-    )
+    ),
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _attachmentTemplateGetId,
   getLinks: _attachmentTemplateGetLinks,
   attach: _attachmentTemplateAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _attachmentTemplateEstimateSize(
@@ -104,7 +102,7 @@ AttachmentTemplate _attachmentTemplateDeserialize(
   object.title = reader.readString(offsets[2]);
   object.type =
       _AttachmentTemplatetypeValueEnumMap[reader.readByteOrNull(offsets[3])] ??
-          TaskAttachmentType.contact;
+      TaskAttachmentType.contact;
   return object;
 }
 
@@ -122,9 +120,11 @@ P _attachmentTemplateDeserializeProp<P>(
     case 2:
       return (reader.readString(offset)) as P;
     case 3:
-      return (_AttachmentTemplatetypeValueEnumMap[
-              reader.readByteOrNull(offset)] ??
-          TaskAttachmentType.contact) as P;
+      return (_AttachmentTemplatetypeValueEnumMap[reader.readByteOrNull(
+                offset,
+              )] ??
+              TaskAttachmentType.contact)
+          as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -154,12 +154,16 @@ Id _attachmentTemplateGetId(AttachmentTemplate object) {
 }
 
 List<IsarLinkBase<dynamic>> _attachmentTemplateGetLinks(
-    AttachmentTemplate object) {
+  AttachmentTemplate object,
+) {
   return [];
 }
 
 void _attachmentTemplateAttach(
-    IsarCollection<dynamic> col, Id id, AttachmentTemplate object) {
+  IsarCollection<dynamic> col,
+  Id id,
+  AttachmentTemplate object,
+) {
   object.id = id;
 }
 
@@ -183,17 +187,14 @@ extension AttachmentTemplateQueryWhereSort
 extension AttachmentTemplateQueryWhere
     on QueryBuilder<AttachmentTemplate, AttachmentTemplate, QWhereClause> {
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      idEqualTo(Id id) {
+  idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: id,
-        upper: id,
-      ));
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      idNotEqualTo(Id id) {
+  idNotEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -216,7 +217,7 @@ extension AttachmentTemplateQueryWhere
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      idGreaterThan(Id id, {bool include = false}) {
+  idGreaterThan(Id id, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -225,7 +226,7 @@ extension AttachmentTemplateQueryWhere
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      idLessThan(Id id, {bool include = false}) {
+  idLessThan(Id id, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -234,159 +235,165 @@ extension AttachmentTemplateQueryWhere
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      idBetween(
+  idBetween(
     Id lowerId,
     Id upperId, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerId,
-        includeLower: includeLower,
-        upper: upperId,
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      titleEqualTo(String title) {
+  titleEqualTo(String title) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'title',
-        value: [title],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'title', value: [title]),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      titleNotEqualTo(String title) {
+  titleNotEqualTo(String title) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'title',
-              lower: [],
-              upper: [title],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'title',
-              lower: [title],
-              includeLower: false,
-              upper: [],
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'title',
+                lower: [],
+                upper: [title],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'title',
+                lower: [title],
+                includeLower: false,
+                upper: [],
+              ),
+            );
       } else {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'title',
-              lower: [title],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'title',
-              lower: [],
-              upper: [title],
-              includeUpper: false,
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'title',
+                lower: [title],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'title',
+                lower: [],
+                upper: [title],
+                includeUpper: false,
+              ),
+            );
       }
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      titleGreaterThan(
-    String title, {
-    bool include = false,
-  }) {
+  titleGreaterThan(String title, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'title',
-        lower: [title],
-        includeLower: include,
-        upper: [],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'title',
+          lower: [title],
+          includeLower: include,
+          upper: [],
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      titleLessThan(
-    String title, {
-    bool include = false,
-  }) {
+  titleLessThan(String title, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'title',
-        lower: [],
-        upper: [title],
-        includeUpper: include,
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'title',
+          lower: [],
+          upper: [title],
+          includeUpper: include,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      titleBetween(
+  titleBetween(
     String lowerTitle,
     String upperTitle, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'title',
-        lower: [lowerTitle],
-        includeLower: includeLower,
-        upper: [upperTitle],
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'title',
+          lower: [lowerTitle],
+          includeLower: includeLower,
+          upper: [upperTitle],
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      titleStartsWith(String TitlePrefix) {
+  titleStartsWith(String TitlePrefix) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'title',
-        lower: [TitlePrefix],
-        upper: ['$TitlePrefix\u{FFFFF}'],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'title',
+          lower: [TitlePrefix],
+          upper: ['$TitlePrefix\u{FFFFF}'],
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      titleIsEmpty() {
+  titleIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'title',
-        value: [''],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'title', value: ['']),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterWhereClause>
-      titleIsNotEmpty() {
+  titleIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(IndexWhereClause.lessThan(
-              indexName: r'title',
-              upper: [''],
-            ))
-            .addWhereClause(IndexWhereClause.greaterThan(
-              indexName: r'title',
-              lower: [''],
-            ));
+            .addWhereClause(
+              IndexWhereClause.lessThan(indexName: r'title', upper: ['']),
+            )
+            .addWhereClause(
+              IndexWhereClause.greaterThan(indexName: r'title', lower: ['']),
+            );
       } else {
         return query
-            .addWhereClause(IndexWhereClause.greaterThan(
-              indexName: r'title',
-              lower: [''],
-            ))
-            .addWhereClause(IndexWhereClause.lessThan(
-              indexName: r'title',
-              upper: [''],
-            ));
+            .addWhereClause(
+              IndexWhereClause.greaterThan(indexName: r'title', lower: ['']),
+            )
+            .addWhereClause(
+              IndexWhereClause.lessThan(indexName: r'title', upper: ['']),
+            );
       }
     });
   }
@@ -395,109 +402,111 @@ extension AttachmentTemplateQueryWhere
 extension AttachmentTemplateQueryFilter
     on QueryBuilder<AttachmentTemplate, AttachmentTemplate, QFilterCondition> {
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      idEqualTo(Id value) {
+  idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      idGreaterThan(
-    Id value, {
-    bool include = false,
-  }) {
+  idGreaterThan(Id value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      idLessThan(
-    Id value, {
-    bool include = false,
-  }) {
+  idLessThan(Id value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      idBetween(
+  idBetween(
     Id lower,
     Id upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      payloadJsonEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  payloadJsonEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'payloadJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'payloadJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      payloadJsonGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'payloadJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      payloadJsonLessThan(
+  payloadJsonGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'payloadJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'payloadJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      payloadJsonBetween(
+  payloadJsonLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'payloadJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
+  payloadJsonBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -505,191 +514,195 @@ extension AttachmentTemplateQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'payloadJson',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'payloadJson',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      payloadJsonStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  payloadJsonStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'payloadJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'payloadJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      payloadJsonEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  payloadJsonEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'payloadJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'payloadJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      payloadJsonContains(String value, {bool caseSensitive = true}) {
+  payloadJsonContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'payloadJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'payloadJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      payloadJsonMatches(String pattern, {bool caseSensitive = true}) {
+  payloadJsonMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'payloadJson',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'payloadJson',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      payloadJsonIsEmpty() {
+  payloadJsonIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'payloadJson',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'payloadJson', value: ''),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      payloadJsonIsNotEmpty() {
+  payloadJsonIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'payloadJson',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'payloadJson', value: ''),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      sortOrderEqualTo(int value) {
+  sortOrderEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'sortOrder',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'sortOrder', value: value),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      sortOrderGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
+  sortOrderGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'sortOrder',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'sortOrder',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      sortOrderLessThan(
-    int value, {
-    bool include = false,
-  }) {
+  sortOrderLessThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'sortOrder',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'sortOrder',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      sortOrderBetween(
+  sortOrderBetween(
     int lower,
     int upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'sortOrder',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'sortOrder',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      titleEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  titleEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'title',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'title',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      titleGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'title',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      titleLessThan(
+  titleGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'title',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'title',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      titleBetween(
+  titleLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'title',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
+  titleBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -697,140 +710,141 @@ extension AttachmentTemplateQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'title',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'title',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      titleStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  titleStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'title',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'title',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      titleEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  titleEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'title',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'title',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      titleContains(String value, {bool caseSensitive = true}) {
+  titleContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'title',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'title',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      titleMatches(String pattern, {bool caseSensitive = true}) {
+  titleMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'title',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'title',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      titleIsEmpty() {
+  titleIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'title',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'title', value: ''),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      titleIsNotEmpty() {
+  titleIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'title',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'title', value: ''),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      typeEqualTo(TaskAttachmentType value) {
+  typeEqualTo(TaskAttachmentType value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'type',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'type', value: value),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      typeGreaterThan(
-    TaskAttachmentType value, {
-    bool include = false,
-  }) {
+  typeGreaterThan(TaskAttachmentType value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'type',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'type',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      typeLessThan(
-    TaskAttachmentType value, {
-    bool include = false,
-  }) {
+  typeLessThan(TaskAttachmentType value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'type',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'type',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterFilterCondition>
-      typeBetween(
+  typeBetween(
     TaskAttachmentType lower,
     TaskAttachmentType upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'type',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'type',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 }
@@ -844,56 +858,56 @@ extension AttachmentTemplateQueryLinks
 extension AttachmentTemplateQuerySortBy
     on QueryBuilder<AttachmentTemplate, AttachmentTemplate, QSortBy> {
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      sortByPayloadJson() {
+  sortByPayloadJson() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'payloadJson', Sort.asc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      sortByPayloadJsonDesc() {
+  sortByPayloadJsonDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'payloadJson', Sort.desc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      sortBySortOrder() {
+  sortBySortOrder() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortOrder', Sort.asc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      sortBySortOrderDesc() {
+  sortBySortOrderDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortOrder', Sort.desc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      sortByTitle() {
+  sortByTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.asc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      sortByTitleDesc() {
+  sortByTitleDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.desc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      sortByType() {
+  sortByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.asc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      sortByTypeDesc() {
+  sortByTypeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.desc);
     });
@@ -903,70 +917,70 @@ extension AttachmentTemplateQuerySortBy
 extension AttachmentTemplateQuerySortThenBy
     on QueryBuilder<AttachmentTemplate, AttachmentTemplate, QSortThenBy> {
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      thenById() {
+  thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      thenByIdDesc() {
+  thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      thenByPayloadJson() {
+  thenByPayloadJson() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'payloadJson', Sort.asc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      thenByPayloadJsonDesc() {
+  thenByPayloadJsonDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'payloadJson', Sort.desc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      thenBySortOrder() {
+  thenBySortOrder() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortOrder', Sort.asc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      thenBySortOrderDesc() {
+  thenBySortOrderDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortOrder', Sort.desc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      thenByTitle() {
+  thenByTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.asc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      thenByTitleDesc() {
+  thenByTitleDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.desc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      thenByType() {
+  thenByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.asc);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QAfterSortBy>
-      thenByTypeDesc() {
+  thenByTypeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.desc);
     });
@@ -976,28 +990,28 @@ extension AttachmentTemplateQuerySortThenBy
 extension AttachmentTemplateQueryWhereDistinct
     on QueryBuilder<AttachmentTemplate, AttachmentTemplate, QDistinct> {
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QDistinct>
-      distinctByPayloadJson({bool caseSensitive = true}) {
+  distinctByPayloadJson({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'payloadJson', caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QDistinct>
-      distinctBySortOrder() {
+  distinctBySortOrder() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'sortOrder');
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QDistinct>
-      distinctByTitle({bool caseSensitive = true}) {
+  distinctByTitle({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'title', caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<AttachmentTemplate, AttachmentTemplate, QDistinct>
-      distinctByType() {
+  distinctByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'type');
     });
@@ -1013,7 +1027,7 @@ extension AttachmentTemplateQueryProperty
   }
 
   QueryBuilder<AttachmentTemplate, String, QQueryOperations>
-      payloadJsonProperty() {
+  payloadJsonProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'payloadJson');
     });
@@ -1032,7 +1046,7 @@ extension AttachmentTemplateQueryProperty
   }
 
   QueryBuilder<AttachmentTemplate, TaskAttachmentType, QQueryOperations>
-      typeProperty() {
+  typeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'type');
     });

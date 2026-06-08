@@ -19,7 +19,7 @@ import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_priority.dart';
 import 'package:smart_planner/features/templates/domain/entities/ui_template.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_form_sheet.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';

@@ -16,6 +16,7 @@ You are continuing work on **DayLinx** (Flutter app in `smart_planner/`, repo ro
 
 ### What is already done
 - Phases 0–5; device calendar read/write; templates; morning/evening digest; midnight overdue roll
+- Local DB migrated to **isar_community** 3.3.2 (`package:isar_community/isar.dart`) for Android 16 KB page size
 - Android **home widget** MVP (`DayLinxWidgetProvider`, medium 4×2, shared `DayStatusTodayLoader`)
 - Android **day-status** foreground notification (opt-in)
 - Checklist `moveCompletedToEnd`; `SlidingCompletionList` / `CollapsingCompletionTile`; dashboard tile `ValueKey` stability

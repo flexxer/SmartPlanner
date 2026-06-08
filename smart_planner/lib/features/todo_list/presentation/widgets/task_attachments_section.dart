@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/attachment_templates/data/repositories/attachment_template_repository.dart';
 import 'package:smart_planner/features/attachment_templates/domain/attachment_template_factory.dart';
 import 'package:smart_planner/features/attachment_templates/presentation/widgets/save_attachment_template_dialog.dart';

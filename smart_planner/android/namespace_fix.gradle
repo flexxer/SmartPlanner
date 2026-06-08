@@ -1,4 +1,4 @@
-// AGP 8+/9: legacy-плагины (isar_flutter_libs 3.x и др.)
+// AGP 8+/9: legacy-плагины (isar_community_flutter_libs и др.)
 subprojects { subproject ->
     subproject.plugins.withId("com.android.library") {
         subproject.android {
@@ -18,15 +18,6 @@ subprojects { subproject ->
                 android.compileSdkVersion = 36
             } else if (android.hasProperty("compileSdkVersion")) {
                 android.compileSdkVersion = 36
-            }
-        }
-
-        // Legacy plugins may still fail AAR metadata checks after compileSdk bump.
-        if (subproject.name == "isar_flutter_libs") {
-            subproject.tasks.configureEach { task ->
-                if (task.name.contains("AarMetadata")) {
-                    task.enabled = false
-                }
             }
         }
     }

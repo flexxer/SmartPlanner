@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/device_calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/domain/deleted_calendar_event_snapshot.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';

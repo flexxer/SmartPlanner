@@ -1,6 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/presentation/widgets/collapsing_completion_tile.dart';
 import 'package:smart_planner/core/theme/app_theme.dart';

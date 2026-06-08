@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
 import 'package:smart_planner/features/dashboard/domain/day_activity_marker.dart';

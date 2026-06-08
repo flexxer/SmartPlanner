@@ -23,21 +23,13 @@ const SyncRecordSchema = CollectionSchema(
       type: IsarType.byte,
       enumMap: _SyncRecordentityTypeEnumValueMap,
     ),
-    r'etag': PropertySchema(
-      id: 1,
-      name: r'etag',
-      type: IsarType.string,
-    ),
+    r'etag': PropertySchema(id: 1, name: r'etag', type: IsarType.string),
     r'lastSyncedAt': PropertySchema(
       id: 2,
       name: r'lastSyncedAt',
       type: IsarType.dateTime,
     ),
-    r'localId': PropertySchema(
-      id: 3,
-      name: r'localId',
-      type: IsarType.long,
-    ),
+    r'localId': PropertySchema(id: 3, name: r'localId', type: IsarType.long),
     r'pendingOp': PropertySchema(
       id: 4,
       name: r'pendingOp',
@@ -48,8 +40,9 @@ const SyncRecordSchema = CollectionSchema(
       id: 5,
       name: r'remoteId',
       type: IsarType.string,
-    )
+    ),
   },
+
   estimateSize: _syncRecordEstimateSize,
   serialize: _syncRecordSerialize,
   deserialize: _syncRecordDeserialize,
@@ -66,7 +59,7 @@ const SyncRecordSchema = CollectionSchema(
           name: r'localId',
           type: IndexType.value,
           caseSensitive: false,
-        )
+        ),
       ],
     ),
     r'remoteId': IndexSchema(
@@ -79,16 +72,17 @@ const SyncRecordSchema = CollectionSchema(
           name: r'remoteId',
           type: IndexType.hash,
           caseSensitive: true,
-        )
+        ),
       ],
-    )
+    ),
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _syncRecordGetId,
   getLinks: _syncRecordGetLinks,
   attach: _syncRecordAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _syncRecordEstimateSize(
@@ -135,14 +129,14 @@ SyncRecord _syncRecordDeserialize(
   final object = SyncRecord();
   object.entityType =
       _SyncRecordentityTypeValueEnumMap[reader.readByteOrNull(offsets[0])] ??
-          SyncEntityType.task;
+      SyncEntityType.task;
   object.etag = reader.readStringOrNull(offsets[1]);
   object.id = id;
   object.lastSyncedAt = reader.readDateTimeOrNull(offsets[2]);
   object.localId = reader.readLong(offsets[3]);
   object.pendingOp =
       _SyncRecordpendingOpValueEnumMap[reader.readByteOrNull(offsets[4])] ??
-          SyncPendingOp.none;
+      SyncPendingOp.none;
   object.remoteId = reader.readStringOrNull(offsets[5]);
   return object;
 }
@@ -155,9 +149,11 @@ P _syncRecordDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (_SyncRecordentityTypeValueEnumMap[
-              reader.readByteOrNull(offset)] ??
-          SyncEntityType.task) as P;
+      return (_SyncRecordentityTypeValueEnumMap[reader.readByteOrNull(
+                offset,
+              )] ??
+              SyncEntityType.task)
+          as P;
     case 1:
       return (reader.readStringOrNull(offset)) as P;
     case 2:
@@ -166,7 +162,8 @@ P _syncRecordDeserializeProp<P>(
       return (reader.readLong(offset)) as P;
     case 4:
       return (_SyncRecordpendingOpValueEnumMap[reader.readByteOrNull(offset)] ??
-          SyncPendingOp.none) as P;
+              SyncPendingOp.none)
+          as P;
     case 5:
       return (reader.readStringOrNull(offset)) as P;
     default:
@@ -174,10 +171,7 @@ P _syncRecordDeserializeProp<P>(
   }
 }
 
-const _SyncRecordentityTypeEnumValueMap = {
-  'task': 0,
-  'calendarEvent': 1,
-};
+const _SyncRecordentityTypeEnumValueMap = {'task': 0, 'calendarEvent': 1};
 const _SyncRecordentityTypeValueEnumMap = {
   0: SyncEntityType.task,
   1: SyncEntityType.calendarEvent,
@@ -228,10 +222,7 @@ extension SyncRecordQueryWhere
     on QueryBuilder<SyncRecord, SyncRecord, QWhereClause> {
   QueryBuilder<SyncRecord, SyncRecord, QAfterWhereClause> idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: id,
-        upper: id,
-      ));
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
@@ -257,8 +248,10 @@ extension SyncRecordQueryWhere
     });
   }
 
-  QueryBuilder<SyncRecord, SyncRecord, QAfterWhereClause> idGreaterThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<SyncRecord, SyncRecord, QAfterWhereClause> idGreaterThan(
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -266,8 +259,10 @@ extension SyncRecordQueryWhere
     });
   }
 
-  QueryBuilder<SyncRecord, SyncRecord, QAfterWhereClause> idLessThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<SyncRecord, SyncRecord, QAfterWhereClause> idLessThan(
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -282,56 +277,67 @@ extension SyncRecordQueryWhere
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerId,
-        includeLower: includeLower,
-        upper: upperId,
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterWhereClause> localIdEqualTo(
-      int localId) {
+    int localId,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'localId',
-        value: [localId],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'localId', value: [localId]),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterWhereClause> localIdNotEqualTo(
-      int localId) {
+    int localId,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'localId',
-              lower: [],
-              upper: [localId],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'localId',
-              lower: [localId],
-              includeLower: false,
-              upper: [],
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'localId',
+                lower: [],
+                upper: [localId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'localId',
+                lower: [localId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
       } else {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'localId',
-              lower: [localId],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'localId',
-              lower: [],
-              upper: [localId],
-              includeUpper: false,
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'localId',
+                lower: [localId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'localId',
+                lower: [],
+                upper: [localId],
+                includeUpper: false,
+              ),
+            );
       }
     });
   }
@@ -341,12 +347,14 @@ extension SyncRecordQueryWhere
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'localId',
-        lower: [localId],
-        includeLower: include,
-        upper: [],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'localId',
+          lower: [localId],
+          includeLower: include,
+          upper: [],
+        ),
+      );
     });
   }
 
@@ -355,12 +363,14 @@ extension SyncRecordQueryWhere
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'localId',
-        lower: [],
-        upper: [localId],
-        includeUpper: include,
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'localId',
+          lower: [],
+          upper: [localId],
+          includeUpper: include,
+        ),
+      );
     });
   }
 
@@ -371,77 +381,89 @@ extension SyncRecordQueryWhere
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'localId',
-        lower: [lowerLocalId],
-        includeLower: includeLower,
-        upper: [upperLocalId],
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'localId',
+          lower: [lowerLocalId],
+          includeLower: includeLower,
+          upper: [upperLocalId],
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterWhereClause> remoteIdIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'remoteId',
-        value: [null],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'remoteId', value: [null]),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterWhereClause> remoteIdIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'remoteId',
-        lower: [null],
-        includeLower: false,
-        upper: [],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'remoteId',
+          lower: [null],
+          includeLower: false,
+          upper: [],
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterWhereClause> remoteIdEqualTo(
-      String? remoteId) {
+    String? remoteId,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'remoteId',
-        value: [remoteId],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'remoteId', value: [remoteId]),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterWhereClause> remoteIdNotEqualTo(
-      String? remoteId) {
+    String? remoteId,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'remoteId',
-              lower: [],
-              upper: [remoteId],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'remoteId',
-              lower: [remoteId],
-              includeLower: false,
-              upper: [],
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'remoteId',
+                lower: [],
+                upper: [remoteId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'remoteId',
+                lower: [remoteId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
       } else {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'remoteId',
-              lower: [remoteId],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'remoteId',
-              lower: [],
-              upper: [remoteId],
-              includeUpper: false,
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'remoteId',
+                lower: [remoteId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'remoteId',
+                lower: [],
+                upper: [remoteId],
+                includeUpper: false,
+              ),
+            );
       }
     });
   }
@@ -450,40 +472,38 @@ extension SyncRecordQueryWhere
 extension SyncRecordQueryFilter
     on QueryBuilder<SyncRecord, SyncRecord, QFilterCondition> {
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> entityTypeEqualTo(
-      SyncEntityType value) {
+    SyncEntityType value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'entityType',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'entityType', value: value),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      entityTypeGreaterThan(
-    SyncEntityType value, {
-    bool include = false,
-  }) {
+  entityTypeGreaterThan(SyncEntityType value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'entityType',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'entityType',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      entityTypeLessThan(
-    SyncEntityType value, {
-    bool include = false,
-  }) {
+  entityTypeLessThan(SyncEntityType value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'entityType',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'entityType',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -494,29 +514,31 @@ extension SyncRecordQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'entityType',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'entityType',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> etagIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'etag',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'etag'),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> etagIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'etag',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'etag'),
+      );
     });
   }
 
@@ -525,11 +547,13 @@ extension SyncRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'etag',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'etag',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -539,12 +563,14 @@ extension SyncRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'etag',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'etag',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -554,12 +580,14 @@ extension SyncRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'etag',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'etag',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -571,14 +599,16 @@ extension SyncRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'etag',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'etag',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -587,11 +617,13 @@ extension SyncRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'etag',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'etag',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -600,63 +632,69 @@ extension SyncRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'etag',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'etag',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> etagContains(
-      String value,
-      {bool caseSensitive = true}) {
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'etag',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'etag',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> etagMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
+    String pattern, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'etag',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'etag',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> etagIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'etag',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'etag', value: ''),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> etagIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'etag',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'etag', value: ''),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> idEqualTo(
-      Id value) {
+    Id value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
     });
   }
 
@@ -665,11 +703,13 @@ extension SyncRecordQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -678,11 +718,13 @@ extension SyncRecordQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -693,111 +735,111 @@ extension SyncRecordQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      lastSyncedAtIsNull() {
+  lastSyncedAtIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'lastSyncedAt',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'lastSyncedAt'),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      lastSyncedAtIsNotNull() {
+  lastSyncedAtIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'lastSyncedAt',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'lastSyncedAt'),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      lastSyncedAtEqualTo(DateTime? value) {
+  lastSyncedAtEqualTo(DateTime? value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'lastSyncedAt',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'lastSyncedAt', value: value),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      lastSyncedAtGreaterThan(
-    DateTime? value, {
-    bool include = false,
-  }) {
+  lastSyncedAtGreaterThan(DateTime? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'lastSyncedAt',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'lastSyncedAt',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      lastSyncedAtLessThan(
-    DateTime? value, {
-    bool include = false,
-  }) {
+  lastSyncedAtLessThan(DateTime? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'lastSyncedAt',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'lastSyncedAt',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      lastSyncedAtBetween(
+  lastSyncedAtBetween(
     DateTime? lower,
     DateTime? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'lastSyncedAt',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'lastSyncedAt',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> localIdEqualTo(
-      int value) {
+    int value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'localId',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'localId', value: value),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      localIdGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
+  localIdGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'localId',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'localId',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -806,11 +848,13 @@ extension SyncRecordQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'localId',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'localId',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -821,37 +865,38 @@ extension SyncRecordQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'localId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'localId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> pendingOpEqualTo(
-      SyncPendingOp value) {
+    SyncPendingOp value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'pendingOp',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'pendingOp', value: value),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      pendingOpGreaterThan(
-    SyncPendingOp value, {
-    bool include = false,
-  }) {
+  pendingOpGreaterThan(SyncPendingOp value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'pendingOp',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'pendingOp',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -860,11 +905,13 @@ extension SyncRecordQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'pendingOp',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'pendingOp',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -875,30 +922,32 @@ extension SyncRecordQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'pendingOp',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'pendingOp',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> remoteIdIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'remoteId',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'remoteId'),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      remoteIdIsNotNull() {
+  remoteIdIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'remoteId',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'remoteId'),
+      );
     });
   }
 
@@ -907,27 +956,31 @@ extension SyncRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'remoteId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'remoteId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      remoteIdGreaterThan(
+  remoteIdGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'remoteId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'remoteId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -937,12 +990,14 @@ extension SyncRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'remoteId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'remoteId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -954,28 +1009,29 @@ extension SyncRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'remoteId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'remoteId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      remoteIdStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  remoteIdStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'remoteId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'remoteId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -984,55 +1040,61 @@ extension SyncRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'remoteId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'remoteId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> remoteIdContains(
-      String value,
-      {bool caseSensitive = true}) {
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'remoteId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'remoteId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition> remoteIdMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
+    String pattern, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'remoteId',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'remoteId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      remoteIdIsEmpty() {
+  remoteIdIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'remoteId',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'remoteId', value: ''),
+      );
     });
   }
 
   QueryBuilder<SyncRecord, SyncRecord, QAfterFilterCondition>
-      remoteIdIsNotEmpty() {
+  remoteIdIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'remoteId',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'remoteId', value: ''),
+      );
     });
   }
 }
@@ -1213,8 +1275,9 @@ extension SyncRecordQueryWhereDistinct
     });
   }
 
-  QueryBuilder<SyncRecord, SyncRecord, QDistinct> distinctByEtag(
-      {bool caseSensitive = true}) {
+  QueryBuilder<SyncRecord, SyncRecord, QDistinct> distinctByEtag({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'etag', caseSensitive: caseSensitive);
     });
@@ -1238,8 +1301,9 @@ extension SyncRecordQueryWhereDistinct
     });
   }
 
-  QueryBuilder<SyncRecord, SyncRecord, QDistinct> distinctByRemoteId(
-      {bool caseSensitive = true}) {
+  QueryBuilder<SyncRecord, SyncRecord, QDistinct> distinctByRemoteId({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'remoteId', caseSensitive: caseSensitive);
     });
@@ -1255,7 +1319,7 @@ extension SyncRecordQueryProperty
   }
 
   QueryBuilder<SyncRecord, SyncEntityType, QQueryOperations>
-      entityTypeProperty() {
+  entityTypeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'entityType');
     });
@@ -1280,7 +1344,7 @@ extension SyncRecordQueryProperty
   }
 
   QueryBuilder<SyncRecord, SyncPendingOp, QQueryOperations>
-      pendingOpProperty() {
+  pendingOpProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'pendingOp');
     });

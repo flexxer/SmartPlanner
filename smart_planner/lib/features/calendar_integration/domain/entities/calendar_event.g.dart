@@ -32,11 +32,7 @@ const CalendarEventSchema = CollectionSchema(
       name: r'deviceEventId',
       type: IsarType.string,
     ),
-    r'end': PropertySchema(
-      id: 3,
-      name: r'end',
-      type: IsarType.dateTime,
-    ),
+    r'end': PropertySchema(id: 3, name: r'end', type: IsarType.dateTime),
     r'googleEventId': PropertySchema(
       id: 4,
       name: r'googleEventId',
@@ -68,22 +64,15 @@ const CalendarEventSchema = CollectionSchema(
       type: IsarType.byte,
       enumMap: _CalendarEventsourceEnumValueMap,
     ),
-    r'start': PropertySchema(
-      id: 10,
-      name: r'start',
-      type: IsarType.dateTime,
-    ),
-    r'title': PropertySchema(
-      id: 11,
-      name: r'title',
-      type: IsarType.string,
-    ),
+    r'start': PropertySchema(id: 10, name: r'start', type: IsarType.dateTime),
+    r'title': PropertySchema(id: 11, name: r'title', type: IsarType.string),
     r'updatedAt': PropertySchema(
       id: 12,
       name: r'updatedAt',
       type: IsarType.dateTime,
-    )
+    ),
   },
+
   estimateSize: _calendarEventEstimateSize,
   serialize: _calendarEventSerialize,
   deserialize: _calendarEventDeserialize,
@@ -100,7 +89,7 @@ const CalendarEventSchema = CollectionSchema(
           name: r'deviceEventId',
           type: IndexType.hash,
           caseSensitive: true,
-        )
+        ),
       ],
     ),
     r'title': IndexSchema(
@@ -113,7 +102,7 @@ const CalendarEventSchema = CollectionSchema(
           name: r'title',
           type: IndexType.value,
           caseSensitive: false,
-        )
+        ),
       ],
     ),
     r'calendarId': IndexSchema(
@@ -126,16 +115,17 @@ const CalendarEventSchema = CollectionSchema(
           name: r'calendarId',
           type: IndexType.hash,
           caseSensitive: true,
-        )
+        ),
       ],
-    )
+    ),
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _calendarEventGetId,
   getLinks: _calendarEventGetLinks,
   attach: _calendarEventAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _calendarEventEstimateSize(
@@ -202,7 +192,7 @@ CalendarEvent _calendarEventDeserialize(
   object.reminderMinutesBefore = reader.readLongOrNull(offsets[8]);
   object.source =
       _CalendarEventsourceValueEnumMap[reader.readByteOrNull(offsets[9])] ??
-          EventSource.local;
+      EventSource.local;
   object.start = reader.readDateTime(offsets[10]);
   object.title = reader.readString(offsets[11]);
   object.updatedAt = reader.readDateTimeOrNull(offsets[12]);
@@ -236,7 +226,8 @@ P _calendarEventDeserializeProp<P>(
       return (reader.readLongOrNull(offset)) as P;
     case 9:
       return (_CalendarEventsourceValueEnumMap[reader.readByteOrNull(offset)] ??
-          EventSource.local) as P;
+              EventSource.local)
+          as P;
     case 10:
       return (reader.readDateTime(offset)) as P;
     case 11:
@@ -268,7 +259,10 @@ List<IsarLinkBase<dynamic>> _calendarEventGetLinks(CalendarEvent object) {
 }
 
 void _calendarEventAttach(
-    IsarCollection<dynamic> col, Id id, CalendarEvent object) {
+  IsarCollection<dynamic> col,
+  Id id,
+  CalendarEvent object,
+) {
   object.id = id;
 }
 
@@ -292,17 +286,16 @@ extension CalendarEventQueryWhereSort
 extension CalendarEventQueryWhere
     on QueryBuilder<CalendarEvent, CalendarEvent, QWhereClause> {
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause> idEqualTo(
-      Id id) {
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: id,
-        upper: id,
-      ));
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause> idNotEqualTo(
-      Id id) {
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -325,8 +318,9 @@ extension CalendarEventQueryWhere
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause> idGreaterThan(
-      Id id,
-      {bool include = false}) {
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -335,8 +329,9 @@ extension CalendarEventQueryWhere
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause> idLessThan(
-      Id id,
-      {bool include = false}) {
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -351,117 +346,137 @@ extension CalendarEventQueryWhere
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerId,
-        includeLower: includeLower,
-        upper: upperId,
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause>
-      deviceEventIdEqualTo(String deviceEventId) {
+  deviceEventIdEqualTo(String deviceEventId) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'deviceEventId',
-        value: [deviceEventId],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(
+          indexName: r'deviceEventId',
+          value: [deviceEventId],
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause>
-      deviceEventIdNotEqualTo(String deviceEventId) {
+  deviceEventIdNotEqualTo(String deviceEventId) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'deviceEventId',
-              lower: [],
-              upper: [deviceEventId],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'deviceEventId',
-              lower: [deviceEventId],
-              includeLower: false,
-              upper: [],
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'deviceEventId',
+                lower: [],
+                upper: [deviceEventId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'deviceEventId',
+                lower: [deviceEventId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
       } else {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'deviceEventId',
-              lower: [deviceEventId],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'deviceEventId',
-              lower: [],
-              upper: [deviceEventId],
-              includeUpper: false,
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'deviceEventId',
+                lower: [deviceEventId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'deviceEventId',
+                lower: [],
+                upper: [deviceEventId],
+                includeUpper: false,
+              ),
+            );
       }
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause> titleEqualTo(
-      String title) {
+    String title,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'title',
-        value: [title],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'title', value: [title]),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause> titleNotEqualTo(
-      String title) {
+    String title,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'title',
-              lower: [],
-              upper: [title],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'title',
-              lower: [title],
-              includeLower: false,
-              upper: [],
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'title',
+                lower: [],
+                upper: [title],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'title',
+                lower: [title],
+                includeLower: false,
+                upper: [],
+              ),
+            );
       } else {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'title',
-              lower: [title],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'title',
-              lower: [],
-              upper: [title],
-              includeUpper: false,
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'title',
+                lower: [title],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'title',
+                lower: [],
+                upper: [title],
+                includeUpper: false,
+              ),
+            );
       }
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause>
-      titleGreaterThan(
-    String title, {
-    bool include = false,
-  }) {
+  titleGreaterThan(String title, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'title',
-        lower: [title],
-        includeLower: include,
-        upper: [],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'title',
+          lower: [title],
+          includeLower: include,
+          upper: [],
+        ),
+      );
     });
   }
 
@@ -470,12 +485,14 @@ extension CalendarEventQueryWhere
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'title',
-        lower: [],
-        upper: [title],
-        includeUpper: include,
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'title',
+          lower: [],
+          upper: [title],
+          includeUpper: include,
+        ),
+      );
     });
   }
 
@@ -486,104 +503,111 @@ extension CalendarEventQueryWhere
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'title',
-        lower: [lowerTitle],
-        includeLower: includeLower,
-        upper: [upperTitle],
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'title',
+          lower: [lowerTitle],
+          includeLower: includeLower,
+          upper: [upperTitle],
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause> titleStartsWith(
-      String TitlePrefix) {
+    String TitlePrefix,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.between(
-        indexName: r'title',
-        lower: [TitlePrefix],
-        upper: ['$TitlePrefix\u{FFFFF}'],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'title',
+          lower: [TitlePrefix],
+          upper: ['$TitlePrefix\u{FFFFF}'],
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause> titleIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'title',
-        value: [''],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'title', value: ['']),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause>
-      titleIsNotEmpty() {
+  titleIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(IndexWhereClause.lessThan(
-              indexName: r'title',
-              upper: [''],
-            ))
-            .addWhereClause(IndexWhereClause.greaterThan(
-              indexName: r'title',
-              lower: [''],
-            ));
+            .addWhereClause(
+              IndexWhereClause.lessThan(indexName: r'title', upper: ['']),
+            )
+            .addWhereClause(
+              IndexWhereClause.greaterThan(indexName: r'title', lower: ['']),
+            );
       } else {
         return query
-            .addWhereClause(IndexWhereClause.greaterThan(
-              indexName: r'title',
-              lower: [''],
-            ))
-            .addWhereClause(IndexWhereClause.lessThan(
-              indexName: r'title',
-              upper: [''],
-            ));
+            .addWhereClause(
+              IndexWhereClause.greaterThan(indexName: r'title', lower: ['']),
+            )
+            .addWhereClause(
+              IndexWhereClause.lessThan(indexName: r'title', upper: ['']),
+            );
       }
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause>
-      calendarIdEqualTo(String calendarId) {
+  calendarIdEqualTo(String calendarId) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'calendarId',
-        value: [calendarId],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'calendarId', value: [calendarId]),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterWhereClause>
-      calendarIdNotEqualTo(String calendarId) {
+  calendarIdNotEqualTo(String calendarId) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'calendarId',
-              lower: [],
-              upper: [calendarId],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'calendarId',
-              lower: [calendarId],
-              includeLower: false,
-              upper: [],
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'calendarId',
+                lower: [],
+                upper: [calendarId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'calendarId',
+                lower: [calendarId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
       } else {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'calendarId',
-              lower: [calendarId],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'calendarId',
-              lower: [],
-              upper: [calendarId],
-              includeUpper: false,
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'calendarId',
+                lower: [calendarId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'calendarId',
+                lower: [],
+                upper: [calendarId],
+                includeUpper: false,
+              ),
+            );
       }
     });
   }
@@ -592,53 +616,56 @@ extension CalendarEventQueryWhere
 extension CalendarEventQueryFilter
     on QueryBuilder<CalendarEvent, CalendarEvent, QFilterCondition> {
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      calendarIdEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  calendarIdEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'calendarId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'calendarId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      calendarIdGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'calendarId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      calendarIdLessThan(
+  calendarIdGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'calendarId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'calendarId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      calendarIdBetween(
+  calendarIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'calendarId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  calendarIdBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -646,191 +673,195 @@ extension CalendarEventQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'calendarId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'calendarId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      calendarIdStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  calendarIdStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'calendarId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'calendarId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      calendarIdEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  calendarIdEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'calendarId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'calendarId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      calendarIdContains(String value, {bool caseSensitive = true}) {
+  calendarIdContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'calendarId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'calendarId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      calendarIdMatches(String pattern, {bool caseSensitive = true}) {
+  calendarIdMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'calendarId',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'calendarId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      calendarIdIsEmpty() {
+  calendarIdIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'calendarId',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'calendarId', value: ''),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      calendarIdIsNotEmpty() {
+  calendarIdIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'calendarId',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'calendarId', value: ''),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      colorValueEqualTo(int value) {
+  colorValueEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'colorValue',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'colorValue', value: value),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      colorValueGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
+  colorValueGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'colorValue',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'colorValue',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      colorValueLessThan(
-    int value, {
-    bool include = false,
-  }) {
+  colorValueLessThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'colorValue',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'colorValue',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      colorValueBetween(
+  colorValueBetween(
     int lower,
     int upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'colorValue',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'colorValue',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      deviceEventIdEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  deviceEventIdEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'deviceEventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'deviceEventId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      deviceEventIdGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'deviceEventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      deviceEventIdLessThan(
+  deviceEventIdGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'deviceEventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'deviceEventId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      deviceEventIdBetween(
+  deviceEventIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'deviceEventId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  deviceEventIdBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -838,108 +869,109 @@ extension CalendarEventQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'deviceEventId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'deviceEventId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      deviceEventIdStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  deviceEventIdStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'deviceEventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'deviceEventId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      deviceEventIdEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  deviceEventIdEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'deviceEventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'deviceEventId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      deviceEventIdContains(String value, {bool caseSensitive = true}) {
+  deviceEventIdContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'deviceEventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'deviceEventId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      deviceEventIdMatches(String pattern, {bool caseSensitive = true}) {
+  deviceEventIdMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'deviceEventId',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'deviceEventId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      deviceEventIdIsEmpty() {
+  deviceEventIdIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'deviceEventId',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'deviceEventId', value: ''),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      deviceEventIdIsNotEmpty() {
+  deviceEventIdIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'deviceEventId',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'deviceEventId', value: ''),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition> endEqualTo(
-      DateTime value) {
+    DateTime value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'end',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'end', value: value),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      endGreaterThan(
-    DateTime value, {
-    bool include = false,
-  }) {
+  endGreaterThan(DateTime value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'end',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'end',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -948,11 +980,13 @@ extension CalendarEventQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'end',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'end',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -963,82 +997,87 @@ extension CalendarEventQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'end',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'end',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      googleEventIdIsNull() {
+  googleEventIdIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'googleEventId',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'googleEventId'),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      googleEventIdIsNotNull() {
+  googleEventIdIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'googleEventId',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'googleEventId'),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      googleEventIdEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
+  googleEventIdEqualTo(String? value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'googleEventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'googleEventId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      googleEventIdGreaterThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'googleEventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      googleEventIdLessThan(
+  googleEventIdGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'googleEventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'googleEventId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      googleEventIdBetween(
+  googleEventIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'googleEventId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  googleEventIdBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -1046,108 +1085,109 @@ extension CalendarEventQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'googleEventId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'googleEventId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      googleEventIdStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  googleEventIdStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'googleEventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'googleEventId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      googleEventIdEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  googleEventIdEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'googleEventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'googleEventId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      googleEventIdContains(String value, {bool caseSensitive = true}) {
+  googleEventIdContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'googleEventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'googleEventId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      googleEventIdMatches(String pattern, {bool caseSensitive = true}) {
+  googleEventIdMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'googleEventId',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'googleEventId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      googleEventIdIsEmpty() {
+  googleEventIdIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'googleEventId',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'googleEventId', value: ''),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      googleEventIdIsNotEmpty() {
+  googleEventIdIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'googleEventId',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'googleEventId', value: ''),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition> idEqualTo(
-      Id value) {
+    Id value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      idGreaterThan(
-    Id value, {
-    bool include = false,
-  }) {
+  idGreaterThan(Id value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -1156,11 +1196,13 @@ extension CalendarEventQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -1171,155 +1213,119 @@ extension CalendarEventQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      isLocalOnlyEqualTo(bool value) {
+  isLocalOnlyEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'isLocalOnly',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'isLocalOnly', value: value),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      linkedTaskIdsElementEqualTo(int value) {
+  linkedTaskIdsElementEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'linkedTaskIds',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'linkedTaskIds', value: value),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      linkedTaskIdsElementGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
+  linkedTaskIdsElementGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'linkedTaskIds',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'linkedTaskIds',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      linkedTaskIdsElementLessThan(
-    int value, {
-    bool include = false,
-  }) {
+  linkedTaskIdsElementLessThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'linkedTaskIds',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'linkedTaskIds',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      linkedTaskIdsElementBetween(
+  linkedTaskIdsElementBetween(
     int lower,
     int upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'linkedTaskIds',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
-    });
-  }
-
-  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      linkedTaskIdsLengthEqualTo(int length) {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'linkedTaskIds',
-        length,
-        true,
-        length,
-        true,
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'linkedTaskIds',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
       );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      linkedTaskIdsIsEmpty() {
+  linkedTaskIdsLengthEqualTo(int length) {
     return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'linkedTaskIds',
-        0,
-        true,
-        0,
-        true,
-      );
+      return query.listLength(r'linkedTaskIds', length, true, length, true);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      linkedTaskIdsIsNotEmpty() {
+  linkedTaskIdsIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'linkedTaskIds',
-        0,
-        false,
-        999999,
-        true,
-      );
+      return query.listLength(r'linkedTaskIds', 0, true, 0, true);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      linkedTaskIdsLengthLessThan(
-    int length, {
-    bool include = false,
-  }) {
+  linkedTaskIdsIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'linkedTaskIds',
-        0,
-        true,
-        length,
-        include,
-      );
+      return query.listLength(r'linkedTaskIds', 0, false, 999999, true);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      linkedTaskIdsLengthGreaterThan(
-    int length, {
-    bool include = false,
-  }) {
+  linkedTaskIdsLengthLessThan(int length, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'linkedTaskIds',
-        length,
-        include,
-        999999,
-        true,
-      );
+      return query.listLength(r'linkedTaskIds', 0, true, length, include);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      linkedTaskIdsLengthBetween(
+  linkedTaskIdsLengthGreaterThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'linkedTaskIds', length, include, 999999, true);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  linkedTaskIdsLengthBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -1337,71 +1343,74 @@ extension CalendarEventQueryFilter
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      recurrenceRuleJsonIsNull() {
+  recurrenceRuleJsonIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'recurrenceRuleJson',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'recurrenceRuleJson'),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      recurrenceRuleJsonIsNotNull() {
+  recurrenceRuleJsonIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'recurrenceRuleJson',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'recurrenceRuleJson'),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      recurrenceRuleJsonEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
+  recurrenceRuleJsonEqualTo(String? value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'recurrenceRuleJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'recurrenceRuleJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      recurrenceRuleJsonGreaterThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'recurrenceRuleJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      recurrenceRuleJsonLessThan(
+  recurrenceRuleJsonGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'recurrenceRuleJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'recurrenceRuleJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      recurrenceRuleJsonBetween(
+  recurrenceRuleJsonLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'recurrenceRuleJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  recurrenceRuleJsonBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -1409,321 +1418,326 @@ extension CalendarEventQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'recurrenceRuleJson',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'recurrenceRuleJson',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      recurrenceRuleJsonStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  recurrenceRuleJsonStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'recurrenceRuleJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'recurrenceRuleJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      recurrenceRuleJsonEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  recurrenceRuleJsonEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'recurrenceRuleJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'recurrenceRuleJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      recurrenceRuleJsonContains(String value, {bool caseSensitive = true}) {
+  recurrenceRuleJsonContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'recurrenceRuleJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'recurrenceRuleJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      recurrenceRuleJsonMatches(String pattern, {bool caseSensitive = true}) {
+  recurrenceRuleJsonMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'recurrenceRuleJson',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'recurrenceRuleJson',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      recurrenceRuleJsonIsEmpty() {
+  recurrenceRuleJsonIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'recurrenceRuleJson',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'recurrenceRuleJson', value: ''),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      recurrenceRuleJsonIsNotEmpty() {
+  recurrenceRuleJsonIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'recurrenceRuleJson',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'recurrenceRuleJson', value: ''),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      reminderMinutesBeforeIsNull() {
+  reminderMinutesBeforeIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'reminderMinutesBefore',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'reminderMinutesBefore'),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      reminderMinutesBeforeIsNotNull() {
+  reminderMinutesBeforeIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'reminderMinutesBefore',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'reminderMinutesBefore'),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      reminderMinutesBeforeEqualTo(int? value) {
+  reminderMinutesBeforeEqualTo(int? value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'reminderMinutesBefore',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'reminderMinutesBefore',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      reminderMinutesBeforeGreaterThan(
-    int? value, {
-    bool include = false,
-  }) {
+  reminderMinutesBeforeGreaterThan(int? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'reminderMinutesBefore',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'reminderMinutesBefore',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      reminderMinutesBeforeLessThan(
-    int? value, {
-    bool include = false,
-  }) {
+  reminderMinutesBeforeLessThan(int? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'reminderMinutesBefore',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'reminderMinutesBefore',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      reminderMinutesBeforeBetween(
+  reminderMinutesBeforeBetween(
     int? lower,
     int? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'reminderMinutesBefore',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'reminderMinutesBefore',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      sourceEqualTo(EventSource value) {
+  sourceEqualTo(EventSource value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'source',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'source', value: value),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      sourceGreaterThan(
-    EventSource value, {
-    bool include = false,
-  }) {
+  sourceGreaterThan(EventSource value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'source',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'source',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      sourceLessThan(
-    EventSource value, {
-    bool include = false,
-  }) {
+  sourceLessThan(EventSource value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'source',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'source',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      sourceBetween(
+  sourceBetween(
     EventSource lower,
     EventSource upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'source',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'source',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      startEqualTo(DateTime value) {
+  startEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'start',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'start', value: value),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      startGreaterThan(
-    DateTime value, {
-    bool include = false,
-  }) {
+  startGreaterThan(DateTime value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'start',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'start',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      startLessThan(
-    DateTime value, {
-    bool include = false,
-  }) {
+  startLessThan(DateTime value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'start',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'start',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      startBetween(
+  startBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'start',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'start',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      titleEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  titleEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'title',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'title',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      titleGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'title',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      titleLessThan(
+  titleGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'title',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'title',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      titleBetween(
+  titleLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'title',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  titleBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -1731,158 +1745,159 @@ extension CalendarEventQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'title',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'title',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      titleStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  titleStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'title',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'title',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      titleEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  titleEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'title',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'title',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      titleContains(String value, {bool caseSensitive = true}) {
+  titleContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'title',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'title',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      titleMatches(String pattern, {bool caseSensitive = true}) {
+  titleMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'title',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'title',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      titleIsEmpty() {
+  titleIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'title',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'title', value: ''),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      titleIsNotEmpty() {
+  titleIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'title',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'title', value: ''),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      updatedAtIsNull() {
+  updatedAtIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'updatedAt',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'updatedAt'),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      updatedAtIsNotNull() {
+  updatedAtIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'updatedAt',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'updatedAt'),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      updatedAtEqualTo(DateTime? value) {
+  updatedAtEqualTo(DateTime? value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'updatedAt',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'updatedAt', value: value),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      updatedAtGreaterThan(
-    DateTime? value, {
-    bool include = false,
-  }) {
+  updatedAtGreaterThan(DateTime? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'updatedAt',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'updatedAt',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      updatedAtLessThan(
-    DateTime? value, {
-    bool include = false,
-  }) {
+  updatedAtLessThan(DateTime? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'updatedAt',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'updatedAt',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
-      updatedAtBetween(
+  updatedAtBetween(
     DateTime? lower,
     DateTime? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'updatedAt',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'updatedAt',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 }
@@ -1902,7 +1917,7 @@ extension CalendarEventQuerySortBy
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      sortByCalendarIdDesc() {
+  sortByCalendarIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'calendarId', Sort.desc);
     });
@@ -1915,21 +1930,21 @@ extension CalendarEventQuerySortBy
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      sortByColorValueDesc() {
+  sortByColorValueDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'colorValue', Sort.desc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      sortByDeviceEventId() {
+  sortByDeviceEventId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'deviceEventId', Sort.asc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      sortByDeviceEventIdDesc() {
+  sortByDeviceEventIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'deviceEventId', Sort.desc);
     });
@@ -1948,14 +1963,14 @@ extension CalendarEventQuerySortBy
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      sortByGoogleEventId() {
+  sortByGoogleEventId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'googleEventId', Sort.asc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      sortByGoogleEventIdDesc() {
+  sortByGoogleEventIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'googleEventId', Sort.desc);
     });
@@ -1968,35 +1983,35 @@ extension CalendarEventQuerySortBy
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      sortByIsLocalOnlyDesc() {
+  sortByIsLocalOnlyDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isLocalOnly', Sort.desc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      sortByRecurrenceRuleJson() {
+  sortByRecurrenceRuleJson() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'recurrenceRuleJson', Sort.asc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      sortByRecurrenceRuleJsonDesc() {
+  sortByRecurrenceRuleJsonDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'recurrenceRuleJson', Sort.desc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      sortByReminderMinutesBefore() {
+  sortByReminderMinutesBefore() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'reminderMinutesBefore', Sort.asc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      sortByReminderMinutesBeforeDesc() {
+  sortByReminderMinutesBeforeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'reminderMinutesBefore', Sort.desc);
     });
@@ -2045,7 +2060,7 @@ extension CalendarEventQuerySortBy
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      sortByUpdatedAtDesc() {
+  sortByUpdatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
@@ -2061,7 +2076,7 @@ extension CalendarEventQuerySortThenBy
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      thenByCalendarIdDesc() {
+  thenByCalendarIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'calendarId', Sort.desc);
     });
@@ -2074,21 +2089,21 @@ extension CalendarEventQuerySortThenBy
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      thenByColorValueDesc() {
+  thenByColorValueDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'colorValue', Sort.desc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      thenByDeviceEventId() {
+  thenByDeviceEventId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'deviceEventId', Sort.asc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      thenByDeviceEventIdDesc() {
+  thenByDeviceEventIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'deviceEventId', Sort.desc);
     });
@@ -2107,14 +2122,14 @@ extension CalendarEventQuerySortThenBy
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      thenByGoogleEventId() {
+  thenByGoogleEventId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'googleEventId', Sort.asc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      thenByGoogleEventIdDesc() {
+  thenByGoogleEventIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'googleEventId', Sort.desc);
     });
@@ -2139,35 +2154,35 @@ extension CalendarEventQuerySortThenBy
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      thenByIsLocalOnlyDesc() {
+  thenByIsLocalOnlyDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isLocalOnly', Sort.desc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      thenByRecurrenceRuleJson() {
+  thenByRecurrenceRuleJson() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'recurrenceRuleJson', Sort.asc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      thenByRecurrenceRuleJsonDesc() {
+  thenByRecurrenceRuleJsonDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'recurrenceRuleJson', Sort.desc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      thenByReminderMinutesBefore() {
+  thenByReminderMinutesBefore() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'reminderMinutesBefore', Sort.asc);
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      thenByReminderMinutesBeforeDesc() {
+  thenByReminderMinutesBeforeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'reminderMinutesBefore', Sort.desc);
     });
@@ -2216,7 +2231,7 @@ extension CalendarEventQuerySortThenBy
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
-      thenByUpdatedAtDesc() {
+  thenByUpdatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
@@ -2225,8 +2240,9 @@ extension CalendarEventQuerySortThenBy
 
 extension CalendarEventQueryWhereDistinct
     on QueryBuilder<CalendarEvent, CalendarEvent, QDistinct> {
-  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct> distinctByCalendarId(
-      {bool caseSensitive = true}) {
+  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct> distinctByCalendarId({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'calendarId', caseSensitive: caseSensitive);
     });
@@ -2238,11 +2254,13 @@ extension CalendarEventQueryWhereDistinct
     });
   }
 
-  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct> distinctByDeviceEventId(
-      {bool caseSensitive = true}) {
+  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct>
+  distinctByDeviceEventId({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'deviceEventId',
-          caseSensitive: caseSensitive);
+      return query.addDistinctBy(
+        r'deviceEventId',
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
@@ -2252,38 +2270,42 @@ extension CalendarEventQueryWhereDistinct
     });
   }
 
-  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct> distinctByGoogleEventId(
-      {bool caseSensitive = true}) {
+  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct>
+  distinctByGoogleEventId({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'googleEventId',
-          caseSensitive: caseSensitive);
+      return query.addDistinctBy(
+        r'googleEventId',
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QDistinct>
-      distinctByIsLocalOnly() {
+  distinctByIsLocalOnly() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isLocalOnly');
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QDistinct>
-      distinctByLinkedTaskIds() {
+  distinctByLinkedTaskIds() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'linkedTaskIds');
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QDistinct>
-      distinctByRecurrenceRuleJson({bool caseSensitive = true}) {
+  distinctByRecurrenceRuleJson({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'recurrenceRuleJson',
-          caseSensitive: caseSensitive);
+      return query.addDistinctBy(
+        r'recurrenceRuleJson',
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QDistinct>
-      distinctByReminderMinutesBefore() {
+  distinctByReminderMinutesBefore() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'reminderMinutesBefore');
     });
@@ -2301,8 +2323,9 @@ extension CalendarEventQueryWhereDistinct
     });
   }
 
-  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct> distinctByTitle(
-      {bool caseSensitive = true}) {
+  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct> distinctByTitle({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'title', caseSensitive: caseSensitive);
     });
@@ -2336,7 +2359,7 @@ extension CalendarEventQueryProperty
   }
 
   QueryBuilder<CalendarEvent, String, QQueryOperations>
-      deviceEventIdProperty() {
+  deviceEventIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'deviceEventId');
     });
@@ -2349,7 +2372,7 @@ extension CalendarEventQueryProperty
   }
 
   QueryBuilder<CalendarEvent, String?, QQueryOperations>
-      googleEventIdProperty() {
+  googleEventIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'googleEventId');
     });
@@ -2362,21 +2385,21 @@ extension CalendarEventQueryProperty
   }
 
   QueryBuilder<CalendarEvent, List<int>, QQueryOperations>
-      linkedTaskIdsProperty() {
+  linkedTaskIdsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'linkedTaskIds');
     });
   }
 
   QueryBuilder<CalendarEvent, String?, QQueryOperations>
-      recurrenceRuleJsonProperty() {
+  recurrenceRuleJsonProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'recurrenceRuleJson');
     });
   }
 
   QueryBuilder<CalendarEvent, int?, QQueryOperations>
-      reminderMinutesBeforeProperty() {
+  reminderMinutesBeforeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'reminderMinutesBefore');
     });

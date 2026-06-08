@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/event_source.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_rule.dart';
 

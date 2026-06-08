@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/sync/domain/sync_entity_type.dart';
 import 'package:smart_planner/features/sync/domain/sync_pending_op.dart';
 

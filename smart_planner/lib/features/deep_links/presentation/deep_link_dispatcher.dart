@@ -97,7 +97,6 @@ class _DeepLinkDispatcherState extends State<DeepLinkDispatcher> {
           initialTitle: action.title,
           initialStart: action.start,
           initialEnd: action.end,
-          selectedCalendarIds: selectedCalendarIds,
         );
       case DeepLinkCreateTaskFromTemplateAction(:final Id templateId):
         final UiTemplate? template =

@@ -1,64 +1,60 @@
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
-import 'package:smart_planner/features/calendar_integration/domain/entities/event_source.dart';
 import 'package:smart_planner/features/calendar_integration/domain/recurrence_evaluator.dart';
 
-/// Builds the dashboard event strip: device fetch is authoritative for times.
+/// Builds visible calendar event lists from Isar rows (no device import).
 abstract final class VisibleCalendarEventsMerger {
   VisibleCalendarEventsMerger._();
 
-  /// [deviceEventsForDay] — fresh rows from [DeviceCalendarService.getEventsForDay].
-  /// [allStored] — Isar rows (after [upsertDeviceEvents]).
+  /// Events visible on [selectedDay] from [allStored] Isar rows.
   static List<CalendarEvent> merge({
     required DateTime selectedDay,
     required List<CalendarEvent> deviceEventsForDay,
     required List<CalendarEvent> allStored,
   }) {
-    final Map<String, CalendarEvent> storedByDeviceId =
-        <String, CalendarEvent>{
-      for (final CalendarEvent event in allStored) event.deviceEventId: event,
-    };
+    return fromStored(
+      selectedDay: selectedDay,
+      allStored: allStored,
+    );
+  }
 
-    final Set<String> deviceIdsOnDay = <String>{
-      for (final CalendarEvent event in deviceEventsForDay) event.deviceEventId,
-    };
+  /// Week/month grid: events in [rangeStart]…[rangeEnd] from Isar only.
+  static List<CalendarEvent> mergeForRange({
+    required DateTime rangeStart,
+    required DateTime rangeEnd,
+    required List<CalendarEvent> deviceEventsInRange,
+    required List<CalendarEvent> allStored,
+  }) {
+    return fromStoredForRange(
+      rangeStart: rangeStart,
+      rangeEnd: rangeEnd,
+      allStored: allStored,
+    );
+  }
 
+  static List<CalendarEvent> fromStored({
+    required DateTime selectedDay,
+    required List<CalendarEvent> allStored,
+  }) {
     final List<CalendarEvent> visible = <CalendarEvent>[];
-
-    for (final CalendarEvent fresh in deviceEventsForDay) {
-      final CalendarEvent? stored = storedByDeviceId[fresh.deviceEventId];
-      if (stored != null) {
-        visible.add(_withStoredMetadata(fresh, stored));
-      } else {
-        visible.add(fresh);
-      }
-    }
+    final Set<int> addedIds = <int>{};
 
     for (final CalendarEvent stored in allStored) {
-      if (!stored.isLocalOnly) {
-        continue;
-      }
-      if (_isShadowedByDeviceOnDay(
-        local: stored,
-        deviceEvents: deviceEventsForDay,
-        day: selectedDay,
-      )) {
+      if (_hasRecurrence(stored)) {
         continue;
       }
       if (!RecurrenceEvaluator.shouldShowEventOnDate(stored, selectedDay)) {
         continue;
       }
-      if (deviceIdsOnDay.contains(stored.deviceEventId)) {
-        continue;
+      if (addedIds.add(stored.id)) {
+        visible.add(stored);
       }
-      visible.add(stored);
     }
 
     _appendRecurringStoredOccurrences(
       visible: visible,
       selectedDay: selectedDay,
       allStored: allStored,
-      deviceEventsForDay: deviceEventsForDay,
     );
 
     visible.sort(
@@ -67,51 +63,20 @@ abstract final class VisibleCalendarEventsMerger {
     return visible;
   }
 
-  /// Week/month grid: fresh device rows for [rangeStart]…[rangeEnd] plus local-only.
-  static List<CalendarEvent> mergeForRange({
+  static List<CalendarEvent> fromStoredForRange({
     required DateTime rangeStart,
     required DateTime rangeEnd,
-    required List<CalendarEvent> deviceEventsInRange,
     required List<CalendarEvent> allStored,
   }) {
     final DateTime rangeDayStart = AppDateUtils.startOfDay(rangeStart);
     final DateTime rangeDayEndExclusive =
         AppDateUtils.startOfDay(rangeEnd).add(const Duration(days: 1));
 
-    final Map<String, CalendarEvent> storedByDeviceId =
-        <String, CalendarEvent>{
-      for (final CalendarEvent event in allStored) event.deviceEventId: event,
-    };
-
-    final Set<String> deviceIdsInRange = <String>{
-      for (final CalendarEvent event in deviceEventsInRange)
-        event.deviceEventId,
-    };
-
     final List<CalendarEvent> visible = <CalendarEvent>[];
-
-    for (final CalendarEvent fresh in deviceEventsInRange) {
-      final CalendarEvent? stored = storedByDeviceId[fresh.deviceEventId];
-      if (stored != null) {
-        visible.add(_withStoredMetadata(fresh, stored));
-      } else {
-        visible.add(fresh);
-      }
-    }
+    final Set<int> addedIds = <int>{};
 
     for (final CalendarEvent stored in allStored) {
-      if (!stored.isLocalOnly) {
-        continue;
-      }
-      if (deviceIdsInRange.contains(stored.deviceEventId)) {
-        continue;
-      }
-      if (_isShadowedByDeviceInRange(
-        local: stored,
-        deviceEvents: deviceEventsInRange,
-        rangeDayStart: rangeDayStart,
-        rangeDayEndExclusive: rangeDayEndExclusive,
-      )) {
+      if (_hasRecurrence(stored)) {
         continue;
       }
       if (!_isVisibleInRange(
@@ -121,7 +86,9 @@ abstract final class VisibleCalendarEventsMerger {
       )) {
         continue;
       }
-      visible.add(stored);
+      if (addedIds.add(stored.id)) {
+        visible.add(stored);
+      }
     }
 
     _appendRecurringStoredOccurrencesForRange(
@@ -129,7 +96,6 @@ abstract final class VisibleCalendarEventsMerger {
       rangeDayStart: rangeDayStart,
       rangeDayEndExclusive: rangeDayEndExclusive,
       allStored: allStored,
-      deviceEventsInRange: deviceEventsInRange,
     );
 
     visible.sort(
@@ -153,96 +119,16 @@ abstract final class VisibleCalendarEventsMerger {
     return false;
   }
 
-  static bool _isShadowedByDeviceOnDay({
-    required CalendarEvent local,
-    required List<CalendarEvent> deviceEvents,
-    required DateTime day,
-  }) {
-    if (!local.isLocalOnly) {
-      return false;
-    }
-    final String titleKey = local.title.trim().toLowerCase();
-    for (final CalendarEvent device in deviceEvents) {
-      if (device.title.trim().toLowerCase() != titleKey) {
-        continue;
-      }
-      if (AppDateUtils.isSameCalendarDay(device.start, day)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  static bool _isShadowedByDeviceInRange({
-    required CalendarEvent local,
-    required List<CalendarEvent> deviceEvents,
-    required DateTime rangeDayStart,
-    required DateTime rangeDayEndExclusive,
-  }) {
-    for (DateTime day = rangeDayStart;
-        day.isBefore(rangeDayEndExclusive);
-        day = day.add(const Duration(days: 1))) {
-      if (_isShadowedByDeviceOnDay(
-        local: local,
-        deviceEvents: deviceEvents,
-        day: day,
-      )) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /// Device fields from [fresh]; Isar id / links from [stored].
-  static CalendarEvent _withStoredMetadata(
-    CalendarEvent fresh,
-    CalendarEvent stored,
-  ) {
-    _applyDeviceFields(stored, fresh);
-    return CalendarEvent.fromDevice(
-      deviceEventId: fresh.deviceEventId,
-      title: fresh.title,
-      start: fresh.start,
-      end: fresh.end,
-      calendarId: fresh.calendarId,
-      colorValue: fresh.colorValue,
-      googleEventId: stored.googleEventId,
-      recurrenceRule: stored.recurrenceRule,
-      linkedTaskIds: List<int>.from(stored.linkedTaskIds),
-    )..id = stored.id
-      ..reminderMinutesBefore = stored.reminderMinutesBefore
-      ..recurrenceRuleJson = stored.recurrenceRuleJson
-      ..updatedAt = stored.updatedAt;
-  }
-
-  static void _applyDeviceFields(CalendarEvent target, CalendarEvent fresh) {
-    target
-      ..title = fresh.title
-      ..start = fresh.start
-      ..end = fresh.end
-      ..calendarId = fresh.calendarId
-      ..colorValue = fresh.colorValue
-      ..source = EventSource.device;
-  }
-
   static void _appendRecurringStoredOccurrences({
     required List<CalendarEvent> visible,
     required DateTime selectedDay,
     required List<CalendarEvent> allStored,
-    required List<CalendarEvent> deviceEventsForDay,
   }) {
     for (final CalendarEvent stored in allStored) {
       if (!_hasRecurrence(stored)) {
         continue;
       }
       if (!RecurrenceEvaluator.shouldShowEventOnDate(stored, selectedDay)) {
-        continue;
-      }
-      if (_deviceCoversCalendarDay(
-        stored: stored,
-        deviceEvents: deviceEventsForDay,
-        day: selectedDay,
-      )) {
         continue;
       }
       if (_visibleCoversCalendarDay(visible, stored, selectedDay)) {
@@ -257,7 +143,6 @@ abstract final class VisibleCalendarEventsMerger {
     required DateTime rangeDayStart,
     required DateTime rangeDayEndExclusive,
     required List<CalendarEvent> allStored,
-    required List<CalendarEvent> deviceEventsInRange,
   }) {
     for (DateTime day = rangeDayStart;
         day.isBefore(rangeDayEndExclusive);
@@ -266,7 +151,6 @@ abstract final class VisibleCalendarEventsMerger {
         visible: visible,
         selectedDay: day,
         allStored: allStored,
-        deviceEventsForDay: deviceEventsInRange,
       );
     }
   }
@@ -276,29 +160,13 @@ abstract final class VisibleCalendarEventsMerger {
     return json != null && json.trim().isNotEmpty;
   }
 
-  static bool _deviceCoversCalendarDay({
-    required CalendarEvent stored,
-    required List<CalendarEvent> deviceEvents,
-    required DateTime day,
-  }) {
-    for (final CalendarEvent device in deviceEvents) {
-      if (device.deviceEventId != stored.deviceEventId) {
-        continue;
-      }
-      if (_overlapsCalendarDay(device, day)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   static bool _visibleCoversCalendarDay(
     List<CalendarEvent> visible,
     CalendarEvent stored,
     DateTime day,
   ) {
     for (final CalendarEvent event in visible) {
-      if (event.deviceEventId != stored.deviceEventId) {
+      if (event.id != stored.id) {
         continue;
       }
       if (_overlapsCalendarDay(event, day)) {
@@ -342,9 +210,11 @@ abstract final class VisibleCalendarEventsMerger {
       googleEventId: master.googleEventId,
       recurrenceRule: master.recurrenceRule,
       linkedTaskIds: List<int>.from(master.linkedTaskIds),
+      source: master.source,
     )..id = master.id
       ..reminderMinutesBefore = master.reminderMinutesBefore
       ..recurrenceRuleJson = master.recurrenceRuleJson
+      ..syncedDeviceEventIdsJson = master.syncedDeviceEventIdsJson
       ..updatedAt = master.updatedAt;
   }
 }

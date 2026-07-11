@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:smart_planner/core/database/isar_database.dart';
-import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
 import 'package:smart_planner/features/notifications/data/background_language_resolver.dart';
 import 'package:smart_planner/features/notifications/data/day_status_home_widget_service.dart';
 import 'package:smart_planner/features/notifications/data/day_status_today_loader.dart';
@@ -40,7 +39,6 @@ abstract final class DayStatusBackgroundSync {
       final String languageCode = await BackgroundLanguageResolver.resolve();
       final DayStatusTodayLoader loader = DayStatusTodayLoader(
         todoRepository: TodoRepository(),
-        calendarService: CalendarService(),
       );
       final DayStatusTodaySnapshot snapshot = await loader.load();
 

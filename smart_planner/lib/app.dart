@@ -16,6 +16,7 @@ import 'package:smart_planner/features/calendar_integration/data/calendar_prefer
 
 import 'package:smart_planner/features/calendar_integration/data/repositories/event_attachment_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/calendar_event_write_service.dart';
+import 'package:smart_planner/features/calendar_integration/data/event_calendar_sync_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/task_event_link_service.dart';
 
@@ -108,8 +109,6 @@ class DayLinxApp extends StatelessWidget {
 
       todoRepository: todoRepository,
 
-      calendarService: calendarService,
-
       localCalendarEventRepository: localCalendarEventRepository,
 
     );
@@ -122,8 +121,6 @@ class DayLinxApp extends StatelessWidget {
 
     final DayStatusTodayLoader dayStatusTodayLoader = DayStatusTodayLoader(
       todoRepository: todoRepository,
-      calendarService: calendarService,
-      calendarPreferences: calendarPreferences,
       localCalendarEvents: localCalendarEventRepository,
     );
 
@@ -148,6 +145,12 @@ class DayLinxApp extends StatelessWidget {
 
     final CalendarEventWriteService calendarEventWriter =
         CalendarEventWriteService(
+      deviceCalendar: calendarService,
+      localEvents: localCalendarEventRepository,
+    );
+
+    final EventCalendarSyncService eventCalendarSync =
+        EventCalendarSyncService(
       deviceCalendar: calendarService,
       localEvents: localCalendarEventRepository,
     );
@@ -178,6 +181,10 @@ class DayLinxApp extends StatelessWidget {
 
         RepositoryProvider<CalendarEventWriteService>.value(
           value: calendarEventWriter,
+        ),
+
+        RepositoryProvider<EventCalendarSyncService>.value(
+          value: eventCalendarSync,
         ),
 
         RepositoryProvider<DashboardDayMarkersRepository>.value(

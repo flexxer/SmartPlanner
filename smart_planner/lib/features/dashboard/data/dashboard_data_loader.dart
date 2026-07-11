@@ -1,10 +1,8 @@
 import 'package:isar_community/isar.dart';
-import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/data/linked_calendars_loader.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
-import 'package:smart_planner/features/calendar_integration/domain/exceptions/calendar_exceptions.dart';
 import 'package:smart_planner/features/calendar_integration/domain/linked_calendar_ids_resolver.dart';
 import 'package:smart_planner/features/dashboard/data/dashboard_dependencies.dart';
 import 'package:smart_planner/features/dashboard/domain/dashboard_load_models.dart';
@@ -29,7 +27,6 @@ class DashboardDataLoader {
         await resolveSelectedCalendarIds(calendarIdsFromEvent);
     final DashboardCalendarSnapshot calendar = await loadCalendarSnapshot(
       selectedDate: selectedDate,
-      calendarIds: selectedCalendarIds,
     );
     final DashboardTaskSnapshot tasks = await loadTaskSnapshot(
       selectedDate: selectedDate,
@@ -105,38 +102,22 @@ class DashboardDataLoader {
 
   Future<DashboardCalendarSnapshot> loadCalendarSnapshot({
     required DateTime selectedDate,
-    required List<String> calendarIds,
   }) async {
-    final _DeviceDayEventsResult device = await _loadDeviceEventsForDay(
-      day: selectedDate,
-      calendarIds: calendarIds,
-    );
     _deps.dayMarkersRepository.invalidate();
-
-    if (device.events.isNotEmpty) {
-      await _deps.localCalendarEvents.upsertDeviceEvents(device.events);
-    }
 
     final List<CalendarEvent> allStored =
         await _deps.localCalendarEvents.getAll();
-    final Set<String> allowedCalendarIds = calendarIds.toSet();
-    final List<CalendarEvent> visible = VisibleCalendarEventsMerger.merge(
+    final List<CalendarEvent> visible = VisibleCalendarEventsMerger.fromStored(
       selectedDay: selectedDate,
-      deviceEventsForDay: device.events,
       allStored: allStored,
-    ).where(
-      (CalendarEvent event) =>
-          allowedCalendarIds.isEmpty ||
-          allowedCalendarIds.contains(event.calendarId),
-    ).toList(growable: false);
+    );
 
     return DashboardCalendarSnapshot(
-      deviceEvents: device.events,
+      deviceEvents: const <CalendarEvent>[],
       visibleCalendarEvents: visible,
       localCalendarEventById: <Id, CalendarEvent>{
         for (final CalendarEvent event in allStored) event.id: event,
       },
-      calendarMessage: device.message,
     );
   }
 
@@ -154,23 +135,6 @@ class DashboardDataLoader {
     );
   }
 
-  Future<List<String>> resolveCalendarIds(
-    List<String>? calendarIdsFromEvent,
-  ) async {
-    if (calendarIdsFromEvent != null && calendarIdsFromEvent.isNotEmpty) {
-      await _deps.calendarPreferences.saveSelectedCalendarIds(
-        calendarIdsFromEvent,
-      );
-    }
-
-    return LinkedCalendarIdsResolver.resolveForDeviceSync(
-      calendarService: _deps.calendarService,
-      preferences: _deps.calendarPreferences,
-      overrideIds: calendarIdsFromEvent,
-    );
-  }
-
-  /// User-selected calendar ids (settings checkboxes), without account expansion.
   Future<List<String>> resolveSelectedCalendarIds(
     List<String>? calendarIdsFromEvent,
   ) async {
@@ -196,63 +160,11 @@ class DashboardDataLoader {
     return _deps.todoRepository.getOverdueUncompletedTasks();
   }
 
-  Future<_DeviceDayEventsResult> _loadDeviceEventsForDay({
-    required DateTime day,
-    required List<String> calendarIds,
-  }) async {
-    try {
-      if (calendarIds.isEmpty) {
-        return _DeviceDayEventsResult(
-          events: <CalendarEvent>[],
-          message: L10n.tr('calendar_events_error_no_access'),
-        );
-      }
-
-      final List<CalendarEvent> events =
-          await _deps.calendarService.getEventsForDay(
-        calendarIds: calendarIds,
-        day: day,
-      );
-
-      await _deps.localCalendarEvents.upsertDeviceEvents(events);
-      await _deps.localCalendarEvents.purgeStaleDeviceEvents(
-        fetchedInWindow: events,
-        windowStart: AppDateUtils.startOfDay(day),
-        windowEndExclusive:
-            AppDateUtils.startOfDay(day).add(const Duration(days: 1)),
-        syncedCalendarIds: calendarIds.toSet(),
-      );
-      await _deps.reminderSync.syncDeviceEventsAfterUpsert(
-        localEvents: _deps.localCalendarEvents,
-        fromDevice: events,
-      );
-
-      return _DeviceDayEventsResult(events: events);
-    } on CalendarPermissionDeniedException {
-      return _DeviceDayEventsResult(
-        events: <CalendarEvent>[],
-        message: L10n.tr('calendar_events_error_android_permission'),
-      );
-    } on CalendarServiceException catch (e) {
-      return _DeviceDayEventsResult(
-        events: <CalendarEvent>[],
-        message: e.toString(),
-      );
-    } catch (error) {
-      return _DeviceDayEventsResult(
-        events: <CalendarEvent>[],
-        message: error.toString(),
-      );
-    }
-  }
-
   Future<DashboardLocalCalendarSlice> loadLocalCalendar(
     DateTime selectedDay,
   ) async {
-    final List<String> calendarIds = await resolveCalendarIds(null);
     final DashboardCalendarSnapshot calendar = await loadCalendarSnapshot(
       selectedDate: selectedDay,
-      calendarIds: calendarIds,
     );
     return DashboardLocalCalendarSlice(
       visibleOnSelectedDay: calendar.visibleCalendarEvents,
@@ -274,14 +186,4 @@ class DashboardDataLoader {
     };
     return ids.toList(growable: false);
   }
-}
-
-class _DeviceDayEventsResult {
-  const _DeviceDayEventsResult({
-    required this.events,
-    this.message,
-  });
-
-  final List<CalendarEvent> events;
-  final String? message;
 }

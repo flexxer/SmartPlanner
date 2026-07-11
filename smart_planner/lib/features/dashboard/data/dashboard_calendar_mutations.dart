@@ -1,4 +1,5 @@
 import 'package:isar_community/isar.dart';
+import 'package:smart_planner/features/calendar_integration/data/event_calendar_sync_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/device_calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/domain/deleted_calendar_event_snapshot.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
@@ -23,8 +24,7 @@ class DashboardCalendarMutations {
     }
     final List<EventAttachment> attachments =
         await _deps.eventAttachments.getAttachmentsForEvent(eventId);
-    final bool wasSynced =
-        !event.isLocalOnly && await _isWritableCalendar(event.calendarId);
+    final bool wasSynced = event.isSyncedToDevice;
     return DeletedCalendarEventSnapshot(
       event: calendarEventSnapshot(event),
       attachments: eventAttachmentsSnapshot(attachments),
@@ -67,23 +67,19 @@ class DashboardCalendarMutations {
     }
 
     if (snapshot.wasSyncedToDevice) {
-      final DeviceCalendarInfo? calendar =
-          await _findWritableCalendar(event.calendarId);
-      if (calendar != null) {
+      final List<DeviceCalendarInfo> calendars =
+          await _calendarsForSyncedEvent(event);
+      if (calendars.isNotEmpty) {
         try {
-          final CalendarEvent synced = await _deps.calendarEventWriter.save(
-            title: event.title,
-            start: event.start,
-            end: event.end,
-            calendar: calendar,
-            recurrence: event.recurrenceRule,
-            reminderMinutesBefore: event.reminderMinutesBefore,
-            existing: event,
+          final EventCalendarSyncService syncService = EventCalendarSyncService();
+          final CalendarEvent synced = await syncService.syncToCalendars(
+            event: event,
+            calendars: calendars,
           );
           await _deps.reminderSync.syncEvent(synced);
           return;
         } on CalendarServiceException {
-          // Local row is restored; device sync can be retried from edit.
+          // Local row is restored; device sync can be retried from detail.
         }
       }
     }
@@ -91,24 +87,28 @@ class DashboardCalendarMutations {
     await _deps.reminderSync.syncEvent(event);
   }
 
-  Future<bool> _isWritableCalendar(String calendarId) async {
-    final DeviceCalendarInfo? calendar = await _findWritableCalendar(calendarId);
-    return calendar != null;
-  }
+  Future<List<DeviceCalendarInfo>> _calendarsForSyncedEvent(
+    CalendarEvent event,
+  ) async {
+    final List<String> ids = List<String>.from(event.syncedCalendarIds);
+    if (ids.isEmpty && event.calendarId.trim().isNotEmpty) {
+      ids.add(event.calendarId);
+    }
+    if (ids.isEmpty) {
+      return const <DeviceCalendarInfo>[];
+    }
 
-  Future<DeviceCalendarInfo?> _findWritableCalendar(String calendarId) async {
     try {
       final DeviceCalendarService deviceCalendar = DeviceCalendarService();
-      final List<DeviceCalendarInfo> calendars =
-          await deviceCalendar.getCalendars();
-      for (final DeviceCalendarInfo calendar in calendars) {
-        if (calendar.id == calendarId && !calendar.isReadOnly) {
-          return calendar;
-        }
-      }
+      final List<DeviceCalendarInfo> all = await deviceCalendar.getCalendars();
+      return all
+          .where(
+            (DeviceCalendarInfo c) =>
+                ids.contains(c.id) && !c.isReadOnly,
+          )
+          .toList(growable: false);
     } on CalendarServiceException {
-      return null;
+      return const <DeviceCalendarInfo>[];
     }
-    return null;
   }
 }

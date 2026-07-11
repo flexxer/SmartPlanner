@@ -16,7 +16,13 @@ import 'package:smart_planner/features/todo_list/presentation/widgets/task_attac
 import 'package:smart_planner/features/calendar_integration/domain/calendar_context_colors.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
+import 'package:smart_planner/features/calendar_integration/data/calendar_preferences_repository.dart';
+import 'package:smart_planner/features/calendar_integration/data/event_calendar_sync_service.dart';
+import 'package:smart_planner/features/calendar_integration/data/linked_calendars_loader.dart';
+import 'package:smart_planner/features/calendar_integration/data/services/device_calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_frequency.dart';
+import 'package:smart_planner/features/calendar_integration/domain/exceptions/calendar_exceptions.dart';
+import 'package:smart_planner/features/calendar_integration/presentation/widgets/event_sync_calendars_selector.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_state.dart';
@@ -80,16 +86,76 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (event == null) {
       return;
     }
-    final DashboardState blocState = context.read<DashboardBloc>().state;
-    final List<String> selectedCalendarIds = blocState is DashboardLoaded
-        ? blocState.selectedCalendarIds
-        : const <String>[];
     await DashboardScreen.openEditCalendarEventSheet(
       context,
       event: event,
-      selectedCalendarIds: selectedCalendarIds,
     );
     _load();
+  }
+
+  Future<void> _openSync() async {
+    final CalendarEvent? event = _event;
+    if (event == null) {
+      return;
+    }
+
+    final Set<String>? selected = await EventSyncCalendarsSheet.show(
+      context,
+      initialSelected: event.syncedCalendarIds.toSet(),
+      linkedCalendarsLoader: LinkedCalendarsLoader(
+        calendarService: context.read<DeviceCalendarService>(),
+        preferences: context.read<CalendarPreferencesRepository>(),
+      ),
+    );
+    if (selected == null || selected.isEmpty || !mounted) {
+      return;
+    }
+
+    final LinkedCalendarsLoadResult loadResult = await LinkedCalendarsLoader(
+      calendarService: context.read<DeviceCalendarService>(),
+      preferences: context.read<CalendarPreferencesRepository>(),
+    ).load();
+    final List<DeviceCalendarInfo> calendars = loadResult.calendars
+        .where(
+          (DeviceCalendarInfo c) =>
+              selected.contains(c.id) && !c.isReadOnly,
+        )
+        .toList(growable: false);
+
+    if (calendars.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('event_sync_no_writable'.tr())),
+        );
+      }
+      return;
+    }
+
+    try {
+      await context.read<EventCalendarSyncService>().syncToCalendars(
+            event: event,
+            calendars: calendars,
+          );
+      if (mounted) {
+        context.read<DashboardBloc>().add(const LoadDashboardData());
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('event_sync_success'.tr())),
+        );
+        await _load();
+      }
+    } on CalendarPermissionDeniedException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('calendar_settings_permission_needed'.tr())),
+        );
+      }
+    } on CalendarServiceException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
   }
 
   @override
@@ -117,7 +183,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       calendarId: event.calendarId,
       fallbackColorValue: event.colorValue,
     );
-    final String calendarLabel = calendarInfo?.name ?? event.calendarId;
+    final String calendarLabel = calendarInfo?.name ??
+        (event.isSyncedToDevice
+            ? event.calendarId
+            : 'event_not_synced'.tr());
     final RecurrenceFrequency? recurrence =
         event.recurrenceRule?.frequency;
     final bool isToday =
@@ -131,6 +200,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         appBar: AppBar(
           title: Text('event_title'.tr()),
           actions: <Widget>[
+            IconButton(
+              tooltip: 'event_sync_title'.tr(),
+              onPressed: _openSync,
+              icon: const Icon(Icons.sync_outlined),
+            ),
             IconButton(
               tooltip: 'common_edit'.tr(),
               onPressed: _openEdit,

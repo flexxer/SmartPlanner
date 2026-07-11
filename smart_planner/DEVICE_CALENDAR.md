@@ -10,46 +10,33 @@ DayLinx uses the [`device_calendar`](https://pub.dev/packages/device_calendar) p
 
 Use **Open device calendar** in the same screen to jump to the system Calendar app (or sync / app permission settings as a fallback).
 
-Events are read through Android’s calendar provider—the same data the built-in Calendar app uses.
-
-On Android, DayLinx reads instances via a **direct** `CalendarContract` query (Instances + Events master table). Each **instance** of a recurring series is a separate row (`eventId` + `begin`); the reader does not collapse a series to one row. When Google edits event times, **Instances** can lag; **Events.DTSTART/DTEND** is preferred for the same `eventId` when merging master data. The `device_calendar` plugin is still used for calendar list, permissions, and write-back.
+Events are pushed to Android’s calendar provider through `device_calendar` `createOrUpdateEvent` — the same data the built-in Calendar app uses.
 
 ## Permissions
 
-- `READ_CALENDAR` — load events for the dashboard and notifications
-- `WRITE_CALENDAR` — create, edit, and delete events on writable device calendars
+- `READ_CALENDAR` — list calendars for the sync picker (writable filter)
+- `WRITE_CALENDAR` — push events to writable device calendars on manual sync
 
-## Write-back (create / edit / delete)
+## Event storage and sync model
 
-When you save an event in DayLinx and pick a **writable** calendar, the app calls `device_calendar` `createOrUpdateEvent`. The event appears in the system Calendar app (and syncs to Google if that calendar is synced). DayLinx keeps Isar metadata: reminders, recurrence JSON, task links.
+- **All events are stored in Isar first** (local-first). The dashboard, grid, notifications, and widgets read from Isar only.
+- **No automatic import** from device calendars (no pull on dashboard load, pull-to-refresh, foreground resume, or grid open).
+- **Outbound sync only**, triggered explicitly:
+  - **Create event:** optional multi-select of calendars enabled in Settings; sync runs on Save when at least one calendar is checked.
+  - **Event detail:** AppBar **Sync** button → multi-select sheet → push to selected writable calendars.
+- Sync mappings (`calendarId` → `deviceEventId`) are stored in `CalendarEvent.syncedDeviceEventIdsJson`.
+- **Delete** removes the event from all synced device calendars and from Isar.
 
-**Read-only** calendars (some shared calendars): the event is stored in Isar only; a snackbar explains that it was not written to the device provider.
+## Settings → Calendars
 
-## Import from device (read path)
-
-On dashboard load, pull-to-refresh, and when the app returns to the foreground, DayLinx:
-
-1. Fetches events for the selected day from the device provider (**only calendars checked** in **Settings → Calendars**).
-2. Upserts them into Isar (`upsertDeviceEvents`).
-3. Builds the visible list via `VisibleCalendarEventsMerger` (fresh device rows + local-only + recurring expansion from stored `recurrenceRuleJson` when an instance is missing for that day).
-4. **Purges stale device rows** in the sync window that were not returned by the latest fetch (non-recurring only; local `local_*` rows are kept).
-
-Edits made in Google Calendar appear after sync reaches the device calendar, then after the next refresh or resume. There is no background polling of Google.
-
-**If events created in the system Calendar app do not appear:** ensure that calendar is **checked** in **Settings → Calendars** and calendar permission is granted. Unchecked calendars are not queried and their events are hidden on the dashboard and week strip.
-
-**If times do not update:** pull to refresh on the dashboard or reopen the app (foreground reload). Ensure calendar permission is granted.
+User-selected calendars define the pool shown in sync pickers (create form + event detail). They are **not** used to filter which events appear on the dashboard.
 
 ## Developer notes
 
-- Linked calendar IDs are stored in `CalendarPreferencesRepository`.
-- Device rows are upserted via `LocalCalendarEventRepository.upsertDeviceEvents` with `EventSource.device`.
-- Visible list merge: `VisibleCalendarEventsMerger` in `lib/features/dashboard/domain/` (per-day and range; expands recurring stored rows).
-- Calendar id resolution: `LinkedCalendarIdsResolver.resolve` / `resolveForDeviceSync` (user selection only; no “import all device calendars” expansion).
-- Event strip layout: `CompressedEventsStripLayout` + `StackedOverlapGeometry.forStrip` — overlapping timed events in one slot as **separate rows** (earlier top-left, later below + shifted right; tiles do not overlap); card height from `stripCardHeight(layerCount)`; “now” line hidden when current time is before the first event of the day.
-- All-day events: `CalendarEventTimeUtils.isAllDay`; dashboard chips (`DashboardAllDayEventsRow`); excluded from timed strip segments.
-- Cross-midnight timed events: clipped per calendar day in `CalendarEventOccurrence`; labels in `EventTimeRangeLabel`.
-- Time grid: `CalendarGridScreen` (day / 3-day / week / month); overlap columns via `StackedOverlapGeometry.forGrid`; long-press empty slot → `EventFormSheet` (hour snap, 15-min duration steps).
-- Write path accepts `allDay` via `DeviceCalendarEventBridge` / `CalendarEventWriteService`.
-- Stale purge: `DeviceCalendarStalePurge` + `LocalCalendarEventRepository.purgeStaleDeviceEvents`.
-- `SyncAccount` / `SyncRecord` in Isar remain for a future cloud sync engine; they are not used for calendar import today.
+- Linked calendar IDs: `CalendarPreferencesRepository`.
+- Outbound sync: `EventCalendarSyncService` + `DeviceCalendarService.createOrUpdateEvent`.
+- Local CRUD: `CalendarEventWriteService.saveLocal` / `LocalCalendarEventRepository`.
+- Visible lists: `VisibleCalendarEventsMerger.fromStored` (Isar + recurrence expansion).
+- Reusable sync UI: `EventSyncCalendarsSelector` (inline) and `EventSyncCalendarsSheet` (detail screen).
+- `SyncAccount` / `SyncRecord` in Isar remain for a future cloud sync engine; they are not used for calendar sync today.
+- Legacy `upsertDeviceEvents` / `purgeStaleDeviceEvents` remain in the repository for compatibility but are no longer called from dashboard loaders.

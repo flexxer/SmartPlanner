@@ -1,106 +1,97 @@
+import 'package:smart_planner/features/calendar_integration/data/event_calendar_sync_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/device_calendar_service.dart';
+import 'package:smart_planner/features/calendar_integration/domain/calendar_event_recurrence.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
-import 'package:smart_planner/features/calendar_integration/domain/entities/event_source.dart';
-import 'package:smart_planner/features/calendar_integration/domain/calendar_event_recurrence.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_rule.dart';
-import 'package:smart_planner/features/calendar_integration/domain/exceptions/calendar_exceptions.dart';
 
-/// Persists calendar events to the device provider and mirrors metadata in Isar.
+/// Persists calendar events in Isar and coordinates outbound device sync.
 class CalendarEventWriteService {
   CalendarEventWriteService({
     DeviceCalendarService? deviceCalendar,
     LocalCalendarEventRepository? localEvents,
+    EventCalendarSyncService? syncService,
   })  : _deviceCalendar = deviceCalendar ?? DeviceCalendarService(),
-        _localEvents = localEvents ?? LocalCalendarEventRepository();
+        _localEvents = localEvents ?? LocalCalendarEventRepository(),
+        _syncService = syncService ??
+            EventCalendarSyncService(
+              deviceCalendar: deviceCalendar,
+              localEvents: localEvents,
+            );
 
   final DeviceCalendarService _deviceCalendar;
   final LocalCalendarEventRepository _localEvents;
+  final EventCalendarSyncService _syncService;
 
-  Future<CalendarEvent> save({
+  /// Saves event metadata in Isar only (no device write).
+  Future<CalendarEvent> saveLocal({
     required String title,
     required DateTime start,
     required DateTime end,
-    required DeviceCalendarInfo calendar,
     RecurrenceRule? recurrence,
     int? reminderMinutesBefore,
     CalendarEvent? existing,
     bool allDay = false,
   }) async {
-    if (calendar.isReadOnly) {
-      return _saveLocalOnly(
-        title: title,
-        start: start,
-        end: end,
-        calendar: calendar,
-        recurrence: recurrence,
-        reminderMinutesBefore: reminderMinutesBefore,
-        existing: existing,
-      );
-    }
+    final CalendarEvent event = existing != null
+        ? (existing
+          ..title = title
+          ..start = start
+          ..end = end
+          ..recurrenceRule = recurrence
+          ..reminderMinutesBefore = reminderMinutesBefore)
+        : CalendarEvent.createLocal(
+            title: title,
+            start: start,
+            end: end,
+            calendarId: '',
+            recurrenceRule: recurrence,
+          )..reminderMinutesBefore = reminderMinutesBefore;
 
-    final CalendarEvent? prior = existing;
-    final String? priorDeviceId =
-        prior != null && !prior.isLocalOnly ? prior.deviceEventId : null;
-    final bool movedToAnotherCalendar = prior != null &&
-        !prior.isLocalOnly &&
-        prior.calendarId != calendar.id &&
-        priorDeviceId != null;
+    await _localEvents.saveLocalEvent(event);
+    return event;
+  }
 
-    if (movedToAnotherCalendar) {
-      await _deviceCalendar.deleteDeviceEvent(
-        calendarId: prior.calendarId,
-        deviceEventId: priorDeviceId,
-      );
-    }
-
-    final String deviceEventId = await _deviceCalendar.createOrUpdateEvent(
-      calendarId: calendar.id,
+  /// Saves locally, then pushes to [calendars] when the list is non-empty.
+  Future<CalendarEvent> save({
+    required String title,
+    required DateTime start,
+    required DateTime end,
+    List<DeviceCalendarInfo> syncCalendars = const <DeviceCalendarInfo>[],
+    RecurrenceRule? recurrence,
+    int? reminderMinutesBefore,
+    CalendarEvent? existing,
+    bool allDay = false,
+  }) async {
+    final CalendarEvent saved = await saveLocal(
       title: title,
       start: start,
       end: end,
-      deviceEventId: movedToAnotherCalendar ? null : priorDeviceId,
       recurrence: recurrence,
       reminderMinutesBefore: reminderMinutesBefore,
+      existing: existing,
       allDay: allDay,
     );
 
-    final CalendarEvent mirror = CalendarEvent.fromDevice(
-      deviceEventId: deviceEventId,
-      title: title,
-      start: start,
-      end: end,
-      calendarId: calendar.id,
-      colorValue: calendar.colorValue,
-      recurrenceRule: recurrence,
-      linkedTaskIds: prior?.linkedTaskIds ?? <int>[],
-      source: EventSource.device,
-    )..reminderMinutesBefore = reminderMinutesBefore;
-
-    await _localEvents.upsertDeviceEvents(<CalendarEvent>[mirror]);
-
-    final CalendarEvent? stored =
-        await _localEvents.findByDeviceEventId(deviceEventId);
-    if (stored == null) {
-      throw CalendarServiceException(
-        'upsertDeviceEvents',
-        'Event not found after device save',
-      );
+    if (syncCalendars.isEmpty) {
+      return saved;
     }
 
-    if (prior != null && prior.isLocalOnly && prior.id != stored.id) {
-      await _migrateLinksAndDeleteLocal(prior, stored);
-    }
-
-    return stored;
+    return _syncService.syncToCalendars(
+      event: saved,
+      calendars: syncCalendars,
+    );
   }
 
   Future<void> delete(
     CalendarEvent event, {
     bool deleteThisInstanceOnly = false,
   }) async {
-    if (!event.isLocalOnly && await _isWritableCalendar(event.calendarId)) {
+    if (event.isSyncedToDevice) {
+      await _syncService.deleteFromSyncedCalendars(event);
+    } else if (!event.isLocalOnly &&
+        await _isWritableCalendar(event.calendarId)) {
       final bool recurring = CalendarEventRecurrence.hasRepeatingRule(event);
       if (recurring && deleteThisInstanceOnly) {
         await _deviceCalendar.deleteDeviceEventInstance(
@@ -120,6 +111,9 @@ class CalendarEventWriteService {
   }
 
   Future<bool> _isWritableCalendar(String calendarId) async {
+    if (calendarId.trim().isEmpty) {
+      return false;
+    }
     try {
       final List<DeviceCalendarInfo> calendars =
           await _deviceCalendar.getCalendars();
@@ -129,49 +123,8 @@ class CalendarEventWriteService {
         }
       }
       return false;
-    } on CalendarServiceException {
+    } on Object {
       return false;
     }
-  }
-
-  Future<CalendarEvent> _saveLocalOnly({
-    required String title,
-    required DateTime start,
-    required DateTime end,
-    required DeviceCalendarInfo calendar,
-    RecurrenceRule? recurrence,
-    int? reminderMinutesBefore,
-    CalendarEvent? existing,
-  }) async {
-    final CalendarEvent event = existing != null
-        ? (existing
-          ..title = title
-          ..start = start
-          ..end = end
-          ..calendarId = calendar.id
-          ..colorValue = calendar.colorValue
-          ..recurrenceRule = recurrence
-          ..reminderMinutesBefore = reminderMinutesBefore)
-        : CalendarEvent.createLocal(
-            title: title,
-            start: start,
-            end: end,
-            calendarId: calendar.id,
-            colorValue: calendar.colorValue,
-            recurrenceRule: recurrence,
-          )..reminderMinutesBefore = reminderMinutesBefore;
-
-    await _localEvents.saveLocalEvent(event);
-    return event;
-  }
-
-  Future<void> _migrateLinksAndDeleteLocal(
-    CalendarEvent fromLocal,
-    CalendarEvent toDevice,
-  ) async {
-    for (final int taskId in List<int>.from(fromLocal.linkedTaskIds)) {
-      await _localEvents.linkTask(eventId: toDevice.id, taskId: taskId);
-    }
-    await _localEvents.deleteLocalEvent(fromLocal.id);
   }
 }

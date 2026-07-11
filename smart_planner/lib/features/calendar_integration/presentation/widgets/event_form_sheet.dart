@@ -7,7 +7,7 @@ import 'package:smart_planner/core/presentation/widgets/form_sheet_scaffold.dart
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_recurrence.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_time_utils.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/widgets/calendar_event_delete_dialog.dart';
-import 'package:smart_planner/features/calendar_integration/presentation/widgets/linked_calendars_field.dart';
+import 'package:smart_planner/features/calendar_integration/presentation/widgets/event_sync_calendars_selector.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/data/calendar_event_write_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/linked_calendars_loader.dart';
@@ -24,7 +24,7 @@ import 'package:smart_planner/features/notifications/data/reminder_sync_service.
 import 'package:smart_planner/features/notifications/data/notification_preferences_repository.dart';
 import 'package:smart_planner/features/notifications/presentation/widgets/reminder_picker_field.dart';
 
-/// Bottom sheet to create or edit a [CalendarEvent] (device calendar + Isar metadata).
+/// Bottom sheet to create or edit a [CalendarEvent] (local Isar + optional sync).
 class EventFormSheet extends StatefulWidget {
   const EventFormSheet({
     required this.repository,
@@ -32,7 +32,6 @@ class EventFormSheet extends StatefulWidget {
     this.initialDay,
     this.initialStart,
     this.initialEnd,
-    this.selectedCalendarIds = const <String>[],
     this.dashboardBloc,
     this.linkedCalendarsLoader,
     this.initialTitle,
@@ -51,7 +50,6 @@ class EventFormSheet extends StatefulWidget {
   final DateTime? initialStart;
   final DateTime? initialEnd;
 
-  final List<String> selectedCalendarIds;
   final DashboardBloc? dashboardBloc;
   final LinkedCalendarsLoader? linkedCalendarsLoader;
 
@@ -70,12 +68,11 @@ class _EventFormSheetState extends State<EventFormSheet> {
   late DateTime _end;
   late DateTime _allDayEndDay;
   bool _isAllDay = false;
-  String? _selectedCalendarId;
-  DeviceCalendarInfo? _selectedCalendar;
   RecurrenceFrequency _recurrenceFrequency = RecurrenceFrequency.none;
   int? _reminderMinutes;
   bool _reminderLoaded = false;
   bool _saving = false;
+  Set<String> _syncCalendarIds = <String>{};
 
   LinkedCalendarsLoader get _loader =>
       widget.linkedCalendarsLoader ?? LinkedCalendarsLoader();
@@ -96,7 +93,6 @@ class _EventFormSheetState extends State<EventFormSheet> {
       } else {
         _allDayEndDay = AppDateUtils.startOfDay(_end);
       }
-      _selectedCalendarId = existing.calendarId;
       _recurrenceFrequency =
           existing.recurrenceRule?.frequency ?? RecurrenceFrequency.none;
       _reminderMinutes = existing.reminderMinutesBefore;
@@ -316,15 +312,20 @@ class _EventFormSheetState extends State<EventFormSheet> {
     );
   }
 
-  Future<void> _save() async {
-    final DeviceCalendarInfo? calendar = _selectedCalendar;
-    if (calendar == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('task_select_calendar'.tr())),
-      );
-      return;
+  Future<List<DeviceCalendarInfo>> _resolveSyncCalendars() async {
+    if (_syncCalendarIds.isEmpty) {
+      return const <DeviceCalendarInfo>[];
     }
+    final LinkedCalendarsLoadResult result = await _loader.load();
+    return result.calendars
+        .where(
+          (DeviceCalendarInfo calendar) =>
+              _syncCalendarIds.contains(calendar.id) && !calendar.isReadOnly,
+        )
+        .toList(growable: false);
+  }
 
+  Future<void> _save() async {
     final String title = _titleController.text.trim();
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -346,14 +347,13 @@ class _EventFormSheetState extends State<EventFormSheet> {
       return;
     }
 
-
     setState(() => _saving = true);
 
     try {
       if (widget.isEditing) {
-        await _saveEdit(title: title, calendar: calendar);
+        await _saveEdit(title: title);
       } else {
-        await _saveCreate(title: title, calendar: calendar);
+        await _saveCreate(title: title);
       }
     } on CalendarPermissionDeniedException {
       if (mounted) {
@@ -385,63 +385,51 @@ class _EventFormSheetState extends State<EventFormSheet> {
     }
   }
 
-  Future<void> _saveCreate({
-    required String title,
-    required DeviceCalendarInfo calendar,
-  }) async {
+  Future<void> _saveCreate({required String title}) async {
     final ({DateTime start, DateTime end}) range = _resolvedRange();
     final CalendarEventWriteService writer =
         context.read<CalendarEventWriteService>();
+    final List<DeviceCalendarInfo> syncCalendars = await _resolveSyncCalendars();
     final CalendarEvent event = await writer.save(
       title: title,
       start: range.start,
       end: range.end,
-      calendar: calendar,
+      syncCalendars: syncCalendars,
       recurrence: _buildRecurrenceRule(),
       reminderMinutesBefore: _reminderMinutes,
       allDay: _isAllDay,
     );
     await _syncReminderForEvent(event);
-    _showReadOnlyNoticeIfNeeded(calendar);
+    if (syncCalendars.isNotEmpty && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('event_sync_success'.tr())),
+      );
+    }
     if (mounted) {
       Navigator.of(context).pop(true);
     }
   }
 
-  Future<void> _saveEdit({
-    required String title,
-    required DeviceCalendarInfo calendar,
-  }) async {
+  Future<void> _saveEdit({required String title}) async {
     final ({DateTime start, DateTime end}) range = _resolvedRange();
     final CalendarEventWriteService writer =
         context.read<CalendarEventWriteService>();
-    final CalendarEvent event = await writer.save(
+    final CalendarEvent event = await writer.saveLocal(
       title: title,
       start: range.start,
       end: range.end,
-      calendar: calendar,
       recurrence: _buildRecurrenceRule(),
       reminderMinutesBefore: _reminderMinutes,
       existing: widget.eventToEdit,
       allDay: _isAllDay,
     );
     await _syncReminderForEvent(event);
-    _showReadOnlyNoticeIfNeeded(calendar);
 
     widget.dashboardBloc?.add(const LoadDashboardData());
 
     if (mounted) {
       Navigator.of(context).pop(true);
     }
-  }
-
-  void _showReadOnlyNoticeIfNeeded(DeviceCalendarInfo calendar) {
-    if (!calendar.isReadOnly || !mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('event_saved_read_only_calendar'.tr())),
-    );
   }
 
   @override
@@ -473,33 +461,17 @@ class _EventFormSheetState extends State<EventFormSheet> {
                 ),
                 textInputAction: TextInputAction.done,
               ),
-              const SizedBox(height: 12),
-              LinkedCalendarsField(
-                style: LinkedCalendarsStyle.dropdown,
-                linkedCalendarsLoader: _loader,
-                selectedCalendarIds: widget.selectedCalendarIds,
-                selectedCalendarId: _selectedCalendarId,
-                isEditing: isEditing,
-                permissionDeniedMessage: 'calendar_permission_request'.tr(),
-                permissionDeniedActionLabel:
-                    'calendar_settings_request_access'.tr(),
-                emptyMessage: 'calendar_no_device_calendars'.tr(),
-                errorRetryActionLabel: 'calendar_permission_retry'.tr(),
-                onCalendarSelected: (DeviceCalendarInfo calendar) {
-                  if (!isEditing && calendar.isReadOnly) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('calendar_read_only_cannot_select'.tr()),
-                      ),
-                    );
-                    return;
-                  }
-                  setState(() {
-                    _selectedCalendarId = calendar.id;
-                    _selectedCalendar = calendar;
-                  });
-                },
-              ),
+              if (!isEditing) ...<Widget>[
+                const SizedBox(height: 12),
+                EventSyncCalendarsSelector(
+                  linkedCalendarsLoader: _loader,
+                  compact: true,
+                  selectedCalendarIds: _syncCalendarIds,
+                  onSelectionChanged: (Set<String> ids) {
+                    setState(() => _syncCalendarIds = ids);
+                  },
+                ),
+              ],
               const SizedBox(height: 12),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
@@ -617,7 +589,7 @@ class _EventFormSheetState extends State<EventFormSheet> {
                 label: isEditing
                     ? 'task_save_changes'.tr()
                     : 'common_save'.tr(),
-                enabled: !_saving && _selectedCalendarId != null,
+                enabled: !_saving,
                 onPressed: _save,
               ),
       ],

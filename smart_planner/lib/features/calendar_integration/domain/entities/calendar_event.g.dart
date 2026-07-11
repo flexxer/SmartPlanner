@@ -65,9 +65,14 @@ const CalendarEventSchema = CollectionSchema(
       enumMap: _CalendarEventsourceEnumValueMap,
     ),
     r'start': PropertySchema(id: 10, name: r'start', type: IsarType.dateTime),
-    r'title': PropertySchema(id: 11, name: r'title', type: IsarType.string),
+    r'syncedDeviceEventIdsJson': PropertySchema(
+      id: 11,
+      name: r'syncedDeviceEventIdsJson',
+      type: IsarType.string,
+    ),
+    r'title': PropertySchema(id: 12, name: r'title', type: IsarType.string),
     r'updatedAt': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
@@ -149,6 +154,12 @@ int _calendarEventEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  {
+    final value = object.syncedDeviceEventIdsJson;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.title.length * 3;
   return bytesCount;
 }
@@ -170,8 +181,9 @@ void _calendarEventSerialize(
   writer.writeLong(offsets[8], object.reminderMinutesBefore);
   writer.writeByte(offsets[9], object.source.index);
   writer.writeDateTime(offsets[10], object.start);
-  writer.writeString(offsets[11], object.title);
-  writer.writeDateTime(offsets[12], object.updatedAt);
+  writer.writeString(offsets[11], object.syncedDeviceEventIdsJson);
+  writer.writeString(offsets[12], object.title);
+  writer.writeDateTime(offsets[13], object.updatedAt);
 }
 
 CalendarEvent _calendarEventDeserialize(
@@ -194,8 +206,9 @@ CalendarEvent _calendarEventDeserialize(
       _CalendarEventsourceValueEnumMap[reader.readByteOrNull(offsets[9])] ??
       EventSource.local;
   object.start = reader.readDateTime(offsets[10]);
-  object.title = reader.readString(offsets[11]);
-  object.updatedAt = reader.readDateTimeOrNull(offsets[12]);
+  object.syncedDeviceEventIdsJson = reader.readStringOrNull(offsets[11]);
+  object.title = reader.readString(offsets[12]);
+  object.updatedAt = reader.readDateTimeOrNull(offsets[13]);
   return object;
 }
 
@@ -231,8 +244,10 @@ P _calendarEventDeserializeProp<P>(
     case 10:
       return (reader.readDateTime(offset)) as P;
     case 11:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 12:
+      return (reader.readString(offset)) as P;
+    case 13:
       return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1688,6 +1703,174 @@ extension CalendarEventQueryFilter
   }
 
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  syncedDeviceEventIdsJsonIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'syncedDeviceEventIdsJson'),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  syncedDeviceEventIdsJsonIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'syncedDeviceEventIdsJson'),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  syncedDeviceEventIdsJsonEqualTo(String? value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'syncedDeviceEventIdsJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  syncedDeviceEventIdsJsonGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'syncedDeviceEventIdsJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  syncedDeviceEventIdsJsonLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'syncedDeviceEventIdsJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  syncedDeviceEventIdsJsonBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'syncedDeviceEventIdsJson',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  syncedDeviceEventIdsJsonStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'syncedDeviceEventIdsJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  syncedDeviceEventIdsJsonEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'syncedDeviceEventIdsJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  syncedDeviceEventIdsJsonContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'syncedDeviceEventIdsJson',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  syncedDeviceEventIdsJsonMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'syncedDeviceEventIdsJson',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  syncedDeviceEventIdsJsonIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'syncedDeviceEventIdsJson',
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
+  syncedDeviceEventIdsJsonIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          property: r'syncedDeviceEventIdsJson',
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterFilterCondition>
   titleEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -2041,6 +2224,20 @@ extension CalendarEventQuerySortBy
     });
   }
 
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
+  sortBySyncedDeviceEventIdsJson() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncedDeviceEventIdsJson', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
+  sortBySyncedDeviceEventIdsJsonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncedDeviceEventIdsJson', Sort.desc);
+    });
+  }
+
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> sortByTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.asc);
@@ -2212,6 +2409,20 @@ extension CalendarEventQuerySortThenBy
     });
   }
 
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
+  thenBySyncedDeviceEventIdsJson() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncedDeviceEventIdsJson', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy>
+  thenBySyncedDeviceEventIdsJsonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncedDeviceEventIdsJson', Sort.desc);
+    });
+  }
+
   QueryBuilder<CalendarEvent, CalendarEvent, QAfterSortBy> thenByTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.asc);
@@ -2323,6 +2534,16 @@ extension CalendarEventQueryWhereDistinct
     });
   }
 
+  QueryBuilder<CalendarEvent, CalendarEvent, QDistinct>
+  distinctBySyncedDeviceEventIdsJson({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(
+        r'syncedDeviceEventIdsJson',
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
   QueryBuilder<CalendarEvent, CalendarEvent, QDistinct> distinctByTitle({
     bool caseSensitive = true,
   }) {
@@ -2414,6 +2635,13 @@ extension CalendarEventQueryProperty
   QueryBuilder<CalendarEvent, DateTime, QQueryOperations> startProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'start');
+    });
+  }
+
+  QueryBuilder<CalendarEvent, String?, QQueryOperations>
+  syncedDeviceEventIdsJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'syncedDeviceEventIdsJson');
     });
   }
 

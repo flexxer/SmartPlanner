@@ -53,7 +53,6 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       dayMarkersRepository: dayMarkersRepository ??
           DashboardDayMarkersRepository(
             todoRepository: todoRepository,
-            calendarService: calendarService,
             localCalendarEventRepository: localEvents,
           ),
       attachmentRepository:

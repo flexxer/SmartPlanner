@@ -1,4 +1,5 @@
 import 'package:isar_community/isar.dart';
+import 'package:smart_planner/features/calendar_integration/domain/calendar_event_sync_mapping.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/event_source.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_rule.dart';
 
@@ -42,6 +43,9 @@ class CalendarEvent {
 
   /// Minutes before [start]; `null` = no reminder.
   int? reminderMinutesBefore;
+
+  /// JSON map of device calendar id → device event id (outbound sync targets).
+  String? syncedDeviceEventIdsJson;
 
   CalendarEvent();
 
@@ -107,6 +111,22 @@ class CalendarEvent {
   /// True when the row exists only in Isar (`local_` id or [EventSource.local]).
   bool get isLocalOnly =>
       source == EventSource.local || deviceEventId.startsWith('local_');
+
+  @ignore
+  Map<String, String> get syncedDeviceEventIds =>
+      CalendarEventSyncMapping.decode(syncedDeviceEventIdsJson);
+
+  @ignore
+  set syncedDeviceEventIds(Map<String, String> mapping) {
+    syncedDeviceEventIdsJson = CalendarEventSyncMapping.encode(mapping);
+  }
+
+  @ignore
+  List<String> get syncedCalendarIds =>
+      CalendarEventSyncMapping.calendarIds(syncedDeviceEventIds);
+
+  @ignore
+  bool get isSyncedToDevice => syncedDeviceEventIds.isNotEmpty;
 
   @ignore
   RecurrenceRule? get recurrenceRule {

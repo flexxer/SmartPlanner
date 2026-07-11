@@ -5,16 +5,14 @@ import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/presentation/widgets/confirm_delete_record.dart';
 import 'package:smart_planner/core/presentation/widgets/form_sheet_scaffold.dart';
-import 'package:smart_planner/features/calendar_integration/presentation/widgets/linked_calendars_field.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/data/task_event_link_service.dart';
-import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
+import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_frequency.dart';
+import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_rule.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
 import 'package:smart_planner/features/dashboard/presentation/record_delete_coordinator.dart';
 import 'package:smart_planner/features/templates/domain/entities/ui_template.dart';
-import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_frequency.dart';
-import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_rule.dart';
 import 'package:smart_planner/features/templates/domain/ui_template_applicator.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
 import 'package:smart_planner/features/todo_list/data/repositories/todo_repository.dart';
@@ -203,20 +201,14 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
     }
 
     final String? calendarId = _selectedCalendarId;
-    if (calendarId == null || calendarId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('task_select_calendar'.tr())),
-      );
-      return;
-    }
 
     setState(() => _saving = true);
 
     try {
       if (widget.isEditing) {
-        await _saveEdit(title: title, calendarId: calendarId);
+        await _saveEdit(title: title, calendarId: calendarId ?? '');
       } else {
-        await _saveCreate(title: title, calendarId: calendarId);
+        await _saveCreate(title: title, calendarId: calendarId ?? '');
       }
     } catch (e) {
       if (mounted) {
@@ -384,14 +376,6 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
                   border: const OutlineInputBorder(),
                 ),
                 maxLines: isEditing ? 3 : 2,
-              ),
-              const SizedBox(height: 12),
-              LinkedCalendarsField(
-                selectedCalendarId: _selectedCalendarId,
-                selectedCalendarIds: widget.selectedCalendarIds,
-                onCalendarSelected: (DeviceCalendarInfo calendar) {
-                  setState(() => _selectedCalendarId = calendar.id);
-                },
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<TaskPriority>(

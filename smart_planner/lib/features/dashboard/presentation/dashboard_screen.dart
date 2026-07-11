@@ -147,7 +147,6 @@ class DashboardScreen extends StatelessWidget {
                             openEditCalendarEventSheet(
                           context,
                           event: event,
-                          selectedCalendarIds: selectedCalendarIds,
                         ),
                       ),
                     ),
@@ -369,7 +368,6 @@ class DashboardScreen extends StatelessWidget {
       await openCreateCalendarEventSheet(
         context,
         selectedDate: selectedDate,
-        selectedCalendarIds: selectedCalendarIds,
       );
     } else {
       await openCreateTaskSheet(
@@ -383,12 +381,10 @@ class DashboardScreen extends StatelessWidget {
   static Future<void> openCreateCalendarEventSheet(
     BuildContext context, {
     required DateTime selectedDate,
-    List<String> selectedCalendarIds = const <String>[],
   }) async {
     await openEventFormSheet(
       context,
       initialDay: selectedDate,
-      selectedCalendarIds: selectedCalendarIds,
     );
   }
 
@@ -399,7 +395,6 @@ class DashboardScreen extends StatelessWidget {
     String? initialTitle,
     DateTime? initialStart,
     DateTime? initialEnd,
-    List<String> selectedCalendarIds = const <String>[],
   }) async {
     final DashboardBloc dashboardBloc = context.read<DashboardBloc>();
     final bool? saved = await showModalBottomSheet<bool>(
@@ -412,7 +407,6 @@ class DashboardScreen extends StatelessWidget {
         initialTitle: initialTitle,
         initialStart: initialStart,
         initialEnd: initialEnd,
-        selectedCalendarIds: selectedCalendarIds,
         dashboardBloc: dashboardBloc,
         linkedCalendarsLoader: LinkedCalendarsLoader(
           calendarService: sheetContext.read<DeviceCalendarService>(),
@@ -684,12 +678,10 @@ class DashboardScreen extends StatelessWidget {
   static Future<void> openEditCalendarEventSheet(
     BuildContext context, {
     required CalendarEvent event,
-    List<String> selectedCalendarIds = const <String>[],
   }) async {
     await openEventFormSheet(
       context,
       eventToEdit: event,
-      selectedCalendarIds: selectedCalendarIds,
     );
   }
 

@@ -26,15 +26,15 @@ Professionals, freelancers, and people with high cognitive load who juggle multi
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| Read device calendars (Google accounts synced to Android Calendar) | **Implemented** | `device_calendar` + calendar picker; no in-app OAuth |
-| Show events from multiple accounts (Personal, Work, Projects) | **Implemented** | User selects calendars in settings |
-| Write events to writable device calendars | **Implemented** | `CalendarEventWriteService` + `DeviceCalendarEventBridge`; read-only calendars → Isar-only + snackbar |
-| Color-code events by calendar source | **Implemented** | `CalendarContextColors` + accent bar on strip cards |
-| Events for a user-selected day | **Implemented** | Device fetch → Isar upsert → `DashboardLocalEventsStrip` for selected day |
+| Read device calendars (Google accounts synced to Android Calendar) | **Implemented** | List calendars for sync picker only; **no automatic import** into Isar |
+| Show events from multiple accounts (Personal, Work, Projects) | **Implemented** | All events stored in Isar; dashboard/grid read Isar only (`VisibleCalendarEventsMerger.fromStored`) |
+| Write events to writable device calendars | **Implemented** | **Manual outbound sync** via `EventCalendarSyncService` on create (optional multi-select) or from `EventDetailScreen` AppBar sync |
+| Color-code events by calendar source | **Implemented** | `CalendarContextColors` + accent bar on strip cards (when synced / `calendarId` set) |
+| Events for a user-selected day | **Implemented** | Isar `calendarEvents` filtered by day + recurrence expansion |
 | Local calendar events CRUD + task linking | **Implemented** | `LocalCalendarEventRepository`; link/unlink tasks; create/edit sheets |
 | Live “now” timeline on today’s event strip | **Implemented** | Pulsing indicator + auto-scroll; hidden when now is before the first event of the day |
 | Week strip activity badges | **Implemented** | Event count + task count (`TaskDateVisibility`); not reminder-only without due on that day |
-| Recurring events on dashboard | **Implemented** | Device instances per occurrence + `VisibleCalendarEventsMerger` expansion from stored rules |
+| Recurring events on dashboard | **Implemented** | Recurrence expansion from stored `recurrenceRuleJson` in Isar (`VisibleCalendarEventsMerger.fromStored`) |
 | Overlapping timed events (dashboard strip) | **Implemented** | Separate non-overlapping rows in `StackedOverlapGeometry.forStrip`: earlier top-left, later below + shifted right; card height scales with overlap count; `CompressedEventsStripLayout` |
 | All-day events (dashboard + grid) | **Implemented** | Chip row above strip; dedicated grid row; `CalendarEventTimeUtils.isAllDay` |
 | Cross-midnight timed events | **Implemented** | Clipped per day in `CalendarEventOccurrence`; labels via `EventTimeRangeLabel` |
@@ -51,7 +51,7 @@ Professionals, freelancers, and people with high cognitive load who juggle multi
 | Roll unfinished tasks with overdue indicator | **Implemented** | **Overdue** panel on today; badge via `Task.dynamicOverdueDays`; optional **midnight roll** moves overdue tasks to today (`OverdueMidnightRollService`, Workmanager ~00:05 + 15 min refresh fallback; toggle in **Reminders** settings, default on) |
 | Tasks filtered by selected calendar day | **Implemented** | Dated tasks via `getUncompletedTasksForDate`; undated via `getUndatedTasks` |
 | Postpone task (tomorrow or pick date) | **Implemented** | `TaskDetailScreen` + `PostponeTaskSheet`; `PostponeTask` / `PostponeTaskToNextDay` |
-| Context calendars (device lists) | **Implemented** | `Task.calendarId` (device calendar id); `TaskLinkedCalendarsField` in `TaskFormSheet`; context badge on tiles via `CalendarContextColors` |
+| Context calendars (device lists) | **Implemented** | `Task.calendarId` optional (device calendar id for badges); **no calendar picker** on `TaskFormSheet` |
 | Create / edit / delete task or event | **Implemented** | `TaskFormSheet` / `EventFormSheet`; delete with confirmation in edit mode (`DeleteTask`, `DeleteCalendarEvent`) |
 | Recurring tasks (bills, stand-ups) | **Planned** | Not in schema yet |
 | Local CRUD + priority sorting | **Implemented** | Isar + `TodoRepository` |
@@ -62,13 +62,15 @@ Professionals, freelancers, and people with high cognitive load who juggle multi
 | Global search (tasks + events) | **Implemented** | `SearchScreen` from dashboard AppBar |
 | Delete with 10s undo | **Implemented** | `RecordDeleteCoordinator` + `delete_undo_snackbar`; restore re-syncs device calendar when applicable |
 | Attachment templates (user presets) | **Implemented** | Isar `AttachmentTemplate`; hub tab + quick-add chips in `AddAttachmentSheet` |
-| Templates hub (task + attachment tabs) | **Implemented** | `TemplatesPage` with `TaskTemplatesTab` and `AttachmentTemplatesTab` |
-| Task / event detail screens | **Implemented** | `TaskDetailScreen`, `EventDetailScreen`; AppBar edit; full attachments + reorderable subtasks on task detail |
-| Templates module (AppBar) | **Implemented** | `TemplatesPage` CRUD; apply via FAB, relation sheet, `TaskFormSheet`, deep link `type=template`; save from task detail |
+| Templates hub (task + attachment tabs) | **Implemented** | `TemplatesPage` with `TaskTemplatesTab` and `AttachmentTemplatesTab` — **rename to Library planned** (see §3.4) |
+| Task / event detail screens | **Implemented** | `TaskDetailScreen`, `EventDetailScreen`; AppBar edit; event detail **Sync** → outbound device calendars |
+| Templates module (AppBar) | **Implemented** | AppBar opens templates hub; apply via FAB, relation sheet, `TaskFormSheet`, deep link `type=template`; save from task detail |
 | Linked subtasks (existing task under a parent task) | **Implemented** | `Task.parentTaskId` + `Task.sortOrder`; manual reorder on `TaskDetailScreen`; link via picker; detach; progress badge on parent |
 | Task attachments (local) | **Implemented** | `TaskAttachment`: contact, image, URL, location, note, checklist; multiple per task (see §3.2.1) |
 
-**Important distinction:** **Calendar events** (meetings) come from the device calendar. **Tasks** are stored locally in Isar—they are not Google Calendar tasks unless a future sync feature is added.
+**Important distinction:** **Calendar events** are stored locally in Isar (local-first). **Outbound sync** to device calendars is explicit only. **Tasks** are stored locally in Isar—they are not Google Calendar tasks unless a future sync feature is added.
+
+**`Task.calendarId` vs user categories:** `calendarId` is the **device calendar context** (sync/color). **Categories** (§3.4) are separate user-defined **tags** for analytics—not a replacement for the removed legacy `TaskCategory`.
 
 **Subtasks vs checklist:** **Linked subtasks** are separate `Task` rows (`parentTaskId`). A **checklist** is a `TaskAttachment` of type `checklist` (plain items inside the attachment payload, not separate tasks).
 
@@ -110,6 +112,50 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 | Background check for overdue tasks | **Implemented** | `workmanager`: overdue digest (`OverdueBackgroundWorker`, 12h); midnight roll + digest refresh; day-status/widget refresh (15 min) |
 | Custom URL scheme deep links (`daylinx://create`) | **Implemented** | `app_links`; opens dashboard + `TaskFormSheet` / `EventFormSheet` with prefilled `title`, `priority`, `start` |
 
+### 3.4 Categories and Library (planned)
+
+User-defined **categories** are cross-cutting **tags** (many-to-many) on tasks, calendar events, and payments. Used for filtering, statistics, and UI grouping—not for device calendar sync.
+
+| Requirement | Status | Notes |
+|-------------|--------|-------|
+| `Category` entity (name, color, sortOrder, isArchived) | **Planned** | Isar `@collection`; **empty on first launch** (no seed data) |
+| Many-to-many tags via `CategoryLink` | **Planned** | `(entityType, entityId, categoryId)`; unique triple; cascade delete with parent entity |
+| Optional tags on task / event / payment | **Planned** | 0..N categories; editable in forms via shared `CategoryTagsField` |
+| Category CRUD in **Library** hub | **Planned** | 3rd tab on renamed hub (Tasks / Attachments / **Categories**); FAB + form sheet |
+| Rename Templates hub → **Library** | **Planned** | `TemplatesPage` → `LibraryPage`; AppBar tooltip `dashboard_tooltip_library`; keep `features/templates/` package name for `UiTemplate` |
+| Category badges on tiles / detail | **Planned** | `CategoryBadgesRow` distinct from calendar context badge |
+| Dashboard / search filter by category | **Planned** | Phase P6 after finance MVP |
+| Category archive (not hard delete when in use) | **Planned** | `isArchived = true` when links exist |
+
+**Library hub tabs (target UX):**
+
+| Tab | Content |
+|-----|---------|
+| Tasks | Existing `TaskTemplatesTab` (UI blueprints) |
+| Attachments | Existing `AttachmentTemplatesTab` |
+| Categories | New `CategoriesTab` — CRUD, reorder, color picker, empty state |
+
+### 3.5 Finance — payments (planned)
+
+Local **payments** (income/expense tracking) linked optionally to tasks and/or events, tagged with categories.
+
+| Requirement | Status | Notes |
+|-------------|--------|-------|
+| `Payment` entity | **Planned** | `title`, `note`, `amountMinor` (int, no float), `currencyCode` (ISO 4217), `direction` (expense/income), `status` (planned/completed/cancelled), `occurredAt`, `updatedAt` |
+| Link to task and/or event | **Planned** | Independent optional `linkedTaskId` and `linkedEventId` — **both may be set** |
+| Categories on payment | **Planned** | Via `CategoryLink` only (same as tasks/events) |
+| **Finance** screen | **Planned** | Dedicated screen; entry from **dashboard AppBar** (e.g. wallet icon) |
+| Payment list + create/edit | **Planned** | `FinanceScreen` + `PaymentFormSheet`; FAB on finance screen |
+| Status toggle on list | **Planned** | **Checkbox** per row: `planned` ↔ `completed` (completed rows dimmed + strikethrough) |
+| Default currency in Settings | **Planned** | `CurrencyPreferencesRepository` (`app_default_currency_code`); section **Finance** on `CalendarSettingsPage` |
+| Currency on payment form | **Planned** | Prefilled from settings default; **editable per payment** |
+| Monthly summary (income / expense / balance) | **Planned** | Header on `FinanceScreen`; group by `currencyCode` (no FX conversion in MVP) |
+| Payments block on task/event detail | **Planned** | List linked payments + add button |
+| Recurring payments | **Out of MVP** | No `recurrenceRuleJson` on `Payment` initially |
+| Budgets / multi-currency conversion / export | **Planned** | Post-MVP |
+
+**Money rules (MVP):** store amounts as `amountMinor`; never aggregate across different `currencyCode` values in one total without explicit conversion (future).
+
 ---
 
 ## 4. Non-functional requirements
@@ -137,22 +183,22 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 - **Date bar:** previous / next day, center label (tap → date picker), “Today” when another day is selected.
 - **Week strip** (`DashboardWeekDateStrip`): horizontally scrollable ~3 weeks; tap a day to select it.
   - **Dots** (3.5 px) under the day number: **calendar** = `ColorScheme.primary` or first event’s calendar color; **local tasks** = `ColorScheme.secondary`.
-  - Markers prefetched for the visible range (one Isar read + one `getEvents` call, cached in `DashboardDayMarkersRepository`).
+  - Markers prefetched for the visible range (one Isar read, cached in `DashboardDayMarkersRepository`).
 - **Default day:** today.
 - **Calendar events** and **tasks** both respect the selected day.
 
 ### Local calendar events (`DashboardLocalEventsSection` + `DashboardLocalEventsStrip`)
 
 - Single source for day events (legacy “events on date” text block removed).
-- Section header: day label and **Create** event (calendar selection is AppBar only).
+- Section header: day label and **Create** event.
 - **All-day row** (`DashboardAllDayEventsRow`): chips above the timed strip when the day has all-day events.
 - **Horizontal strip** (116 dp for a single event; sublinear height growth for overlap groups): compressed layout — adjacent event cards, compact gap markers for long idle periods (≥90 min).
 - **Overlapping timed events:** separate rows in one slot (tiles do **not** cover each other). Earlier event top-left; each later-start event on the next row, shifted **right** toward later time. Row height shrinks as overlap count grows (`stripCardHeight` / `stripOverlapBudget`); compact typography in multi-event slots.
 - **Event card:** accent bar, **start–end time** (`EventTimeRangeLabel` for cross-midnight), title, optional recurrence icon, linked-tasks badge.
 - **Today only:** past / current / future styling; pulsing **Now** chip on current event (`events_now_chip`); live **now** vertical indicator (updates every minute); auto-scroll to current or next event.
-- **Tap** card → **`EventDetailScreen`** (linked tasks, add task, AppBar edit).
+- **Tap** card → **`EventDetailScreen`** (linked tasks, add task, AppBar edit + **Sync** to device calendars).
 - **Long-press** card → `EventFormSheet` (edit mode).
-- Device events are upserted into Isar; strip reads local `calendarEvents` filtered by `RecurrenceEvaluator`.
+- Strip reads local `calendarEvents` from Isar filtered by `RecurrenceEvaluator` / `VisibleCalendarEventsMerger.fromStored`.
 
 ### Tasks
 
@@ -165,7 +211,7 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
   - **Checkbox** (48×48 dp): `ToggleTaskCompletion`; separate splash from body.
   - **Body tap** → **`TaskDetailScreen`** (`Navigator.push`).
   - **Title** + optional **description** (up to two lines, ellipsis).
-  - **Badge row** (`TaskBadge`, `Wrap`): context calendar, priority, due, overdue, linked event, subtasks, checklist, attachments; tappable badges can open detail or event screen.
+  - **Badge row** (`TaskBadge`, `Wrap`): priority, due, overdue, linked event, subtasks, checklist, attachments; category badges when implemented (§3.4); tappable badges can open detail or event screen.
   - Chevron indicates navigation (no in-place expand).
 - **FAB (+):** `TaskFormSheet` (create mode); no default due date — user may leave deadline empty.
 - Empty state at the bottom of the scroll when active dated, backlog, and completed lists are all empty.
@@ -181,26 +227,31 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 
 ### Event detail (`EventDetailScreen`)
 
-- **AppBar:** back, title **Event** (`event_title`), **edit** → `EventFormSheet`.
-- Calendar chip, date/time, recurrence chip when applicable.
+- **AppBar:** back, title **Event** (`event_title`), **Sync** (`Icons.sync_outlined`) → multi-select writable calendars from settings → outbound sync; **edit** → `EventFormSheet`.
+- Calendar chip (when synced), date/time, recurrence chip when applicable.
 - Linked tasks list (toggle completion, tap → `TaskDetailScreen`).
 - **Add task to event** button (create + link).
+- **Planned:** category tags row; linked payments block (§3.5).
 
 ### App bar
 
 | Action | Purpose |
 |--------|---------|
-| Templates (`layers_outlined`) | Opens `TemplatesPage` (create/apply UI templates) |
-| Calendars | Opens **Settings** (`CalendarSettingsPage`): language, **theme**, reminders, notifications, device calendar selection |
+| Search | `SearchScreen` |
+| Time grid | `CalendarGridScreen` |
+| **Finance** (planned) | `FinanceScreen` — payments list and summary |
+| **Library** (planned rename; today: Templates) | Opens hub: task templates, attachment templates, **categories** tab |
+| Settings | `CalendarSettingsPage`: language, theme, reminders, notifications, device calendars, **default currency** (planned) |
 | Refresh | `LoadDashboardData` |
 
 ### Create / edit forms
 
 | Sheet | Create | Edit | Delete |
 |-------|--------|------|--------|
-| `TaskFormSheet` | Title **New task** (`task_new`); optional `dueDate`; calendar chips | Prefilled fields; `UpdateTask` via BLoC | `DeleteTask` + confirm dialog (`delete_dialog_*`) |
-| `EventFormSheet` | Title **New event** (`event_new`); default 10:00–11:00 on `initialDay`; **all-day** toggle; cross-midnight end | Recurrence + times; `LoadDashboardData` after save | `DeleteCalendarEvent` + confirm dialog |
-| `AddAttachmentSheet` | Pick type + form | `attachmentToEdit` prefills fields; `UpdateTaskAttachment` | — (delete via attachment action sheet) |
+| `TaskFormSheet` | Title **New task**; optional `dueDate`; optional **category tags** (planned) | Prefilled fields; `UpdateTask` via BLoC | `DeleteTask` + confirm |
+| `EventFormSheet` | **New event**; optional **sync calendars** multi-select on save; all-day / cross-midnight | Local save only; sync via detail **Sync** button | `DeleteCalendarEvent` + confirm |
+| `PaymentFormSheet` (planned) | Amount + **currency** + direction; optional task/event links; optional tags | Same | Delete + confirm |
+| `AddAttachmentSheet` | Pick type + form | `attachmentToEdit`; `UpdateTaskAttachment` | — (delete via attachment action sheet) |
 
 Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `EditCalendarEventSheet` were removed in favor of the unified sheets. In-dashboard tile expansion was removed in favor of detail screens.
 
@@ -229,10 +280,29 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 
 - Google Tasks API sync
 - Full Google Calendar OAuth write access
+- Automatic import of device calendar events into Isar
 - Cloud sync / multi-device backup
 - AI scheduling assistant
+- Recurring payments (initial finance MVP)
+- Multi-currency conversion / budgets / CSV export (post-MVP finance)
 
-## 7. Revision history
+## 7. Implementation phases — Categories & Finance
+
+Handoff order for the next implementation agent:
+
+| Phase | Deliverable |
+|-------|-------------|
+| **P0** | Isar: `Category`, `CategoryLink`, `Payment`; repos; `CategoryTagService`; `CurrencyPreferencesRepository`; extend `SyncEntityType`; unit tests for links and aggregates |
+| **P1** | Rename hub → `LibraryPage`; 3rd tab `CategoriesTab` + `CategoryFormSheet`; empty state; no seed categories |
+| **P2** | `CategoryTagsField` + `CategoryBadgesRow`; integrate into `TaskFormSheet`, `EventFormSheet`, detail screens |
+| **P3** | `FinanceScreen` (dashboard AppBar entry); `PaymentFormSheet`; list with **checkbox** status; Settings **default currency**; currency picker on payment form |
+| **P4** | Linked payments on `TaskDetailScreen` / `EventDetailScreen`; prefill category tags from parent when linking |
+| **P5** | Monthly summary header; breakdown by category (per currency) |
+| **P6** | Dashboard / search filters by category |
+
+See `PROJECT_STRUCTURE.md` for module layout (`features/categories/`, `features/finance/`).
+
+## 8. Revision history
 
 | Date | Change |
 |------|--------|
@@ -262,3 +332,5 @@ Legacy `CreateTaskSheet`, `EditTaskSheet`, `CreateCalendarEventSheet`, and `Edit
 | 2026-06-06 | Theme picker (system / light / dark); tuned Material 3 palette and contrast; bordered UI sections |
 | 2026-06-06 | Calendar overlap layout: dashboard staggered strip, grid day/3-day/week/month tabs, all-day + cross-midnight events, long-press grid slots, `calendar_event_layout_test` |
 | 2026-06-06 | Dashboard overlap strip: non-overlapping rows, right shift for later events, scaled card height by overlap count |
+| 2026-07 | Manual outbound calendar sync only; removed device import; `EventCalendarSyncService`, `EventSyncCalendarsSelector` |
+| 2026-07 | Spec: **Category** + **CategoryLink** (multi-tag), **Payment** / **Finance** screen, **Library** hub rename, default currency in Settings, payment list checkbox status |

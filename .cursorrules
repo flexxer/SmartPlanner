@@ -5,15 +5,15 @@
 ## Tech stack
 - Framework: Flutter (latest stable)
 - State management: BLoC (strict typing)
-- Local DB: Isar (`Task`, `TaskAttachment`, `CalendarEvent` — no `TaskCategory`)
+- Local DB: Isar (`Task`, `TaskAttachment`, `CalendarEvent`, `Category`, `CategoryLink`, `Payment` — planned last three)
 - Localization: easy_localization + flutter_localizations; `lib/core/localization/`
-- Device calendars: device_calendar
+- Device calendars: device_calendar (outbound sync only; no automatic import)
 - Notifications: flutter_local_notifications (incl. Android day-status FGS), workmanager
 - Deep links: app_links, scheme `daylinx://create?type=task|event&title=…`
 - Attachments: image_picker, url_launcher, geolocator, flutter_map, flutter_contacts, map_launcher, http (Nominatim)
 
 ## Architecture
-Feature-driven Clean Architecture. Features: `calendar_integration`, `todo_list`, `notifications`, `dashboard`, `templates`. Per feature: `data`, `domain`, `presentation`.
+Feature-driven Clean Architecture. Features: `calendar_integration`, `todo_list`, `notifications`, `dashboard`, `templates`, `categories` (planned), `finance` (planned). Per feature: `data`, `domain`, `presentation`.
 
 See `PROJECT_STRUCTURE.md` and `PRD_PRODUCT_SPEC.md` for details.
 
@@ -22,16 +22,20 @@ See `PROJECT_STRUCTURE.md` and `PRD_PRODUCT_SPEC.md` for details.
 - Separate UI widgets from business logic.
 - **No hardcoded user-facing strings** in widgets — use `'key'.tr()` or `L10n.tr('key')`; add keys to `en.json`, `ru.json`, `es.json`.
 - Dates: `L10n.dateFormat(pattern, context: context)` and `context.locale` for pickers (not hardcoded `'ru'`).
-- Prefer reusable UI: `TaskExpandableTile`, `TaskDetailScreen`, `EventDetailScreen`, `TaskBadge`, `TaskFormSheet`, `EventFormSheet`, `TaskOverdueRules`, `AppDateUtils`, `DashboardWeekDateStrip`, `L10n`.
+- Prefer reusable UI: `TaskExpandableTile`, `TaskDetailScreen`, `EventDetailScreen`, `CategoryTagsField` (planned), `EventSyncCalendarsSelector`, `TaskFormSheet`, `EventFormSheet`, `AppDateUtils`, `L10n`.
 - Dashboard: compact task tiles only — **tap body** opens `TaskDetailScreen`; **tap event card** opens `EventDetailScreen`. No in-place tile expansion.
-- Dashboard: `overdueTasks` only when selected day is today; `undatedTasks` via `getUndatedTasks`; week dots via `DashboardDayMarkersRepository`.
-- Task context: `Task.calendarId` (device calendar id from settings); badges use `CalendarContextColors` + `linkedCalendarsById`.
+- Dashboard: `overdueTasks` only when selected day is today; `undatedTasks` via `getUndatedTasks`; week dots via `DashboardDayMarkersRepository` (Isar events only).
+- Task context: `Task.calendarId` optional (device calendar id); **user categories** are separate tags via `CategoryLink` (planned)—not legacy `TaskCategory`.
+- Calendar events: local-first Isar; outbound sync via `EventCalendarSyncService` / `EventSyncCalendarsSelector` on create or event detail Sync.
 - Subtasks: `Task.parentTaskId` + `Task.sortOrder`; reorder on detail via `ReorderChildTasks`; checklist = `TaskAttachmentType.checklist`.
 - Postpone: on `TaskDetailScreen`; `Task.postponeDueDate` / `postponeToNextDay`; overdue = `Task.dynamicOverdueDays` / `L10n.overdueDays`.
-- Forms: `TaskFormSheet` / `EventFormSheet` for create/edit; delete via `DeleteTask` / `DeleteCalendarEvent` with confirm dialog. Detail AppBar edit opens same sheets.
+- Forms: `TaskFormSheet` / `EventFormSheet` for create/edit; `PaymentFormSheet` (planned); delete via confirm dialog. No calendar picker on task form.
 - Attachments: tap → `AttachmentActionSheet` (open / edit `AddAttachmentSheet` / delete with Undo); edit → `UpdateTaskAttachment`.
-- Calendar events = device/local Isar; tasks = local Isar (not Google Tasks API).
+- **Library** hub (rename from Templates): task templates, attachment templates, **categories** tab (planned CRUD).
+- **Finance** screen (planned): dashboard AppBar entry; payments with checkbox status; default currency in Settings + per-payment override.
+- Payments (planned): `amountMinor` + `currencyCode`; optional links to task **and** event; categories via `CategoryLink`.
 - Theming: `ThemeMode.system` + `ColorScheme`, not hardcoded colors.
 - Language override: `CalendarSettingsPage` + `LocalePreferencesRepository`; `context.setLocale` / `resetLocale`.
-- Android day-status bar: opt-in on `CalendarSettingsPage`; `DayStatusNotificationController` + `DashboardBloc.syncTodayStatus`; default off.
-- Deep links: `DeepLinkParser` + `DeepLinkDispatcher`; extend `TaskFormSheet`/`EventFormSheet` initial* params, not hardcoded routing in `main.dart`.
+- Android day-status bar: opt-in on Settings; `DayStatusNotificationController` + `DashboardBloc.syncTodayStatus`; default off.
+- Deep links: `DeepLinkParser` + `DeepLinkDispatcher`; extend form sheets via initial* params, not hardcoded routing in `main.dart`.
+- Implementation order for categories/finance: PRD §7 (P0–P6).

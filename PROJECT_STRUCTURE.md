@@ -35,7 +35,7 @@ smart_planner/lib/
 │   │   ├── app_color_utils.dart            # WCAG contrast helpers for accent badges & labels
 │   │   ├── theme_preferences_repository.dart  # persisted ThemeMode (SharedPreferences + ValueNotifier)
 │   │   └── theme_picker_section.dart       # dropdown on CalendarSettingsPage
-│   ├── database/isar_database.dart    # Isar singleton (tasks, events, sync, templates)
+│   ├── database/isar_database.dart    # Isar singleton (+ planned Category, CategoryLink, Payment)
 │   ├── presentation/widgets/
 │   │   ├── settings_expandable_section.dart  # Grouped settings blocks
 │   │   ├── form_sheet_scaffold.dart          # Shared create/edit sheet layout
@@ -45,6 +45,8 @@ smart_planner/lib/
 │   │   ├── sliding_completion_list.dart      # Slide-to-end + strikethrough for checkbox lists
 │   │   └── collapsing_completion_tile.dart   # Collapse animation for variable-height rows
 │   ├── timezone/timezone_monitor.dart # Detect TZ change → reschedule reminders
+│   ├── finance/                       # (planned) shared finance prefs
+│   │   └── currency_preferences_repository.dart
 │   └── utils/app_date_utils.dart      # startOfDay, startOfWeek, dayKeyMs, strip ranges
 │
 ├── features/
@@ -151,9 +153,39 @@ smart_planner/lib/
 │   │   ├── data/repositories/ui_template_repository.dart
 │   │   ├── domain/                            # UiTemplate, factory, applicator
 │   │   └── presentation/
-│   │       ├── pages/templates_page.dart      # Tabbed hub: tasks + attachments
+│   │       ├── pages/templates_page.dart      # Tabbed hub → rename to library_page.dart
 │   │       ├── widgets/task_templates_tab.dart, template_form_sheet.dart, template_picker_sheet.dart
 │   │
+│   ├── categories/                        # (planned) user-defined tags
+│   │   ├── domain/
+│   │   │   ├── entities/category.dart
+│   │   │   ├── entities/category_link.dart
+│   │   │   ├── tagged_entity_type.dart      # task | calendarEvent | payment
+│   │   │   ├── repositories/category_repository.dart
+│   │   │   └── category_tag_service.dart      # setTags / getTags / copyFromEntity
+│   │   ├── data/
+│   │   │   └── category_repository_impl.dart
+│   │   └── presentation/
+│   │       ├── widgets/category_tags_field.dart
+│   │       ├── widgets/category_badges_row.dart
+│   │       ├── widgets/category_form_sheet.dart
+│   │       └── tabs/categories_tab.dart     # Library tab 3
+│   │
+│   ├── finance/                           # (planned) payments / cashflow
+│   │   ├── domain/
+│   │   │   ├── entities/payment.dart
+│   │   │   ├── money.dart                   # amountMinor + currencyCode
+│   │   │   ├── payment_direction.dart
+│   │   │   ├── payment_status.dart
+│   │   │   ├── payment_aggregates.dart
+│   │   │   └── repositories/payment_repository.dart
+│   │   ├── data/
+│   │   │   └── payment_repository_impl.dart
+│   │   └── presentation/
+│   │       ├── pages/finance_screen.dart
+│   │       ├── widgets/payment_form_sheet.dart
+│   │       ├── widgets/payment_list_tile.dart   # checkbox planned ↔ completed
+│   │       └── widgets/finance_summary_header.dart
 │   ├── search/
 │   │   ├── data/global_search_service.dart
 │   │   ├── domain/search_result_item.dart
@@ -260,7 +292,10 @@ smart_planner/test/
 | Component | Role |
 |-----------|------|
 | `DashboardBloc` | Thin coordinator: routes events, emits `DashboardLoaded`; delegates load to `DashboardDataLoader`, mutations to `DashboardTaskMutations` / `DashboardCalendarMutations` |
-| `DashboardDataLoader` | Resolves calendar IDs; loads task snapshot, device events, local Isar strip, linked calendars |
+| `DashboardDataLoader` | Loads task snapshot; calendar slice from **Isar only** (`VisibleCalendarEventsMerger.fromStored`); resolves settings calendar ids for sync picker metadata |
+| `EventCalendarSyncService` | Outbound push of local events to selected writable device calendars; `syncedDeviceEventIdsJson` on `CalendarEvent` |
+| `EventSyncCalendarsSelector` | Reusable multi-select of settings-linked calendars (create event + event detail sync sheet) |
+| `VisibleCalendarEventsMerger.fromStored` | Day/range visible events from Isar + recurrence expansion (no device import) |
 | `DashboardTaskMutations` | Toggle/postpone/delete task, attachments, task↔event links |
 | `DashboardLoaded` | Active/completed/undated/overdue task lists; `linkedCalendarsById` for context calendar badges |
 | `DashboardDayMarkersRepository` | One Isar + one calendar fetch per week range (cached) |
@@ -276,18 +311,29 @@ smart_planner/test/
 | `CalendarGridScreen` | Tabs: 1 day, 3 days, week, month; opens `EventFormSheet` from grid |
 | `CalendarGridWeekView` | Time grid with all-day row, overlap blocks, now line, long-press slot create |
 | `EventTimeStatus` / resolver | past / current / future styling on strip cards |
-| `LocalCalendarEventRepository` | Implements `CalendarEventStore`; Isar events; `EventSource`, `updatedAt`; device upsert |
+| `LocalCalendarEventRepository` | Isar events; local CRUD; legacy `upsertDeviceEvents` retained but not called from dashboard loaders |
+| `CalendarEventWriteService` | `saveLocal`; optional outbound sync via `EventCalendarSyncService` |
+| `EventDetailScreen` | Full event UI: time, sync status, linked tasks, add task; AppBar Sync + edit |
 | `CalendarEventStore` | Domain interface for calendar event persistence (test doubles) |
 | `TaskRepository` | Domain interface implemented by `TodoRepository` |
-| `SyncAccount` / `SyncRecord` | Isar collections for future Google sync (accounts + local↔remote mapping) |
+| `SyncAccount` / `SyncRecord` | Future cloud sync; extend `SyncEntityType` with `category`, `categoryLink`, `payment` |
 | `SyncRecordRepository` | CRUD + `markSynced` / `setPendingOp` for outbox pattern |
 | `DayActivityMarker` | `hasCalendarEvents`, `hasLocalTasks`, optional calendar color |
-| `DashboardScreen` AppBar | Templates stub; calendars; refresh |
+| `DashboardScreen` AppBar | Search; time grid; **Finance** (planned); **Library** (templates hub → rename); settings; refresh |
+| `LibraryPage` (planned rename from `TemplatesPage`) | Tabs: task templates, attachment templates, **categories** |
+| `Category` / `CategoryLink` | (planned) User tags; many-to-many via junction; empty category list on first launch |
+| `CategoryTagService` | (planned) setTags / getTags / copyFromEntity for task, event, payment |
+| `CategoryFormSheet` | (planned) Create/edit category (name, color); used from Categories tab FAB |
+| `CategoryTagsField` | (planned) Shared multi-select chips in forms |
+| `Payment` | (planned) Income/expense row; `amountMinor` + `currencyCode`; optional `linkedTaskId` + `linkedEventId` (both allowed) |
+| `FinanceScreen` | (planned) Payment list, checkbox status, monthly summary; opened from dashboard AppBar |
+| `CurrencyPreferencesRepository` | (planned) Default ISO 4217 code; Settings → Finance section |
+| `PaymentFormSheet` | (planned) Amount, currency picker (default from settings), direction, links, tags |
 | `TodoRepository` | Task CRUD; `getUncompletedTasksForDate`, `getUndatedTasks`, `getCompletedTasksForDate`, `getOverdueUncompletedTasks`, `deleteTask`, `reopenFromCompleted`, `reorderChildTasks`, `compareChildTasks` (`Task.sortOrder`) |
 | `TaskDateVisibility` | Dated tasks per day; undated tasks in dashboard backlog section only |
-| `LinkedCalendarsLoader` | Device calendars enabled in app settings (for forms + markers) |
-| `TaskLinkedCalendarsField` | Horizontal chips to pick `Task.calendarId` |
-| `DeviceCalendarService` | Permissions, calendars, `getEventsForDay` / `getEventsForToday` |
+| `LinkedCalendarsLoader` | Device calendars enabled in settings (sync picker pool) |
+| `EventSyncCalendarsSelector` | Multi-select writable calendars for outbound event sync |
+| `DeviceCalendarService` | Permissions, calendar list, create/update/delete events |
 | `CalendarPreferencesRepository` | Persist selected calendar IDs |
 | `TaskOverdueRules` | `dynamicOverdueDays`, `recordPostpone`, `postponeToNextDay` |
 | `TaskDateVisibility` | Filter uncompleted tasks for a calendar day |
@@ -295,7 +341,6 @@ smart_planner/test/
 | `TaskReopen` | Build new `Task` from a completed one |
 | `TaskExpandableTile` | Compact dashboard row: checkbox + tap body → `TaskDetailScreen`; badges only (no in-place expand) |
 | `TaskDetailScreen` | Full task UI: description, badges, reorderable subtasks, attachments, postpone, AppBar → `TaskFormSheet` |
-| `EventDetailScreen` | Full event UI: time, calendar, linked tasks, add task, AppBar → `EventFormSheet` |
 | `TaskBadge` | Optional `onTap` — linked event, subtasks, link-to-event |
 | `TaskDetailChildTasksSection` | `ReorderableListView` for active children; completed block with slide animation; `CollapsingCompletionTile` on toggle |
 | `SlidingCompletionList` | Shared slide-to-end list for checklist + linked tasks; dynamic row height via `completionCheckboxRowExtent` |
@@ -503,15 +548,43 @@ Domain unit tests: `task_date_visibility_test.dart`, `task_overdue_rules_test.da
 
 ---
 
+## Categories & Finance (planned schema)
+
+### Category + CategoryLink
+
+- **`Category`:** `name`, `colorValue`, `sortOrder`, `isArchived`, `updatedAt`. **No seed data** on first launch.
+- **`CategoryLink`:** junction `(TaggedEntityType entityType, int entityId, int categoryId)` with unique constraint.
+- **Tagged entities:** `task`, `calendarEvent`, `payment` — each supports **0..N** categories (optional, editable).
+- **Not** the legacy removed `TaskCategory`; **not** the same as `Task.calendarId` (device context).
+
+### Payment
+
+- **`amountMinor`:** integer minor units (no `double`).
+- **`currencyCode`:** ISO 4217 per row; default from `CurrencyPreferencesRepository`; overridable on `PaymentFormSheet`.
+- **`linkedTaskId` / `linkedEventId`:** both optional; **both may be set**.
+- **`status`:** `planned` | `completed` | `cancelled`; list UI uses **checkbox** for planned ↔ completed.
+- **No recurring payments** in MVP.
+
+### Navigation
+
+- **Finance:** `FinanceScreen` ← dashboard AppBar (new icon).
+- **Library:** rename `TemplatesPage` → `LibraryPage`; tabs Tasks | Attachments | **Categories**.
+- **Settings:** add **Finance** section with default currency dropdown.
+
+Implementation phases: **PRD §7** (P0–P6).
+
+---
+
 ## AI assistant onboarding
 
 When starting code generation in Cursor/Claude:
 
 1. Read `PRD_PRODUCT_SPEC.md` and this file (**English only** for docs).
 2. Respect feature folders; do not put UI in `data/`.
-3. Prefer extending existing services (`DeviceCalendarService`, `LocalCalendarEventRepository`, `TodoRepository`) over duplicate logic.
-4. Reuse `TaskExpandableTile`, `TaskDetailScreen`, `EventDetailScreen`, `TaskBadge`, `DashboardLocalEventsStrip`, `TaskOverdueRules`, `AppDateUtils`, `L10n` where applicable.
+3. Prefer extending existing services (`CategoryTagService`, `PaymentRepository`, `LocalCalendarEventRepository`, `TodoRepository`) over duplicate logic.
+4. Reuse `FormSheetScaffold`, `CategoryTagsField`, `TaskExpandableTile`, `TaskDetailScreen`, `EventDetailScreen`, `AppDateUtils`, `L10n` where applicable.
 5. New UI strings: add keys to `en.json`, `ru.json`, `es.json`; use `.tr()` — no hardcoded copy in widgets.
+6. Next feature work: **Categories + Finance** per PRD §3.4–§3.5 and §7 unless the user specifies otherwise.
 
 Example prompt:
 
@@ -554,3 +627,5 @@ Example prompt:
 | 2026-06-08 | Dashboard event strip: time-proportional card width/offset (50 px/hour); non-overlapping sequential events share overlap row; layout tests in `compressed_events_strip_layout_test` |
 | 2026-06-06 | Lock screen widget spec (`ANDROID_LOCK_SCREEN_WIDGET.md`); home widget paths in key-types table; removed sprint roadmap / home-widget sketch docs |
 | 2026-06-06 | **Theme settings** (system / light / dark); tuned `AppTheme` + `AppColorUtils`; bordered sections/cards; settings **Theme** section on `CalendarSettingsPage` |
+| 2026-07 | Manual outbound calendar sync; Isar-only event lists; `EventCalendarSyncService` |
+| 2026-07 | Planned: `categories/`, `finance/` features; Library hub rename; CategoryLink multi-tag; Payment + currency prefs |

@@ -48,7 +48,7 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
 - **Task detail** (`TaskDetailScreen`): priority icon + title, description, badges, **reorderable attachments**, scrollable checklists, **reorderable linked subtasks** (`Task.sortOrder`) with checkbox to reopen completed subtasks, postpone, link/unlink event
 
-- **Event detail** (`EventDetailScreen`): time, calendar, recurrence, linked tasks, add task to event; AppBar edit
+- **Event detail** (`EventDetailScreen`): time, recurrence, linked tasks, add task; AppBar **Sync** (outbound device calendars) + edit
 
 - **Linked subtasks** vs **checklist** — separate concepts (`parentTaskId` + `sortOrder` vs attachment type)
 
@@ -56,21 +56,25 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
   - **Checklist** — inline checkboxes on detail; optional **Move completed items to the end** in attachment settings (default on); slide animation when toggling
 
-  - **Attachment templates** (user-defined): quick-add chips in `AddAttachmentSheet`; manage under **Templates** → Attachments tab
+  - **Attachment templates** (user-defined): quick-add chips in `AddAttachmentSheet`; manage under **Library** → Attachments tab (rename from Templates planned)
 
   - Tap attachment → action sheet: **Open / View**, **Edit** (`AddAttachmentSheet`), **Delete** (SnackBar Undo), **Save as template**
 
 - **Completion animations** — shared `SlidingCompletionList` (checklists, event linked tasks) and `CollapsingCompletionTile` (child subtasks); dashboard toggles via BLoC with stable per-task keys
 
-- **Templates hub** (`TemplatesPage`, AppBar): tabs **Tasks** (UI blueprints) and **Attachments** (presets)
+- **Library hub** (rename from `TemplatesPage` planned): tabs **Tasks** (UI blueprints), **Attachments** (presets), **Categories** (planned — user tag CRUD, empty on first launch)
 
-- **Create / edit / delete** tasks and local events via **`TaskFormSheet`** / **`EventFormSheet`** (all-day events, cross-midnight end times, delete with confirmation in edit mode)
+- **Finance** (planned): separate screen from dashboard AppBar; income/expense payments; checkbox status; default currency in Settings + per-payment currency on form
 
-- **AppBar:** search, templates (`TemplatesPage`), **settings** (language, **theme**, reminders, digests, midnight roll), **calendar time grid** (day / 3-day / week / month; all-day row; overlapping events; long-press empty slot to create; auto-scroll to now), refresh
+- **Categories** (planned): optional multi-tag on tasks, events, payments; distinct from `Task.calendarId` (device context)
 
-- **Device calendar write-back** — create/edit/delete on writable calendars; read-only calendars save to Isar only; move event between calendars on edit; recurring delete (this occurrence vs series); import/read **only checked** calendars in settings
+- **Create / edit / delete** tasks and local events via **`TaskFormSheet`** / **`EventFormSheet`** (event create: optional outbound calendar sync; all-day, cross-midnight)
 
-- **Dashboard calendar UX** — recurring series shown on each day (device instances + merger); “now” timeline hidden before the first event; week strip task badge matches visible tasks on that day
+- **AppBar:** search, time grid, **Finance** (planned), **Library** (templates hub), **settings** (language, theme, reminders, digests, midnight roll, device calendars, **default currency** planned), refresh
+
+- **Device calendar** — local-first Isar; **manual outbound sync** only (`EventCalendarSyncService`); settings calendars = sync picker pool
+
+- **Dashboard calendar UX** — recurring from stored rules; “now” timeline hidden before the first event; week strip from Isar events + tasks
 
 - **Recurring tasks** — optional daily/weekly repeat on tasks with a due date (same JSON rule model as events)
 
@@ -86,7 +90,9 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
 
 
-Calendar **events** (device + local Isar) ≠ local **tasks** (Isar); not Google Tasks API.
+Calendar **events** and **tasks** are stored locally in Isar. Events sync **out** to device calendars only when the user chooses. Not Google Tasks API.
+
+**Planned:** user **categories** (multi-tag), **payments** / **Finance** screen — see PRD §3.4–§3.5.
 
 
 
@@ -165,7 +171,9 @@ Includes: `task_date_visibility_test`, `task_overdue_rules_test`, `task_overdue_
 
 | `lib/features/calendar_integration/` | Device calendar, local events, `EventDetailScreen`, `EventFormSheet`, `CalendarSettingsPage` |
 
-| `lib/features/templates/` | UI task templates (save/apply) |
+| `lib/features/templates/` | UI task templates (save/apply); hub UI → rename to **Library** |
+| `lib/features/categories/` | (planned) User-defined tags |
+| `lib/features/finance/` | (planned) Payments / cashflow |
 
 | `lib/features/deep_links/` | `daylinx://` parsing and routing to create sheets |
 | `lib/features/notifications/` | Local notifications, Workmanager stub, Android day-status foreground service |

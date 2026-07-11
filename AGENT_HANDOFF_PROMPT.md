@@ -9,34 +9,52 @@ Copy everything below the line into a new chat.
 You are continuing work on **DayLinx** (Flutter app in `smart_planner/`, repo root `SmartPlanner/`).
 
 ### Read first
-1. `ANDROID_LOCK_SCREEN_WIDGET.md` — **your default task** (variant 1 «Pulse»)
-2. `PROJECT_STRUCTURE.md` — architecture and key paths
-3. `PRD_PRODUCT_SPEC.md` — product status (§3.3 notifications/widgets)
-4. `smart_planner/DEVICE_CALENDAR.md` — device calendar only (no OAuth)
+1. `PRD_PRODUCT_SPEC.md` — **§3.4 Categories**, **§3.5 Finance**, **§7 Implementation phases**
+2. `PROJECT_STRUCTURE.md` — planned `features/categories/`, `features/finance/`, Library hub, schema notes
+3. `smart_planner/DEVICE_CALENDAR.md` — local-first events; manual outbound sync only
+4. `ANDROID_LOCK_SCREEN_WIDGET.md` — only if user asks for lock screen widget
 
 ### What is already done
-- Phases 0–5; device calendar read/write; templates; morning/evening digest; midnight overdue roll
-- Local DB migrated to **isar_community** 3.3.2 (`package:isar_community/isar.dart`) for Android 16 KB page size
-- Android **home widget** MVP (`DayLinxWidgetProvider`, medium 4×2, shared `DayStatusTodayLoader`)
-- Android **day-status** foreground notification (opt-in)
-- Checklist `moveCompletedToEnd`; `SlidingCompletionList` / `CollapsingCompletionTile`; dashboard tile `ValueKey` stability
-- Calendar overlap UX: dashboard event strip (time-proportional layout ~50 px/hour; non-overlapping events share a row; overlapping rows with scaled height and right shift), grid day/3-day/week/month tabs, all-day + cross-midnight events, long-press grid slot create
-- ~108 tests (`flutter test`)
+- Device calendar: **no automatic import**; events in Isar; outbound sync via `EventCalendarSyncService` + `EventSyncCalendarsSelector`
+- Phases 0–5 baseline; templates hub (`TemplatesPage`); digest; overdue roll; home widget; day-status FGS
+- Local DB: **isar_community** 3.3.2 (`package:isar_community/isar.dart`)
+- Calendar overlap UX; ~106 tests (`flutter test`)
 
 ### Your task (default)
-Implement **Android lock screen widget variant 1** per `ANDROID_LOCK_SCREEN_WIDGET.md`:
-- `DayStatusLockScreenPayloadBuilder` + tests
-- `DayStatusLockScreenWidgetService` + Glance provider (API 34+)
-- Sync from same triggers as home widget
-- Read-only, 2 lines max, tap → dashboard today
+Implement **Categories + Finance** per PRD **§7** (start with **P0 + P1**, then P2–P3 as scope allows):
 
-Only if the user asks for something else — follow their instruction. Cloud sync is **not** planned.
+**P0 — Schema & repos**
+- Isar: `Category`, `CategoryLink` (many-to-many tags on task / calendarEvent / payment), `Payment`
+- `CategoryTagService`, `CategoryRepository`, `PaymentRepository`
+- `CurrencyPreferencesRepository` in `core/finance/` (SharedPreferences `app_default_currency_code`)
+- Extend `SyncEntityType`; register schemas in `IsarDatabase`
+- Unit tests for links and money aggregates
+
+**P1 — Library hub**
+- Rename UI hub **Templates → Library** (`LibraryPage`, keys `library_*`)
+- Add 3rd tab **Categories** with CRUD (`CategoriesTab`, `CategoryFormSheet`)
+- **Empty category list** on first launch (no seed)
+- FAB creates category on categories tab (same pattern as template tabs)
+
+**P2–P3 (if time)**
+- `CategoryTagsField` on task/event forms
+- `FinanceScreen` + dashboard AppBar entry
+- `PaymentFormSheet` (currency from settings default, editable); list checkbox planned ↔ completed
+- Settings → **Finance** section: default currency dropdown
+
+### Product rules (fixed)
+- **Multiple tags** per task/event/payment via `CategoryLink` (optional)
+- Payment may link to **both** task and event
+- **No recurring payments** in MVP
+- **`amountMinor` int** — never store money as double
+- Do **not** conflate `Task.calendarId` with user categories
+- Reuse `FormSheetScaffold`, match existing code style
 
 ### Rules
-- Minimize scope; match existing code style
-- Reuse `DayStatusTodayLoader` / `DayStatusLocaleCopy` — no duplicate event logic
-- Do **not** re-add Google Calendar API unless explicitly asked
+- Minimize scope; match existing Clean Architecture
+- Do **not** re-add automatic device calendar import
 - Do **not** commit unless asked
 - Run `flutter test` before finishing
+- Docs in **English**; UI strings in en/ru/es JSON
 
 ## End of prompt

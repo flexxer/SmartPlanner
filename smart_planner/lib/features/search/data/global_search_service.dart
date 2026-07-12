@@ -1,20 +1,34 @@
 import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/database/isar_database.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
+import 'package:smart_planner/features/categories/data/category_repository_impl.dart';
+import 'package:smart_planner/features/categories/domain/category_filter_utils.dart';
+import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/domain/tagged_entity_type.dart';
 import 'package:smart_planner/features/search/domain/search_result_item.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 
 /// Case-insensitive search across local tasks and calendar events.
 class GlobalSearchService {
-  GlobalSearchService({Isar? isar}) : _isar = isar;
+  GlobalSearchService({
+    Isar? isar,
+    CategoryTagService? categoryTagService,
+  })  : _isar = isar,
+        _categoryTagService = categoryTagService ?? CategoryTagService(isar: isar);
 
   final Isar? _isar;
+  final CategoryTagService _categoryTagService;
 
   Isar get _db => _isar ?? IsarDatabase.instance;
 
-  Future<List<SearchResultItem>> search(String query) async {
+  Future<List<SearchResultItem>> search(
+    String query, {
+    List<Id> categoryIds = const <Id>[],
+  }) async {
     final String needle = query.trim().toLowerCase();
-    if (needle.isEmpty) {
+    final bool hasText = needle.isNotEmpty;
+    final bool hasCategory = categoryIds.isNotEmpty;
+    if (!hasText && !hasCategory) {
       return const <SearchResultItem>[];
     }
 
@@ -24,11 +38,33 @@ class GlobalSearchService {
       for (final Task task in tasks) task.id: task,
     };
 
+    Map<int, List<Id>> taskTagIdsByEntity = const <int, List<Id>>{};
+    Map<int, List<Id>> eventTagIdsByEntity = const <int, List<Id>>{};
+    if (hasCategory) {
+      taskTagIdsByEntity = await _categoryTagService.getTagIdsForEntities(
+        entityType: TaggedEntityType.task,
+        entityIds: tasks.map((Task task) => task.id),
+      );
+      eventTagIdsByEntity = await _categoryTagService.getTagIdsForEntities(
+        entityType: TaggedEntityType.calendarEvent,
+        entityIds: events.map((CalendarEvent event) => event.id),
+      );
+    }
+
     final List<SearchResultItem> results = <SearchResultItem>[];
 
     for (final Task task in tasks) {
-      if (!task.title.toLowerCase().contains(needle) &&
+      if (hasText &&
+          !task.title.toLowerCase().contains(needle) &&
           !(task.description ?? '').toLowerCase().contains(needle)) {
+        continue;
+      }
+      if (hasCategory &&
+          !CategoryFilterUtils.matchesAnySelectedCategory(
+            entityId: task.id,
+            selectedCategoryIds: categoryIds,
+            tagIdsByEntityId: taskTagIdsByEntity,
+          )) {
         continue;
       }
       String? parentTitle;
@@ -45,7 +81,15 @@ class GlobalSearchService {
     }
 
     for (final CalendarEvent event in events) {
-      if (!event.title.toLowerCase().contains(needle)) {
+      if (hasText && !event.title.toLowerCase().contains(needle)) {
+        continue;
+      }
+      if (hasCategory &&
+          !CategoryFilterUtils.matchesAnySelectedCategory(
+            entityId: event.id,
+            selectedCategoryIds: categoryIds,
+            tagIdsByEntityId: eventTagIdsByEntity,
+          )) {
         continue;
       }
       results.add(SearchResultItem.event(event: event));

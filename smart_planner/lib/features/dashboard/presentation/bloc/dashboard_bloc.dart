@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/app_initializer.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/data/calendar_preferences_repository.dart';
@@ -9,6 +10,8 @@ import 'package:smart_planner/features/calendar_integration/data/calendar_event_
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/task_event_link_service.dart';
+import 'package:smart_planner/features/categories/data/category_preferences_repository.dart';
+import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
 import 'package:smart_planner/features/dashboard/data/dashboard_calendar_mutations.dart';
 import 'package:smart_planner/features/dashboard/data/dashboard_data_loader.dart';
 import 'package:smart_planner/features/dashboard/data/dashboard_dependencies.dart';
@@ -38,6 +41,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     ReminderSyncService? reminderSync,
     TaskEventLinkService? taskEventLinkService,
     EventAttachmentRepository? eventAttachmentRepository,
+    CategoryTagService? categoryTagService,
+    CategoryPreferencesRepository? categoryPreferences,
   })  : _selectedDate = AppDateUtils.startOfDay(DateTime.now()),
         _dayStatusNotifications = dayStatusNotifications,
         _dayStatusHomeWidget = dayStatusHomeWidget,
@@ -70,6 +75,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         deviceCalendar: calendarService,
         localEvents: localEvents,
       ),
+      categoryTagService: categoryTagService ?? CategoryTagService(),
+      categoryPreferences:
+          categoryPreferences ?? CategoryPreferencesRepository(),
       dayStatusNotifications: dayStatusNotifications,
       dayStatusHomeWidget: dayStatusHomeWidget,
     );
@@ -99,6 +107,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     on<RestoreDeletedCalendarEvent>(_onRestoreDeletedCalendarEvent);
     on<ExpandDashboardTask>(_onExpandDashboardTask);
     on<ClearExpandedDashboardTask>(_onClearExpandedDashboardTask);
+    on<SetDashboardCategoryFilter>(_onSetDashboardCategoryFilter);
   }
 
   late final DashboardDependencies _deps;
@@ -457,6 +466,47 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     emit(current.copyWith(clearExpandedTaskId: true));
   }
 
+  Future<void> _onSetDashboardCategoryFilter(
+    SetDashboardCategoryFilter event,
+    Emitter<DashboardState> emit,
+  ) async {
+    final DashboardState current = state;
+    if (current is! DashboardLoaded) {
+      return;
+    }
+
+    try {
+      final List<Id> categoryIds =
+          await _loader.resolveSelectedCategoryIds(event.categoryIds);
+      final DashboardTaskSnapshot tasks = await _loader.loadTaskSnapshot(
+        selectedDate: current.selectedDate,
+        calendarIds: current.selectedCalendarIds,
+        selectedCategoryIds: categoryIds,
+        refreshMarkers: false,
+      );
+      final DashboardLocalCalendarSlice local = await _loader.loadLocalCalendar(
+        current.selectedDate,
+        selectedCategoryIds: categoryIds,
+      );
+      emit(
+        current.copyWith(
+          selectedCategoryIds: categoryIds,
+          tasks: tasks.tasks,
+          completedTasks: tasks.completedTasks,
+          overdueTasks: tasks.overdueTasks,
+          undatedTasks: tasks.undatedTasks,
+          calendarEvents: local.visibleOnSelectedDay,
+          localCalendarEventById: local.localCalendarEventById,
+          childTasksByParentId: tasks.childTasksByParentId,
+          attachmentsByTaskId: tasks.attachmentsByTaskId,
+          categoriesByTaskId: tasks.categoriesByTaskId,
+        ),
+      );
+    } catch (error) {
+      emit(DashboardError(error.toString()));
+    }
+  }
+
   Future<void> _emitReloadedTasks(
     DashboardLoaded current,
     Emitter<DashboardState> emit,
@@ -464,10 +514,12 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     final DashboardTaskSnapshot tasks = await _loader.loadTaskSnapshot(
       selectedDate: current.selectedDate,
       calendarIds: current.selectedCalendarIds,
+      selectedCategoryIds: current.selectedCategoryIds,
       refreshMarkers: true,
     );
     final DashboardLocalCalendarSlice local = await _loader.loadLocalCalendar(
       current.selectedDate,
+      selectedCategoryIds: current.selectedCategoryIds,
     );
     emit(
       dashboardLoadedAfterTaskMutation(

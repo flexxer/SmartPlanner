@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:smart_planner/core/finance/currency_picker_section.dart';
 import 'package:smart_planner/core/localization/language_picker_section.dart';
 import 'package:smart_planner/core/theme/theme_picker_section.dart';
 
@@ -281,6 +282,20 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> {
           children: const <Widget>[
 
             ThemePickerSection(),
+
+          ],
+
+        ),
+
+        SettingsExpandableSection(
+
+          title: 'settings_section_finance'.tr(),
+
+          initiallyExpanded: true,
+
+          children: const <Widget>[
+
+            CurrencyPickerSection(),
 
           ],
 

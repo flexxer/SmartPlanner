@@ -10,6 +10,9 @@ import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/sync/domain/entities/sync_account.dart';
 import 'package:smart_planner/features/sync/domain/entities/sync_record.dart';
 import 'package:smart_planner/features/attachment_templates/domain/entities/attachment_template.dart';
+import 'package:smart_planner/features/categories/domain/entities/category.dart';
+import 'package:smart_planner/features/categories/domain/entities/category_link.dart';
+import 'package:smart_planner/features/finance/domain/entities/payment.dart';
 import 'package:smart_planner/features/templates/domain/entities/ui_template.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 
@@ -80,6 +83,12 @@ class IsarDatabase {
         SyncAccountSchema,
 
         SyncRecordSchema,
+
+        CategorySchema,
+
+        CategoryLinkSchema,
+
+        PaymentSchema,
 
       ],
 

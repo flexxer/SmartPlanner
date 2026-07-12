@@ -5,6 +5,7 @@ import 'package:smart_planner/features/calendar_integration/domain/entities/devi
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
+import 'package:smart_planner/features/categories/domain/entities/category.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_badges_row.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_priority_icon.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_tile_list_context.dart';
@@ -20,6 +21,7 @@ class TaskExpandableTile extends StatelessWidget {
     required this.attachments,
     this.contextCalendar,
     this.linkedEvent,
+    this.categories = const <Category>[],
     this.onOpenLinkedEvent,
     this.onLinkToCalendarEvent,
     required this.listContext,
@@ -35,6 +37,7 @@ class TaskExpandableTile extends StatelessWidget {
   final List<TaskAttachment> attachments;
   final DeviceCalendarInfo? contextCalendar;
   final CalendarEvent? linkedEvent;
+  final List<Category> categories;
   final VoidCallback? onOpenLinkedEvent;
   final VoidCallback? onLinkToCalendarEvent;
   final TaskTileListContext listContext;
@@ -132,6 +135,7 @@ class TaskExpandableTile extends StatelessWidget {
                           visibleCalendarCount: visibleCalendarCount,
                           contextCalendar: contextCalendar,
                           linkedEvent: linkedEvent,
+                          categories: categories,
                           childTasksBundle: childTasksBundle,
                           attachments: attachments,
                           onOpenLinkedEvent: onOpenLinkedEvent,

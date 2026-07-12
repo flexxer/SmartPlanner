@@ -3,6 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
+import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/domain/entities/category.dart';
+import 'package:smart_planner/features/categories/domain/tagged_entity_type.dart';
+import 'package:smart_planner/features/finance/domain/entities/payment.dart';
+import 'package:smart_planner/features/finance/domain/repositories/payment_repository.dart';
+import 'package:smart_planner/features/finance/presentation/widgets/linked_payments_section.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
@@ -47,6 +53,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   List<TaskAttachment> _attachments = <TaskAttachment>[];
   List<Task> _activeChildren = <Task>[];
   List<Task> _completedChildren = <Task>[];
+  List<Category> _categories = <Category>[];
+  List<Payment> _linkedPayments = <Payment>[];
   int _completedChildCount = 0;
   int _totalChildCount = 0;
   bool _loading = true;
@@ -84,15 +92,56 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         .where((Task t) => t.isCompleted)
         .toList(growable: false);
 
+    final List<Category> categories =
+        await context.read<CategoryTagService>().getTags(
+              entityType: TaggedEntityType.task,
+              entityId: widget.taskId,
+            );
+    final List<Payment> payments =
+        await context.read<PaymentRepository>().getByTaskId(widget.taskId);
+
     setState(() {
       _task = task;
       _attachments = attachments;
       _activeChildren = active;
       _completedChildren = completed;
+      _categories = categories;
+      _linkedPayments = payments;
       _completedChildCount = completed.length;
       _totalChildCount = allChildren.length;
       _loading = false;
     });
+  }
+
+  Future<void> _addPayment() async {
+    final Task? task = _task;
+    if (task == null) {
+      return;
+    }
+    final bool? saved = await LinkedPaymentsSection.openCreatePayment(
+      context: context,
+      linkedTaskId: task.id,
+      linkedEventId: task.linkedEventId,
+      initialOccurredAt: task.dueDate ?? widget.selectedDate,
+    );
+    if (saved == true && mounted) {
+      await _load();
+    }
+  }
+
+  Future<void> _editPayment(Payment payment) async {
+    final bool? saved = await LinkedPaymentsSection.openEditPayment(
+      context: context,
+      payment: payment,
+    );
+    if (saved == true && mounted) {
+      await _load();
+    }
+  }
+
+  Future<void> _togglePaymentStatus(Id paymentId) async {
+    await context.read<PaymentRepository>().togglePlannedCompleted(paymentId);
+    await _load();
   }
 
   void _onDashboardUpdated() {
@@ -293,6 +342,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 contextCalendar: contextCalendar,
                 linkedEvent: linkedEvent,
                 linkedEventMaxTitleLength: 24,
+                categories: _categories,
                 childTasksBundle: ChildTasksBundle(
                   activeChildren: _activeChildren,
                   completedCount: _completedChildCount,
@@ -433,6 +483,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   taskId: child.id,
                   selectedDate: widget.selectedDate,
                 ),
+              ),
+              const SizedBox(height: 20),
+              Divider(height: 1, color: colors.outlineVariant),
+              const SizedBox(height: 16),
+              LinkedPaymentsSection(
+                payments: _linkedPayments,
+                onAdd: _addPayment,
+                onToggleStatus: _togglePaymentStatus,
+                onOpenPayment: _editPayment,
               ),
               const SizedBox(height: 20),
               Divider(height: 1, color: colors.outlineVariant),

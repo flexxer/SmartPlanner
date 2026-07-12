@@ -3,6 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
+import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/domain/entities/category.dart';
+import 'package:smart_planner/features/categories/domain/tagged_entity_type.dart';
+import 'package:smart_planner/features/categories/presentation/widgets/category_badge_chip.dart';
+import 'package:smart_planner/features/finance/domain/entities/payment.dart';
+import 'package:smart_planner/features/finance/domain/repositories/payment_repository.dart';
+import 'package:smart_planner/features/finance/presentation/widgets/linked_payments_section.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/event_attachment_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
@@ -49,6 +56,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   CalendarEvent? _event;
   List<Task> _linkedTasks = <Task>[];
   List<EventAttachment> _attachments = <EventAttachment>[];
+  List<Category> _categories = <Category>[];
+  List<Payment> _linkedPayments = <Payment>[];
   bool _loading = true;
 
   @override
@@ -73,10 +82,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         context.read<EventAttachmentRepository>();
     final List<EventAttachment> attachments =
         await attachmentRepository.getAttachmentsForEvent(widget.eventId);
+    final List<Category> categories =
+        await context.read<CategoryTagService>().getTags(
+              entityType: TaggedEntityType.calendarEvent,
+              entityId: widget.eventId,
+            );
+    final List<Payment> payments =
+        await context.read<PaymentRepository>().getByEventId(widget.eventId);
     setState(() {
       _event = event;
       _linkedTasks = tasks;
       _attachments = attachments;
+      _categories = categories;
+      _linkedPayments = payments;
       _loading = false;
     });
   }
@@ -91,6 +109,36 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       event: event,
     );
     _load();
+  }
+
+  Future<void> _addPayment() async {
+    final CalendarEvent? event = _event;
+    if (event == null) {
+      return;
+    }
+    final bool? saved = await LinkedPaymentsSection.openCreatePayment(
+      context: context,
+      linkedEventId: event.id,
+      initialOccurredAt: event.start,
+    );
+    if (saved == true && mounted) {
+      await _load();
+    }
+  }
+
+  Future<void> _editPayment(Payment payment) async {
+    final bool? saved = await LinkedPaymentsSection.openEditPayment(
+      context: context,
+      payment: payment,
+    );
+    if (saved == true && mounted) {
+      await _load();
+    }
+  }
+
+  Future<void> _togglePaymentStatus(Id paymentId) async {
+    await context.read<PaymentRepository>().togglePlannedCompleted(paymentId);
+    await _load();
   }
 
   Future<void> _openSync() async {
@@ -228,6 +276,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: <Widget>[
+                  for (final Category category in _categories)
+                    CategoryBadgeChip(category: category),
                   Chip(
                     avatar: Icon(
                       Icons.calendar_month_outlined,
@@ -360,6 +410,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ReminderDetailRow(
                 minutesBefore: event.reminderMinutesBefore,
                 fireAt: ReminderScheduleTime.fireAtForEvent(event),
+              ),
+              const SizedBox(height: 20),
+              Divider(height: 1, color: colors.outlineVariant),
+              const SizedBox(height: 16),
+              LinkedPaymentsSection(
+                payments: _linkedPayments,
+                onAdd: _addPayment,
+                onToggleStatus: _togglePaymentStatus,
+                onOpenPayment: _editPayment,
               ),
               const SizedBox(height: 20),
               Divider(height: 1, color: colors.outlineVariant),

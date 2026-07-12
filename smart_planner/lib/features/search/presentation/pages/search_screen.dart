@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
+import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/presentation/widgets/category_filter_chips.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/pages/event_detail_screen.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
@@ -26,15 +29,24 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _queryController = TextEditingController();
-  final GlobalSearchService _searchService = GlobalSearchService();
+  GlobalSearchService? _searchService;
   Timer? _debounce;
   List<SearchResultItem> _results = <SearchResultItem>[];
+  List<Id> _selectedCategoryIds = <Id>[];
   bool _searching = false;
 
   @override
   void initState() {
     super.initState();
     _queryController.addListener(_onQueryChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _searchService ??= GlobalSearchService(
+      categoryTagService: context.read<CategoryTagService>(),
+    );
   }
 
   @override
@@ -53,7 +65,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _runSearch(String query) async {
     setState(() => _searching = true);
-    final List<SearchResultItem> results = await _searchService.search(query);
+    final List<SearchResultItem> results = await _searchService!.search(
+      query,
+      categoryIds: _selectedCategoryIds,
+    );
     if (!mounted) {
       return;
     }
@@ -61,6 +76,11 @@ class _SearchScreenState extends State<SearchScreen> {
       _results = results;
       _searching = false;
     });
+  }
+
+  void _onCategoryFilterChanged(List<Id> ids) {
+    setState(() => _selectedCategoryIds = ids);
+    _runSearch(_queryController.text);
   }
 
   @override
@@ -76,13 +96,23 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
       ),
-      body: _buildBody(context),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          CategoryFilterChips(
+            selectedCategoryIds: _selectedCategoryIds,
+            onSelectionChanged: _onCategoryFilterChanged,
+          ),
+          Expanded(child: _buildBody(context)),
+        ],
+      ),
     );
   }
 
   Widget _buildBody(BuildContext context) {
     final String query = _queryController.text.trim();
-    if (query.isEmpty) {
+    final bool hasCategoryFilter = _selectedCategoryIds.isNotEmpty;
+    if (query.isEmpty && !hasCategoryFilter) {
       return Center(
         child: Text(
           'search_prompt'.tr(),

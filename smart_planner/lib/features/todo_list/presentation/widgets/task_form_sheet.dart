@@ -9,6 +9,9 @@ import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/data/task_event_link_service.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_frequency.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_rule.dart';
+import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/domain/tagged_entity_type.dart';
+import 'package:smart_planner/features/categories/presentation/widgets/category_tags_field.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
 import 'package:smart_planner/features/dashboard/presentation/record_delete_coordinator.dart';
@@ -89,6 +92,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
   RecurrenceFrequency _recurrenceFrequency = RecurrenceFrequency.none;
   bool _reminderLoaded = false;
   bool _saving = false;
+  List<Id> _selectedCategoryIds = <Id>[];
 
   @override
   void initState() {
@@ -123,6 +127,31 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       }
       _loadDefaultReminder();
     }
+    if (widget.isEditing) {
+      _loadCategoryTags();
+    }
+  }
+
+  Future<void> _loadCategoryTags() async {
+    final Task? task = widget.taskToEdit;
+    if (task == null) {
+      return;
+    }
+    final List<Id> ids = await context.read<CategoryTagService>().getTagIds(
+          entityType: TaggedEntityType.task,
+          entityId: task.id,
+        );
+    if (mounted) {
+      setState(() => _selectedCategoryIds = ids);
+    }
+  }
+
+  Future<void> _persistCategoryTags(Id taskId) async {
+    await context.read<CategoryTagService>().setTags(
+          entityType: TaggedEntityType.task,
+          entityId: taskId,
+          categoryIds: _selectedCategoryIds,
+        );
   }
 
   Future<void> _loadDefaultReminder() async {
@@ -256,6 +285,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       await widget.repository.updateTask(task);
       await _syncReminderForTask(task);
     }
+    await _persistCategoryTags(task.id);
 
     if (mounted) {
       Navigator.of(context).pop(true);
@@ -278,6 +308,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
     )..recurrenceRule = _buildRecurrenceRule();
     final Id taskId = await widget.repository.saveTask(task);
     task.id = taskId;
+    await _persistCategoryTags(taskId);
     final TaskEventLinkService linkService =
         context.read<TaskEventLinkService>();
     await _syncReminderForTask(task);
@@ -463,6 +494,13 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
                   },
                 ),
               ],
+              const SizedBox(height: 12),
+              CategoryTagsField(
+                selectedCategoryIds: _selectedCategoryIds,
+                onSelectionChanged: (List<Id> ids) {
+                  setState(() => _selectedCategoryIds = ids);
+                },
+              ),
               const SizedBox(height: 16),
               FormSheetSaveButton(
                 label: isEditing

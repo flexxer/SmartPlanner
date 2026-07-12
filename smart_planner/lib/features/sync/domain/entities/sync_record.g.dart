@@ -171,10 +171,19 @@ P _syncRecordDeserializeProp<P>(
   }
 }
 
-const _SyncRecordentityTypeEnumValueMap = {'task': 0, 'calendarEvent': 1};
+const _SyncRecordentityTypeEnumValueMap = {
+  'task': 0,
+  'calendarEvent': 1,
+  'category': 2,
+  'categoryLink': 3,
+  'payment': 4,
+};
 const _SyncRecordentityTypeValueEnumMap = {
   0: SyncEntityType.task,
   1: SyncEntityType.calendarEvent,
+  2: SyncEntityType.category,
+  3: SyncEntityType.categoryLink,
+  4: SyncEntityType.payment,
 };
 const _SyncRecordpendingOpEnumValueMap = {
   'none': 0,

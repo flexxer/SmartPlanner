@@ -11,7 +11,7 @@ import 'package:smart_planner/features/templates/domain/ui_template_embedded_att
 import 'package:smart_planner/features/templates/presentation/widgets/template_form_sheet.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment_type.dart';
 
-/// Task blueprint templates tab on [TemplatesPage].
+/// Task blueprint templates tab on [LibraryPage].
 class TaskTemplatesTab extends StatefulWidget {
   const TaskTemplatesTab({super.key});
 

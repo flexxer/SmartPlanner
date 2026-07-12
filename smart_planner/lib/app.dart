@@ -39,7 +39,14 @@ import 'package:smart_planner/features/dashboard/presentation/dashboard_screen.d
 import 'package:smart_planner/features/deep_links/data/deep_link_service.dart';
 import 'package:smart_planner/features/deep_links/presentation/deep_link_dispatcher.dart';
 
+import 'package:smart_planner/core/finance/currency_preferences_repository.dart';
+
 import 'package:smart_planner/features/attachment_templates/data/repositories/attachment_template_repository.dart';
+import 'package:smart_planner/features/categories/data/category_repository_impl.dart';
+import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/domain/repositories/category_repository.dart';
+import 'package:smart_planner/features/finance/data/payment_repository_impl.dart';
+import 'package:smart_planner/features/finance/domain/repositories/payment_repository.dart';
 import 'package:smart_planner/features/templates/data/repositories/ui_template_repository.dart';
 
 import 'package:smart_planner/features/todo_list/data/repositories/task_attachment_repository.dart';
@@ -102,6 +109,17 @@ class DayLinxApp extends StatelessWidget {
 
     final AttachmentTemplateRepository attachmentTemplateRepository =
         AttachmentTemplateRepository();
+
+    final CategoryRepository categoryRepository = CategoryRepositoryImpl();
+
+    final CategoryTagService categoryTagService = CategoryTagService(
+      categoryRepository: categoryRepository,
+    );
+
+    final PaymentRepository paymentRepository = PaymentRepositoryImpl();
+
+    final CurrencyPreferencesRepository currencyPreferences =
+        CurrencyPreferencesRepository();
 
     final DashboardDayMarkersRepository dayMarkersRepository =
 
@@ -217,6 +235,22 @@ class DayLinxApp extends StatelessWidget {
 
         RepositoryProvider<AttachmentTemplateRepository>.value(
           value: attachmentTemplateRepository,
+        ),
+
+        RepositoryProvider<CategoryRepository>.value(
+          value: categoryRepository,
+        ),
+
+        RepositoryProvider<CategoryTagService>.value(
+          value: categoryTagService,
+        ),
+
+        RepositoryProvider<PaymentRepository>.value(
+          value: paymentRepository,
+        ),
+
+        RepositoryProvider<CurrencyPreferencesRepository>.value(
+          value: currencyPreferences,
         ),
 
         RepositoryProvider<LocalePreferencesRepository>.value(

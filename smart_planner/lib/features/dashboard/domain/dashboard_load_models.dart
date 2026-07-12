@@ -1,6 +1,7 @@
 import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
+import 'package:smart_planner/features/categories/domain/entities/category.dart';
 import 'package:smart_planner/features/dashboard/domain/day_activity_marker.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
@@ -16,6 +17,7 @@ class DashboardTaskSnapshot {
     required this.childTasksByParentId,
     required this.attachmentsByTaskId,
     required this.dayMarkers,
+    this.categoriesByTaskId = const <Id, List<Category>>{},
   });
 
   final List<Task> tasks;
@@ -25,6 +27,7 @@ class DashboardTaskSnapshot {
   final Map<Id, ChildTasksBundle> childTasksByParentId;
   final Map<Id, List<TaskAttachment>> attachmentsByTaskId;
   final Map<int, DayActivityMarker> dayMarkers;
+  final Map<Id, List<Category>> categoriesByTaskId;
 }
 
 /// Local Isar calendar events for one day (no device fetch).
@@ -61,6 +64,7 @@ class DashboardLoadPayload {
     required this.linkedCalendarsById,
     required this.selectedDate,
     required this.selectedCalendarIds,
+    this.selectedCategoryIds = const <Id>[],
   });
 
   final DashboardTaskSnapshot tasks;
@@ -68,4 +72,5 @@ class DashboardLoadPayload {
   final Map<String, DeviceCalendarInfo> linkedCalendarsById;
   final DateTime selectedDate;
   final List<String> selectedCalendarIds;
+  final List<Id> selectedCategoryIds;
 }

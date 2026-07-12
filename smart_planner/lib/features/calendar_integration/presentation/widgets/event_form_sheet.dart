@@ -1,6 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:isar_community/isar.dart';
+import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/domain/tagged_entity_type.dart';
+import 'package:smart_planner/features/categories/presentation/widgets/category_tags_field.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/presentation/widgets/confirm_delete_record.dart';
 import 'package:smart_planner/core/presentation/widgets/form_sheet_scaffold.dart';
@@ -73,6 +77,7 @@ class _EventFormSheetState extends State<EventFormSheet> {
   bool _reminderLoaded = false;
   bool _saving = false;
   Set<String> _syncCalendarIds = <String>{};
+  List<Id> _selectedCategoryIds = <Id>[];
 
   LinkedCalendarsLoader get _loader =>
       widget.linkedCalendarsLoader ?? LinkedCalendarsLoader();
@@ -114,7 +119,27 @@ class _EventFormSheetState extends State<EventFormSheet> {
     }
     if (existing == null) {
       _loadDefaultReminder();
+    } else {
+      _loadCategoryTags(existing.id);
     }
+  }
+
+  Future<void> _loadCategoryTags(Id eventId) async {
+    final List<Id> ids = await context.read<CategoryTagService>().getTagIds(
+          entityType: TaggedEntityType.calendarEvent,
+          entityId: eventId,
+        );
+    if (mounted) {
+      setState(() => _selectedCategoryIds = ids);
+    }
+  }
+
+  Future<void> _persistCategoryTags(Id eventId) async {
+    await context.read<CategoryTagService>().setTags(
+          entityType: TaggedEntityType.calendarEvent,
+          entityId: eventId,
+          categoryIds: _selectedCategoryIds,
+        );
   }
 
   Future<void> _loadDefaultReminder() async {
@@ -400,6 +425,7 @@ class _EventFormSheetState extends State<EventFormSheet> {
       allDay: _isAllDay,
     );
     await _syncReminderForEvent(event);
+    await _persistCategoryTags(event.id);
     if (syncCalendars.isNotEmpty && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('event_sync_success'.tr())),
@@ -424,6 +450,7 @@ class _EventFormSheetState extends State<EventFormSheet> {
       allDay: _isAllDay,
     );
     await _syncReminderForEvent(event);
+    await _persistCategoryTags(event.id);
 
     widget.dashboardBloc?.add(const LoadDashboardData());
 
@@ -584,6 +611,13 @@ class _EventFormSheetState extends State<EventFormSheet> {
                   },
                 ),
               ],
+              const SizedBox(height: 12),
+              CategoryTagsField(
+                selectedCategoryIds: _selectedCategoryIds,
+                onSelectionChanged: (List<Id> ids) {
+                  setState(() => _selectedCategoryIds = ids);
+                },
+              ),
               const SizedBox(height: 16),
               FormSheetSaveButton(
                 label: isEditing

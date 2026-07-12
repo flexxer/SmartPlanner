@@ -4,6 +4,8 @@ import 'package:smart_planner/features/calendar_integration/data/repositories/ev
 import 'package:smart_planner/features/calendar_integration/data/repositories/local_calendar_event_repository.dart';
 import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/task_event_link_service.dart';
+import 'package:smart_planner/features/categories/data/category_preferences_repository.dart';
+import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
 import 'package:smart_planner/features/dashboard/data/dashboard_day_markers_repository.dart';
 import 'package:smart_planner/features/notifications/data/day_status_home_widget_service.dart';
 import 'package:smart_planner/features/notifications/data/day_status_notification_controller.dart';
@@ -24,6 +26,8 @@ class DashboardDependencies {
     required this.taskEventLinks,
     required this.reminderSync,
     required this.calendarEventWriter,
+    required this.categoryTagService,
+    required this.categoryPreferences,
     this.dayStatusNotifications,
     this.dayStatusHomeWidget,
   });
@@ -38,6 +42,8 @@ class DashboardDependencies {
   final TaskEventLinkService taskEventLinks;
   final ReminderSyncService reminderSync;
   final CalendarEventWriteService calendarEventWriter;
+  final CategoryTagService categoryTagService;
+  final CategoryPreferencesRepository categoryPreferences;
   final DayStatusNotificationController? dayStatusNotifications;
   final DayStatusHomeWidgetService? dayStatusHomeWidget;
 }

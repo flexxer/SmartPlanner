@@ -2,4 +2,7 @@
 enum SyncEntityType {
   task,
   calendarEvent,
+  category,
+  categoryLink,
+  payment,
 }

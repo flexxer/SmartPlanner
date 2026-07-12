@@ -8,7 +8,7 @@ import 'package:smart_planner/features/attachment_templates/domain/attachment_te
 import 'package:smart_planner/features/attachment_templates/domain/entities/attachment_template.dart';
 import 'package:smart_planner/features/attachment_templates/presentation/widgets/attachment_template_form_sheet.dart';
 
-/// Attachment preset templates tab on [TemplatesPage].
+/// Attachment preset templates tab on [LibraryPage].
 class AttachmentTemplatesTab extends StatefulWidget {
   const AttachmentTemplatesTab({super.key});
 

@@ -1,6 +1,7 @@
 import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
+import 'package:smart_planner/features/categories/domain/entities/category.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/dashboard/domain/day_activity_marker.dart';
@@ -27,6 +28,8 @@ final class DashboardLoaded extends DashboardState {
     this.overdueTasks = const <Task>[],
     this.undatedTasks = const <Task>[],
     this.selectedCalendarIds = const <String>[],
+    this.selectedCategoryIds = const <Id>[],
+    this.categoriesByTaskId = const <Id, List<Category>>{},
     this.calendarMessage,
     this.localCalendarEventById = const <Id, CalendarEvent>{},
     this.childTasksByParentId = const <Id, ChildTasksBundle>{},
@@ -52,6 +55,8 @@ final class DashboardLoaded extends DashboardState {
 
   final DateTime selectedDate;
   final List<String> selectedCalendarIds;
+  final List<Id> selectedCategoryIds;
+  final Map<Id, List<Category>> categoriesByTaskId;
 
   /// Linked child tasks keyed by parent [Task.id].
   final Map<Id, ChildTasksBundle> childTasksByParentId;
@@ -98,6 +103,8 @@ final class DashboardLoaded extends DashboardState {
     Map<Id, CalendarEvent>? localCalendarEventById,
     DateTime? selectedDate,
     List<String>? selectedCalendarIds,
+    List<Id>? selectedCategoryIds,
+    Map<Id, List<Category>>? categoriesByTaskId,
     String? calendarMessage,
     Map<Id, ChildTasksBundle>? childTasksByParentId,
     Map<Id, List<TaskAttachment>>? attachmentsByTaskId,
@@ -116,6 +123,8 @@ final class DashboardLoaded extends DashboardState {
           localCalendarEventById ?? this.localCalendarEventById,
       selectedDate: selectedDate ?? this.selectedDate,
       selectedCalendarIds: selectedCalendarIds ?? this.selectedCalendarIds,
+      selectedCategoryIds: selectedCategoryIds ?? this.selectedCategoryIds,
+      categoriesByTaskId: categoriesByTaskId ?? this.categoriesByTaskId,
       calendarMessage: calendarMessage ?? this.calendarMessage,
       childTasksByParentId:
           childTasksByParentId ?? this.childTasksByParentId,

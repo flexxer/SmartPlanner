@@ -8,6 +8,10 @@ import 'package:smart_planner/core/utils/app_date_utils.dart';
 
 import 'package:smart_planner/features/calendar_integration/domain/calendar_context_colors.dart';
 
+import 'package:smart_planner/features/categories/domain/entities/category.dart';
+
+import 'package:smart_planner/features/categories/presentation/widgets/category_badge_chip.dart';
+
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
@@ -60,6 +64,8 @@ class TaskBadgesRow extends StatelessWidget {
 
     this.linkedEventMaxTitleLength = 20,
 
+    this.categories = const <Category>[],
+
     super.key,
 
   });
@@ -92,6 +98,8 @@ class TaskBadgesRow extends StatelessWidget {
 
   final int linkedEventMaxTitleLength;
 
+  final List<Category> categories;
+
 
 
   bool get _isDashboard => listContext != TaskTileListContext.detail;
@@ -104,7 +112,9 @@ class TaskBadgesRow extends StatelessWidget {
 
     final List<Widget> badges = <Widget>[];
 
-
+    for (final Category category in categories) {
+      badges.add(CategoryBadgeChip(category: category));
+    }
 
     if (_contextCalendarBadge(context) case final Widget calendarBadge) {
 

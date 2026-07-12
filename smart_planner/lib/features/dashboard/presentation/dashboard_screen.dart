@@ -7,10 +7,13 @@ import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/device_calendar_info.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/pages/calendar_grid_screen.dart';
+import 'package:smart_planner/features/finance/presentation/pages/finance_screen.dart';
 import 'package:smart_planner/features/search/presentation/pages/search_screen.dart';
-import 'package:smart_planner/features/templates/presentation/pages/templates_page.dart';
+import 'package:smart_planner/features/templates/presentation/pages/library_page.dart';
 import 'package:smart_planner/features/templates/presentation/widgets/template_picker_sheet.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/pages/calendar_settings_page.dart';
+import 'package:smart_planner/features/categories/domain/entities/category.dart';
+import 'package:smart_planner/features/categories/presentation/widgets/category_filter_chips.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_event.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_state.dart';
@@ -66,9 +69,14 @@ class DashboardScreen extends StatelessWidget {
             onPressed: () => _openCalendarGrid(context),
           ),
           IconButton(
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            tooltip: 'dashboard_tooltip_finance'.tr(),
+            onPressed: () => _openFinance(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.layers_outlined),
-            tooltip: 'dashboard_tooltip_templates'.tr(),
-            onPressed: () => _openTemplates(context),
+            tooltip: 'dashboard_tooltip_library'.tr(),
+            onPressed: () => _openLibrary(context),
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -113,6 +121,8 @@ class DashboardScreen extends StatelessWidget {
               :final calendarEvents,
               :final selectedDate,
               :final selectedCalendarIds,
+              :final selectedCategoryIds,
+              :final categoriesByTaskId,
               :final calendarMessage,
               :final localCalendarEventById,
               :final childTasksByParentId,
@@ -130,6 +140,14 @@ class DashboardScreen extends StatelessWidget {
                         selectedDate: selectedDate,
                         dayShortFormat: dayShortFormat,
                         dayMarkers: dayMarkers,
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: CategoryFilterChips(
+                        selectedCategoryIds: selectedCategoryIds,
+                        onSelectionChanged: (List<Id> ids) => context
+                            .read<DashboardBloc>()
+                            .add(SetDashboardCategoryFilter(ids)),
                       ),
                     ),
                     SliverToBoxAdapter(
@@ -181,6 +199,7 @@ class DashboardScreen extends StatelessWidget {
                           childTasksByParentId: childTasksByParentId,
                           attachmentsByTaskId: attachmentsByTaskId,
                           linkedCalendarsById: linkedCalendarsById,
+                          categoriesByTaskId: categoriesByTaskId,
                         ),
                       ),
                     ..._buildTaskAreaSlivers(
@@ -195,6 +214,7 @@ class DashboardScreen extends StatelessWidget {
                       childTasksByParentId: childTasksByParentId,
                       attachmentsByTaskId: attachmentsByTaskId,
                       linkedCalendarsById: linkedCalendarsById,
+                      categoriesByTaskId: categoriesByTaskId,
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 88)),
                   ],
@@ -231,6 +251,7 @@ class DashboardScreen extends StatelessWidget {
     required Map<Id, ChildTasksBundle> childTasksByParentId,
     required Map<Id, List<TaskAttachment>> attachmentsByTaskId,
     required Map<String, DeviceCalendarInfo> linkedCalendarsById,
+    required Map<Id, List<Category>> categoriesByTaskId,
   }) {
     final List<Task> activeDated = datedTasks.active;
     final List<Task> completedDated = datedTasks.completed;
@@ -245,6 +266,7 @@ class DashboardScreen extends StatelessWidget {
       childTasksByParentId: childTasksByParentId,
       attachmentsByTaskId: attachmentsByTaskId,
       linkedCalendarsById: linkedCalendarsById,
+      categoriesByTaskId: categoriesByTaskId,
     );
 
     return <Widget>[
@@ -301,6 +323,7 @@ class DashboardScreen extends StatelessWidget {
             childTasksByParentId: childTasksByParentId,
             attachmentsByTaskId: attachmentsByTaskId,
             linkedCalendarsById: linkedCalendarsById,
+            categoriesByTaskId: categoriesByTaskId,
           ),
         ),
       if (noTasksForDay)
@@ -744,12 +767,20 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  static Future<void> _openTemplates(BuildContext context) async {
+  static Future<void> _openFinance(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const FinanceScreen(),
+      ),
+    );
+  }
+
+  static Future<void> _openLibrary(BuildContext context) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (BuildContext routeContext) => BlocProvider<DashboardBloc>.value(
           value: context.read<DashboardBloc>(),
-          child: const TemplatesPage(),
+          child: const LibraryPage(),
         ),
       ),
     );
@@ -1013,6 +1044,7 @@ class _OverdueTasksPanel extends StatelessWidget {
     required this.childTasksByParentId,
     required this.attachmentsByTaskId,
     required this.linkedCalendarsById,
+    required this.categoriesByTaskId,
   });
 
   final List<Task> overdueTasks;
@@ -1022,6 +1054,7 @@ class _OverdueTasksPanel extends StatelessWidget {
   final Map<Id, ChildTasksBundle> childTasksByParentId;
   final Map<Id, List<TaskAttachment>> attachmentsByTaskId;
   final Map<String, DeviceCalendarInfo> linkedCalendarsById;
+  final Map<Id, List<Category>> categoriesByTaskId;
 
   @override
   Widget build(BuildContext context) {
@@ -1078,6 +1111,7 @@ class _OverdueTasksPanel extends StatelessWidget {
                       childTasksByParentId: childTasksByParentId,
                       attachmentsByTaskId: attachmentsByTaskId,
                       linkedCalendarsById: linkedCalendarsById,
+                      categoriesByTaskId: categoriesByTaskId,
                     ),
                     listContext: TaskTileListContext.dashboardOverdue,
                   ),
@@ -1140,6 +1174,7 @@ class _DashboardTaskTile extends StatelessWidget {
       childTasksBundle: childBundle,
       attachments: attachments,
       linkedEvent: linkedEvent,
+      categories: tileContext.categoriesByTaskId[task.id] ?? const <Category>[],
       onOpenDetail: () => DashboardScreen.openTaskDetail(
         context,
         taskId: task.id,
@@ -1226,6 +1261,7 @@ class _TaskTileContext {
     required this.childTasksByParentId,
     required this.attachmentsByTaskId,
     required this.linkedCalendarsById,
+    required this.categoriesByTaskId,
   });
 
   final DateTime selectedDate;
@@ -1234,6 +1270,7 @@ class _TaskTileContext {
   final Map<Id, ChildTasksBundle> childTasksByParentId;
   final Map<Id, List<TaskAttachment>> attachmentsByTaskId;
   final Map<String, DeviceCalendarInfo> linkedCalendarsById;
+  final Map<Id, List<Category>> categoriesByTaskId;
 }
 
 class _CompletedTasksPanel extends StatelessWidget {
@@ -1245,6 +1282,7 @@ class _CompletedTasksPanel extends StatelessWidget {
     required this.childTasksByParentId,
     required this.attachmentsByTaskId,
     required this.linkedCalendarsById,
+    required this.categoriesByTaskId,
   });
 
   final List<Task> completedTasks;
@@ -1254,6 +1292,7 @@ class _CompletedTasksPanel extends StatelessWidget {
   final Map<Id, ChildTasksBundle> childTasksByParentId;
   final Map<Id, List<TaskAttachment>> attachmentsByTaskId;
   final Map<String, DeviceCalendarInfo> linkedCalendarsById;
+  final Map<Id, List<Category>> categoriesByTaskId;
 
   @override
   Widget build(BuildContext context) {
@@ -1311,6 +1350,7 @@ class _CompletedTasksPanel extends StatelessWidget {
                       childTasksByParentId: childTasksByParentId,
                       attachmentsByTaskId: attachmentsByTaskId,
                       linkedCalendarsById: linkedCalendarsById,
+                      categoriesByTaskId: categoriesByTaskId,
                     ),
                     listContext: TaskTileListContext.dashboardDueOnSelectedDay,
                     dimAsCompleted: true,

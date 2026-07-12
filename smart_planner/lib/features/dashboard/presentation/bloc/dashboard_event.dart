@@ -182,3 +182,10 @@ final class ExpandDashboardTask extends DashboardEvent {
 final class ClearExpandedDashboardTask extends DashboardEvent {
   const ClearExpandedDashboardTask();
 }
+
+/// Filter dashboard tasks and events by user category tags (OR semantics).
+final class SetDashboardCategoryFilter extends DashboardEvent {
+  const SetDashboardCategoryFilter(this.categoryIds);
+
+  final List<Id> categoryIds;
+}

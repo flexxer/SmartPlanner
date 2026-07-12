@@ -25,7 +25,7 @@ import 'package:smart_planner/features/attachment_templates/domain/attachment_te
 import 'package:smart_planner/features/attachment_templates/domain/attachment_template_labels.dart';
 import 'package:smart_planner/features/attachment_templates/domain/entities/attachment_template.dart';
 import 'package:smart_planner/features/attachment_templates/presentation/widgets/attachment_template_form_sheet.dart';
-import 'package:smart_planner/features/templates/presentation/pages/templates_page.dart';
+import 'package:smart_planner/features/templates/presentation/pages/library_page.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/checklist_editor_section.dart';
 import 'package:smart_planner/features/todo_list/presentation/widgets/location_map_picker_sheet.dart';
 
@@ -785,7 +785,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
                     onManage: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => const TemplatesPage(
+                          builder: (_) => const LibraryPage(
                             initialTabIndex: 1,
                           ),
                         ),

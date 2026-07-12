@@ -13,6 +13,8 @@ DashboardLoaded dashboardLoadedFromPayload(DashboardLoadPayload payload) {
     calendarEvents: payload.calendar.visibleCalendarEvents,
     selectedDate: payload.selectedDate,
     selectedCalendarIds: payload.selectedCalendarIds,
+    selectedCategoryIds: payload.selectedCategoryIds,
+    categoriesByTaskId: payload.tasks.categoriesByTaskId,
     calendarMessage: payload.calendar.calendarMessage,
     localCalendarEventById: payload.calendar.localCalendarEventById,
     childTasksByParentId: payload.tasks.childTasksByParentId,
@@ -38,5 +40,6 @@ DashboardLoaded dashboardLoadedAfterTaskMutation({
     childTasksByParentId: tasks.childTasksByParentId,
     attachmentsByTaskId: tasks.attachmentsByTaskId,
     dayMarkers: tasks.dayMarkers,
+    categoriesByTaskId: tasks.categoriesByTaskId,
   );
 }

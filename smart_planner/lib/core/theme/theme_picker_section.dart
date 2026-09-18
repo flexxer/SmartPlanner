@@ -47,7 +47,7 @@ class _ThemePickerSectionState extends State<ThemePickerSection> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: DropdownButtonFormField<String>(
-        value: AppThemeMode.pickerCodes.contains(_selectedCode)
+        initialValue: AppThemeMode.pickerCodes.contains(_selectedCode)
             ? _selectedCode
             : AppThemeMode.systemCode,
         decoration: const InputDecoration(

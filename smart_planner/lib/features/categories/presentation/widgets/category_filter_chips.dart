@@ -34,7 +34,8 @@ class _CategoryFilterChipsState extends State<CategoryFilterChips> {
 
   Future<void> _loadCategories() async {
     final CategoryRepository repository = context.read<CategoryRepository>();
-    final List<Category> list = await repository.getActive();
+    final List<Category> list =
+        (await repository.getActive()).getOrElse((_) => <Category>[]);
     if (!mounted) {
       return;
     }

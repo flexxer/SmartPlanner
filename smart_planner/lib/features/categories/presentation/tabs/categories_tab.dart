@@ -27,7 +27,8 @@ class CategoriesTabState extends State<CategoriesTab> {
   Future<void> reload() async {
     setState(() => _loading = true);
     final CategoryRepository repository = context.read<CategoryRepository>();
-    final List<Category> list = await repository.getActive();
+    final List<Category> list =
+        (await repository.getActive()).getOrElse((_) => <Category>[]);
     if (!mounted) {
       return;
     }
@@ -52,7 +53,12 @@ class CategoriesTabState extends State<CategoriesTab> {
 
   Future<void> _delete(Category category) async {
     final CategoryRepository repository = context.read<CategoryRepository>();
-    final int linkCount = await repository.countLinks(category.id);
+    final int linkCount =
+        (await repository.countLinks(category.id)).getOrElse((_) => 0);
+
+    if (!mounted) {
+      return;
+    }
 
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -117,9 +123,6 @@ class CategoriesTabState extends State<CategoriesTab> {
 
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
       final Category item = _categories.removeAt(oldIndex);
       _categories.insert(newIndex, item);
     });
@@ -142,7 +145,7 @@ class CategoriesTabState extends State<CategoriesTab> {
         padding: const EdgeInsets.fromLTRB(0, 8, 0, 88),
         buildDefaultDragHandles: false,
         itemCount: _categories.length,
-        onReorder: _onReorder,
+        onReorderItem: _onReorder,
         itemBuilder: (BuildContext context, int index) {
           final Category category = _categories[index];
           return _CategoryTile(

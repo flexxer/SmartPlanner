@@ -9,13 +9,12 @@ import 'package:smart_planner/features/notifications/domain/day_status_widget_pa
 
 /// Pushes today's snapshot to the Android home-screen widget.
 class DayStatusHomeWidgetService {
-  DayStatusHomeWidgetService({required DayStatusTodayLoader loader})
-      : _loader = loader;
+  DayStatusHomeWidgetService({required this.loader});
 
   static const String androidProviderName =
       'com.aliakseipcholkin.smart_planner.DayLinxWidgetProvider';
 
-  final DayStatusTodayLoader _loader;
+  final DayStatusTodayLoader loader;
 
   bool get isSupported => !kIsWeb && Platform.isAndroid;
 
@@ -25,7 +24,7 @@ class DayStatusHomeWidgetService {
     }
 
     try {
-      final DayStatusTodaySnapshot snapshot = await _loader.load();
+      final DayStatusTodaySnapshot snapshot = await loader.load();
       final String languageCode = await BackgroundLanguageResolver.resolve();
       final DayStatusWidgetPayload payload = DayStatusLocaleCopy.widgetPayload(
         snapshot: snapshot,

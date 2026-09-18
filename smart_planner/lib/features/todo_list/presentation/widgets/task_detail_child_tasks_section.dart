@@ -71,7 +71,7 @@ class TaskDetailChildTasksSection extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             buildDefaultDragHandles: false,
             itemCount: activeChildren.length,
-            onReorder: onReorder,
+            onReorderItem: onReorder,
             itemBuilder: (BuildContext context, int index) {
               final Task child = activeChildren[index];
               return _ReorderableChildRow(

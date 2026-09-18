@@ -1,0 +1,22 @@
+# DayLinx Project Rules & Ultra-Economy Token Protocol
+# Current Stack: Flutter (Clean Architecture: Pure Domain, Isar Data Models + Mappers, Result<T> Error Handling)
+
+## 💰 ULTRA-ECONOMY & CONTEXT RULES (COST REDUCTION)
+1. CRITICAL CONTEXT LIMIT: Never scan, read, or index directory trees/multiple files unless directly ordered. Always ask the user for the exact file path if it is ambiguous.
+2. FILE READING LIMIT: If a file is longer than 150 lines, do not read it fully. Use precision tools (grep/targeted search) to read only the lines relevant to the current bug or feature.
+3. OUTPUT BREVITY: Be extremely concise. Eliminate all conversational filler, greetings, and long explanations. Do not explain code changes in chat. Just present the code Diff and a 1-sentence summary upon completion.
+4. REASONING CONTROL: For UI, layout, UX, and style modifications, strictly do not use high reasoning/thinking tokens. If you loop on a compilation error more than 2 times, immediately STOP, report the exact log, and ask the user for manual guidance.
+
+## 🛡️ NDA & PRIVACY COMPLIANCE
+1. Strictly forbidden to read, pass, or print any contents of `.env` files, production API tokens, private signing certificates (`.keystore`, `.jks`), or local database files into the terminal or logs.
+
+## 🏗️ ARCHITECTURE & WORKFLOW STANDARDS
+1. CORE PATTERN: Domain entities must remain 100% pure (Plain Old Dart Objects). Never inject database metadata, Isar annotations (`@collection`, `@index`), or third-party service imports into the domain layer.
+2. DATA LAYER: All persistence layouts, Isar collections (e.g., `TaskModel`), and data mappers (`toDomain()` / `fromDomain()`) must live strictly within the data layer.
+3. DEPENDENCY INJECTION: All repositories and services must be instantiated and injected globally in the composition root (`app_dependencies.dart`). Never instantiate repositories or inject dependencies inside widget `build()` methods.
+4. ASYNC SAFETY: Every asynchronous callback using `BuildContext` must strictly implement an explicit mounting check: `if (!context.mounted) return;` immediately after any `await` instruction.
+5. ERROR HANDLING: All business logic, services, and repository outputs must wrap return values in the functional `Result<T>` pattern (`Success`/`Failure`) from `result.dart`. Never throw raw uncaught exceptions to the UI layer.
+
+## 🛠️ FLUTTER UI OPTIMIZATION RULES
+1. REBUILD PREVENTION: Maximize the use of `const` constructors, `RepaintBoundary`, and isolated state consumers (`ValueListenableBuilder`, targeted `BlocBuilder`) to ensure local widget re-rendering only. Never trigger a full screen rebuild for local state changes.
+2. LIST RENDERING: Always use lazy-loading widgets (`ListView.builder`, `SliverList`) for rendering any dynamic lists or logs. Never map list iterations inside a standard `Column`.

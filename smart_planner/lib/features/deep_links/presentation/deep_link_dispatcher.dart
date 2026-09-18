@@ -99,8 +99,10 @@ class _DeepLinkDispatcherState extends State<DeepLinkDispatcher> {
           initialEnd: action.end,
         );
       case DeepLinkCreateTaskFromTemplateAction(:final Id templateId):
-        final UiTemplate? template =
-            await context.read<UiTemplateRepository>().getById(templateId);
+        final UiTemplate? template = (await context
+                .read<UiTemplateRepository>()
+                .getById(templateId))
+            .getOrElse((_) => null);
         if (!mounted || template == null) {
           return;
         }

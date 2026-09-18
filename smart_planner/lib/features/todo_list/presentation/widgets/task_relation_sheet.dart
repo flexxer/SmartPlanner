@@ -118,17 +118,18 @@ class _TaskRelationSheetState extends State<TaskRelationSheet> {
 
       switch (target) {
         case TaskRelationParentTarget(:final Id parentTaskId):
-          _taskCandidates =
-              await repository.getTasksAttachableToParent(parentTaskId);
+          _taskCandidates = (await repository.getTasksAttachableToParent(parentTaskId))
+              .getOrElse((_) => <Task>[]);
         case TaskRelationEventTarget(:final CalendarEvent event):
           _taskCandidates =
-              await repository.getTasksAttachableToEvent(event);
+              (await repository.getTasksAttachableToEvent(event)).getOrElse((_) => <Task>[]);
         case TaskRelationPickEventTarget():
           _taskCandidates = <Task>[];
       }
 
       if (templateRepository != null) {
-        _templates = await templateRepository.getAll();
+        _templates = (await templateRepository.getAll())
+            .getOrElse((_) => <UiTemplate>[]);
       }
 
       if (mounted) {

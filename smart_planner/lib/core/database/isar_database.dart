@@ -1,114 +1,70 @@
 import 'package:isar_community/isar.dart';
-
 import 'package:path_provider/path_provider.dart';
 
-import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
-import 'package:smart_planner/features/calendar_integration/domain/entities/event_attachment.dart';
+import 'package:smart_planner/core/result/result.dart';
+import 'package:smart_planner/features/attachment_templates/data/models/attachment_template_model.dart';
+import 'package:smart_planner/features/calendar_integration/data/models/calendar_event_model.dart';
+import 'package:smart_planner/features/calendar_integration/data/models/event_attachment_model.dart';
+import 'package:smart_planner/features/categories/data/models/category_model.dart';
+import 'package:smart_planner/features/categories/data/models/category_link_model.dart';
+import 'package:smart_planner/features/finance/data/models/payment_model.dart';
+import 'package:smart_planner/features/templates/data/models/ui_template_model.dart';
+import 'package:smart_planner/features/todo_list/data/models/task_model.dart';
+import 'package:smart_planner/features/todo_list/data/models/task_attachment_model.dart';
 
-import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
-
-import 'package:smart_planner/features/sync/domain/entities/sync_account.dart';
-import 'package:smart_planner/features/sync/domain/entities/sync_record.dart';
-import 'package:smart_planner/features/attachment_templates/domain/entities/attachment_template.dart';
-import 'package:smart_planner/features/categories/domain/entities/category.dart';
-import 'package:smart_planner/features/categories/domain/entities/category_link.dart';
-import 'package:smart_planner/features/finance/domain/entities/payment.dart';
-import 'package:smart_planner/features/templates/domain/entities/ui_template.dart';
-import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
-
-
-
-/// Синглтон локальной БД Isar.
-
+/// Singleton for the local Isar database.
 class IsarDatabase {
-
   IsarDatabase._();
-
-
 
   static const String _dbName = 'smart_planner';
 
-
-
   static Isar? _instance;
 
-
-
+  /// The open database. Throws when [init] has not completed yet.
   static Isar get instance {
-
     final Isar? db = _instance;
-
     if (db == null || !db.isOpen) {
-
-      throw StateError(
-
-        'Isar не инициализирован. Вызовите IsarDatabase.init() в main.',
-
-      );
-
+      throw StateError('Isar is not initialized. Call IsarDatabase.init() first.');
     }
-
     return db;
-
   }
 
-
-
-  static Future<void> init() async {
-
-    if (_instance?.isOpen ?? false) {
-
-      return;
-
+  /// Opens the database once. Returns a [Result] so startup failures are
+  /// surfaced as a typed [AppFailure] instead of a raw exception.
+  static Future<Result<Isar>> init() async {
+    final Isar? existing = _instance;
+    if (existing != null && existing.isOpen) {
+      return Success(existing);
     }
 
-    final dir = await getApplicationDocumentsDirectory();
-
-    _instance = await Isar.open(
-
-      <CollectionSchema<dynamic>>[
-
-        TaskSchema,
-
-        TaskAttachmentSchema,
-
-        CalendarEventSchema,
-
-        EventAttachmentSchema,
-
-        UiTemplateSchema,
-
-        AttachmentTemplateSchema,
-
-        SyncAccountSchema,
-
-        SyncRecordSchema,
-
-        CategorySchema,
-
-        CategoryLinkSchema,
-
-        PaymentSchema,
-
-      ],
-
-      directory: dir.path,
-
-      name: _dbName,
-
-    );
-
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final Isar isar = await Isar.open(
+        <CollectionSchema<dynamic>>[
+          TaskModelSchema,
+          TaskAttachmentModelSchema,
+          CalendarEventModelSchema,
+          EventAttachmentModelSchema,
+          UiTemplateModelSchema,
+          AttachmentTemplateModelSchema,
+          CategoryModelSchema,
+          CategoryLinkModelSchema,
+          PaymentModelSchema,
+        ],
+        directory: dir.path,
+        name: _dbName,
+      );
+      _instance = isar;
+      return Success(isar);
+    } on Object catch (error, stackTrace) {
+      return Failure(
+        DatabaseFailure('Failed to open Isar database: $error', stackTrace),
+      );
+    }
   }
-
-
 
   static Future<void> close() async {
-
     await _instance?.close();
-
     _instance = null;
-
   }
-
 }
-

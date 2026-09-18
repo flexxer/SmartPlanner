@@ -1,55 +1,55 @@
-import 'package:isar_community/isar.dart';
+import 'package:smart_planner/core/result/result.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
 
 /// Domain contract for task persistence (implemented by [TodoRepository]).
 abstract class TaskRepository {
-  Future<List<Task>> getAllTasks();
+  Future<Result<List<Task>>> getAllTasks();
 
-  Future<Task?> getTaskById(Id id);
+  Future<Result<Task?>> getTaskById(int id);
 
-  Future<List<Task>> getUncompletedTasks();
+  Future<Result<List<Task>>> getUncompletedTasks();
 
-  Future<List<Task>> getCompletedTasks();
+  Future<Result<List<Task>>> getCompletedTasks();
 
-  Future<Task> reopenFromCompleted(Task source, DateTime newDueDate);
+  Future<Result<Task>> reopenFromCompleted(Task source, DateTime newDueDate);
 
-  Future<List<Task>> getOverdueUncompletedTasks({DateTime? referenceDay});
+  Future<Result<List<Task>>> getOverdueUncompletedTasks({DateTime? referenceDay});
 
-  Future<List<Task>> getUncompletedTasksForDate(DateTime date);
+  Future<Result<List<Task>>> getUncompletedTasksForDate(DateTime date);
 
-  Future<List<Task>> getUndatedTasks();
+  Future<Result<List<Task>>> getUndatedTasks();
 
-  Future<List<Task>> getCompletedTasksForDate(DateTime date);
+  Future<Result<List<Task>>> getCompletedTasksForDate(DateTime date);
 
-  Future<List<Task>> getAllChildTasks(Id parentTaskId);
+  Future<Result<List<Task>>> getAllChildTasks(int parentTaskId);
 
-  Future<ChildTasksBundle> getChildTasksBundle(Id parentTaskId);
+  Future<Result<ChildTasksBundle>> getChildTasksBundle(int parentTaskId);
 
-  Future<Map<Id, ChildTasksBundle>> getChildTasksBundlesForParents(
-    List<Id> parentTaskIds,
+  Future<Result<Map<int, ChildTasksBundle>>> getChildTasksBundlesForParents(
+    List<int> parentTaskIds,
   );
 
-  Future<List<Task>> getTasksAttachableToEvent(CalendarEvent event);
+  Future<Result<List<Task>>> getTasksAttachableToEvent(CalendarEvent event);
 
-  Future<List<Task>> getTasksAttachableToParent(Id parentTaskId);
+  Future<Result<List<Task>>> getTasksAttachableToParent(int parentTaskId);
 
-  Future<bool> attachTaskToParent({
-    required Id childTaskId,
-    required Id parentTaskId,
+  Future<Result<bool>> attachTaskToParent({
+    required int childTaskId,
+    required int parentTaskId,
   });
 
-  Future<void> reorderChildTasks({
-    required Id parentTaskId,
-    required List<Id> orderedChildIds,
+  Future<Result<bool>> reorderChildTasks({
+    required int parentTaskId,
+    required List<int> orderedChildIds,
   });
 
-  Future<void> detachTaskFromParent(Id childTaskId);
+  Future<Result<bool>> detachTaskFromParent(int childTaskId);
 
-  Future<Id> saveTask(Task task);
+  Future<Result<Task>> saveTask(Task task);
 
-  Future<void> updateTask(Task task);
+  Future<Result<Task>> updateTask(Task task);
 
-  Future<bool> deleteTask(Id id);
+  Future<Result<bool>> deleteTask(int id);
 }

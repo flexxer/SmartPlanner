@@ -46,7 +46,7 @@ class _CurrencyPickerSectionState extends State<CurrencyPickerSection> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: DropdownButtonFormField<String>(
-        value: CurrencyPreferencesRepository.supportedCurrencyCodes
+        initialValue: CurrencyPreferencesRepository.supportedCurrencyCodes
                 .contains(_selectedCode)
             ? _selectedCode
             : CurrencyPreferencesRepository.defaultCurrencyCode,

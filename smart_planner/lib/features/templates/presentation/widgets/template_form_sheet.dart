@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_planner/core/result/result.dart';
 import 'package:smart_planner/features/templates/data/repositories/ui_template_repository.dart';
 import 'package:smart_planner/features/templates/domain/entities/ui_template.dart';
 
@@ -72,44 +73,43 @@ class _TemplateFormSheetState extends State<TemplateFormSheet> {
 
     setState(() => _saving = true);
 
-    try {
-      final String? description = _descriptionController.text.trim().isEmpty
-          ? null
-          : _descriptionController.text.trim();
-      final List<String> checklistItems = _parseChecklistLines();
+    final String? description = _descriptionController.text.trim().isEmpty
+        ? null
+        : _descriptionController.text.trim();
+    final List<String> checklistItems = _parseChecklistLines();
 
-      if (widget.isEditing) {
-        final UiTemplate template = widget.templateToEdit!
-          ..title = title
-          ..templateDescription = description
-          ..checklistItems = checklistItems;
-        await widget.repository.save(template);
-      } else {
-        await widget.repository.save(
-          UiTemplate.create(
-            title: title,
-            templateDescription: description,
-            checklistItems: checklistItems,
-          ),
-        );
-      }
+    final UiTemplate template;
+    if (widget.isEditing) {
+      template = widget.templateToEdit!
+        ..title = title
+        ..templateDescription = description
+        ..checklistItems = checklistItems;
+    } else {
+      template = UiTemplate.create(
+        title: title,
+        templateDescription: description,
+        checklistItems: checklistItems,
+      );
+    }
 
-      if (mounted) {
+    final Result<UiTemplate> result = await widget.repository.save(template);
+    if (!mounted) {
+      return;
+    }
+    switch (result) {
+      case Success():
         Navigator.of(context).pop(true);
-      }
-    } catch (e) {
-      if (mounted) {
+      case Failure(:final failure):
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               'common_error_with_details'.tr(namedArgs: <String, String>{
-                'details': '$e',
+                'details': failure.message,
               }),
             ),
           ),
         );
         setState(() => _saving = false);
-      }
     }
   }
 

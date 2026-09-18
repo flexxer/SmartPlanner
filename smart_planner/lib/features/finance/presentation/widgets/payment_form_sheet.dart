@@ -12,7 +12,6 @@ import 'package:smart_planner/features/categories/presentation/widgets/category_
 import 'package:smart_planner/features/finance/domain/entities/payment.dart';
 import 'package:smart_planner/features/finance/domain/money.dart';
 import 'package:smart_planner/features/finance/domain/payment_direction.dart';
-import 'package:smart_planner/features/finance/domain/payment_status.dart';
 import 'package:smart_planner/features/finance/domain/repositories/payment_repository.dart';
 
 /// Create or edit a local [Payment].
@@ -73,9 +72,9 @@ class _PaymentFormSheetState extends State<PaymentFormSheet> {
   }
 
   Future<void> _loadDefaults() async {
+    final CategoryTagService tagService = context.read<CategoryTagService>();
     final String code =
         await context.read<CurrencyPreferencesRepository>().getDefaultCurrencyCode();
-    final CategoryTagService tagService = context.read<CategoryTagService>();
     List<Id> prefilledTags = <Id>[];
 
     if (widget.linkedTaskId != null) {
@@ -189,6 +188,7 @@ class _PaymentFormSheetState extends State<PaymentFormSheet> {
           ? null
           : _noteController.text.trim();
 
+      final Payment saved;
       if (widget.isEditing) {
         final Payment payment = widget.paymentToEdit!
           ..title = title
@@ -197,10 +197,10 @@ class _PaymentFormSheetState extends State<PaymentFormSheet> {
           ..direction = _direction
           ..occurredAt = _occurredAt
           ..note = note;
-        await repository.save(payment);
-        await _persistCategoryTags(payment.id);
+        saved = (await repository.save(payment))
+            .getOrElse((failure) => throw StateError('$failure'));
       } else {
-        final Id id = await repository.save(
+        saved = (await repository.save(
           Payment.create(
             title: title,
             amountMinor: amountMinor,
@@ -211,9 +211,10 @@ class _PaymentFormSheetState extends State<PaymentFormSheet> {
             linkedTaskId: widget.linkedTaskId,
             linkedEventId: widget.linkedEventId,
           ),
-        );
-        await _persistCategoryTags(id);
+        ))
+            .getOrElse((failure) => throw StateError('$failure'));
       }
+      await _persistCategoryTags(saved.id);
 
       if (mounted) {
         Navigator.of(context).pop(true);
@@ -268,7 +269,7 @@ class _PaymentFormSheetState extends State<PaymentFormSheet> {
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
-          value: CurrencyPreferencesRepository.supportedCurrencyCodes
+          initialValue: CurrencyPreferencesRepository.supportedCurrencyCodes
                   .contains(_currencyCode)
               ? _currencyCode
               : CurrencyPreferencesRepository.defaultCurrencyCode,
@@ -294,7 +295,7 @@ class _PaymentFormSheetState extends State<PaymentFormSheet> {
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<PaymentDirection>(
-          value: _direction,
+          initialValue: _direction,
           decoration: InputDecoration(
             labelText: 'payment_field_direction'.tr(),
             border: const OutlineInputBorder(),

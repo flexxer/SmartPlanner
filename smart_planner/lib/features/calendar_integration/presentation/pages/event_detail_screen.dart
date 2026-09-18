@@ -69,7 +69,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   Future<void> _load() async {
     final LocalCalendarEventRepository repository =
         context.read<LocalCalendarEventRepository>();
-    final CalendarEvent? event = await repository.getById(widget.eventId);
+    final EventAttachmentRepository attachmentRepository =
+        context.read<EventAttachmentRepository>();
+    final CategoryTagService categoryTagService =
+        context.read<CategoryTagService>();
+    final PaymentRepository paymentRepository =
+        context.read<PaymentRepository>();
+    final CalendarEvent? event =
+        (await repository.getById(widget.eventId)).getOrElse((_) => null);
     if (!mounted) {
       return;
     }
@@ -77,18 +84,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       Navigator.of(context).pop();
       return;
     }
-    final List<Task> tasks = await repository.getLinkedTasks(event);
-    final EventAttachmentRepository attachmentRepository =
-        context.read<EventAttachmentRepository>();
-    final List<EventAttachment> attachments =
-        await attachmentRepository.getAttachmentsForEvent(widget.eventId);
-    final List<Category> categories =
-        await context.read<CategoryTagService>().getTags(
-              entityType: TaggedEntityType.calendarEvent,
-              entityId: widget.eventId,
-            );
+    final List<Task> tasks =
+        (await repository.getLinkedTasks(event)).getOrElse((_) => <Task>[]);
+    final List<EventAttachment> attachments = (await attachmentRepository
+            .getAttachmentsForEvent(widget.eventId))
+        .getOrElse((_) => <EventAttachment>[]);
+    final List<Category> categories = await categoryTagService.getTags(
+          entityType: TaggedEntityType.calendarEvent,
+          entityId: widget.eventId,
+        );
     final List<Payment> payments =
-        await context.read<PaymentRepository>().getByEventId(widget.eventId);
+        (await paymentRepository.getByEventId(widget.eventId))
+            .getOrElse((_) => <Payment>[]);
     setState(() {
       _event = event;
       _linkedTasks = tasks;
@@ -159,6 +166,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       return;
     }
 
+    final EventCalendarSyncService syncService =
+        context.read<EventCalendarSyncService>();
     final LinkedCalendarsLoadResult loadResult = await LinkedCalendarsLoader(
       calendarService: context.read<DeviceCalendarService>(),
       preferences: context.read<CalendarPreferencesRepository>(),
@@ -180,7 +189,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     }
 
     try {
-      await context.read<EventCalendarSyncService>().syncToCalendars(
+      await syncService.syncToCalendars(
             event: event,
             calendars: calendars,
           );

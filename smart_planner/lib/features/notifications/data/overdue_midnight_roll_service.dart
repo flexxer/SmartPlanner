@@ -47,8 +47,9 @@ class OverdueMidnightRollService {
       );
     }
 
-    final List<Task> overdueBeforeRoll =
-        await _todoRepository.getOverdueUncompletedTasks(referenceDay: today);
+    final List<Task> overdueBeforeRoll = (await _todoRepository
+            .getOverdueUncompletedTasks(referenceDay: today))
+        .getOrElse((_) => <Task>[]);
     if (overdueBeforeRoll.isEmpty) {
       await _preferences.setLastOverdueMidnightRollDayKey(todayKey);
       return (outcome: OverdueMidnightRollOutcome.nothingToRoll, rolledCount: 0);
@@ -61,7 +62,8 @@ class OverdueMidnightRollService {
 
     for (final Task task in overdueBeforeRoll) {
       try {
-        final Task? updated = await _todoRepository.getTaskById(task.id);
+        final Task? updated =
+            (await _todoRepository.getTaskById(task.id)).getOrElse((_) => null);
         if (updated != null) {
           await _reminderScheduler.syncTask(updated);
         }

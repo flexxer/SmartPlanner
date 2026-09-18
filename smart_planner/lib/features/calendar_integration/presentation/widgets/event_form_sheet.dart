@@ -8,9 +8,7 @@ import 'package:smart_planner/features/categories/presentation/widgets/category_
 import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/presentation/widgets/confirm_delete_record.dart';
 import 'package:smart_planner/core/presentation/widgets/form_sheet_scaffold.dart';
-import 'package:smart_planner/features/calendar_integration/domain/calendar_event_recurrence.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_time_utils.dart';
-import 'package:smart_planner/features/calendar_integration/presentation/widgets/calendar_event_delete_dialog.dart';
 import 'package:smart_planner/features/calendar_integration/presentation/widgets/event_sync_calendars_selector.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/data/calendar_event_write_service.dart';

@@ -150,7 +150,8 @@ class AttachmentCoordinator {
     required Id attachmentId,
     required int itemLocalId,
   }) async {
-    final EventAttachment? attachment = await repository.getById(attachmentId);
+    final EventAttachment? attachment =
+        (await repository.getById(attachmentId)).getOrElse((_) => null);
     if (attachment == null) {
       return;
     }

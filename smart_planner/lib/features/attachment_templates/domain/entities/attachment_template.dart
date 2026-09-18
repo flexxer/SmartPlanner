@@ -1,25 +1,11 @@
-import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment_type.dart';
 
-part 'attachment_template.g.dart';
-
 /// Reusable attachment preset (location, checklist, link, note, contact).
-@collection
+///
+/// Pure domain model — no Isar annotations. Persistence is handled by
+/// `AttachmentTemplateModel` in the data layer.
 class AttachmentTemplate {
-  Id id = Isar.autoIncrement;
-
-  @Index(type: IndexType.value, caseSensitive: false)
-  late String title;
-
-  @Enumerated(EnumType.ordinal)
-  late TaskAttachmentType type;
-
-  /// JSON payload matching [TaskAttachmentCodec] for [type].
-  String payloadJson = '';
-
-  int sortOrder = 0;
-
-  AttachmentTemplate();
+  AttachmentTemplate({this.id = 0});
 
   factory AttachmentTemplate.create({
     required String title,
@@ -33,4 +19,16 @@ class AttachmentTemplate {
       ..payloadJson = payloadJson
       ..sortOrder = sortOrder;
   }
+
+  /// Database id; `0` until persisted.
+  int id;
+
+  String title = '';
+
+  TaskAttachmentType type = TaskAttachmentType.note;
+
+  /// JSON payload matching `TaskAttachmentCodec` for [type].
+  String payloadJson = '';
+
+  int sortOrder = 0;
 }

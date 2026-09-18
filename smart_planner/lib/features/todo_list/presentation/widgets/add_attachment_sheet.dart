@@ -15,7 +15,6 @@ import 'package:smart_planner/features/todo_list/data/services/device_contact_pi
 import 'package:smart_planner/features/todo_list/domain/entities/attachment_payloads.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task_attachment_type.dart';
-import 'package:smart_planner/features/todo_list/domain/task_attachment_checklist.dart';
 import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.dart';
 import 'package:smart_planner/features/todo_list/data/services/osm_place_search_service.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
@@ -33,27 +32,24 @@ import 'package:smart_planner/features/todo_list/presentation/widgets/location_m
 class AddAttachmentSheet extends StatefulWidget {
   const AddAttachmentSheet({
     required TaskAttachmentRepository repository,
-    required Id taskId,
+    required this.taskId,
     TaskAttachment? attachmentToEdit,
-    DashboardBloc? dashboardBloc,
+    this.dashboardBloc,
     super.key,
   })  : taskRepository = repository,
         eventRepository = null,
-        taskId = taskId,
         eventId = null,
         taskAttachmentToEdit = attachmentToEdit,
-        eventAttachmentToEdit = null,
-        dashboardBloc = dashboardBloc;
+        eventAttachmentToEdit = null;
 
   const AddAttachmentSheet.forEvent({
     required EventAttachmentRepository repository,
-    required Id eventId,
+    required this.eventId,
     EventAttachment? attachmentToEdit,
     super.key,
   })  : taskRepository = null,
         eventRepository = repository,
         taskId = null,
-        eventId = eventId,
         taskAttachmentToEdit = null,
         eventAttachmentToEdit = attachmentToEdit,
         dashboardBloc = null;
@@ -122,15 +118,12 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   }
 
   Future<void> _loadTemplates() async {
-    try {
-      final AttachmentTemplateRepository repository =
-          context.read<AttachmentTemplateRepository>();
-      final List<AttachmentTemplate> list = await repository.getAll();
-      if (mounted) {
-        setState(() => _templates = list);
-      }
-    } on Object {
-      // Templates are optional when repository is not provided.
+    final AttachmentTemplateRepository repository =
+        context.read<AttachmentTemplateRepository>();
+    final List<AttachmentTemplate> list =
+        (await repository.getAll()).getOrElse((_) => <AttachmentTemplate>[]);
+    if (mounted) {
+      setState(() => _templates = list);
     }
   }
 
@@ -466,6 +459,8 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
   }
 
   Future<void> _configureLocationTemplate(AttachmentTemplate template) async {
+    final AttachmentTemplateRepository repository =
+        context.read<AttachmentTemplateRepository>();
     final LocationPickResult? result = await showModalBottomSheet<LocationPickResult>(
       context: context,
       isScrollControlled: true,
@@ -490,7 +485,7 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
     );
     template.payloadJson = payload;
     try {
-      await context.read<AttachmentTemplateRepository>().save(template);
+      await repository.save(template);
     } on Object {
       // Continue even if template save fails.
     }
@@ -597,8 +592,9 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
     required String? attachmentLabel,
   }) async {
     if (widget.isEventMode) {
-      final int sortOrder =
-          await widget.eventRepository!.nextSortOrder(widget.eventId!);
+      final int sortOrder = (await widget.eventRepository!
+              .nextSortOrder(widget.eventId!))
+          .getOrElse((_) => 0);
       await widget.eventRepository!.save(
         EventAttachment.create(
           eventId: widget.eventId!,
@@ -610,8 +606,9 @@ class _AddAttachmentSheetState extends State<AddAttachmentSheet> {
       );
       return;
     }
-    final int sortOrder =
-        await widget.taskRepository!.nextSortOrder(widget.taskId!);
+    final int sortOrder = (await widget.taskRepository!
+            .nextSortOrder(widget.taskId!))
+        .getOrElse((_) => 0);
     await widget.taskRepository!.save(
       TaskAttachment.create(
         taskId: widget.taskId!,
@@ -1132,7 +1129,7 @@ class _AttachmentTemplateQuickStrip extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: templates.length + 1,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (BuildContext context, int index) {
               if (index == templates.length) {
                 return ActionChip(

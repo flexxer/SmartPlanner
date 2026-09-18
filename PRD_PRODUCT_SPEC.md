@@ -112,20 +112,20 @@ Stored as `TaskAttachment` in Isar (`taskId`, `type`, `payloadJson`, optional `l
 | Background check for overdue tasks | **Implemented** | `workmanager`: overdue digest (`OverdueBackgroundWorker`, 12h); midnight roll + digest refresh; day-status/widget refresh (15 min) |
 | Custom URL scheme deep links (`daylinx://create`) | **Implemented** | `app_links`; opens dashboard + `TaskFormSheet` / `EventFormSheet` with prefilled `title`, `priority`, `start` |
 
-### 3.4 Categories and Library (planned)
+### 3.4 Categories and Library
 
 User-defined **categories** are cross-cutting **tags** (many-to-many) on tasks, calendar events, and payments. Used for filtering, statistics, and UI grouping—not for device calendar sync.
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| `Category` entity (name, color, sortOrder, isArchived) | **Planned** | Isar `@collection`; **empty on first launch** (no seed data) |
-| Many-to-many tags via `CategoryLink` | **Planned** | `(entityType, entityId, categoryId)`; unique triple; cascade delete with parent entity |
-| Optional tags on task / event / payment | **Planned** | 0..N categories; editable in forms via shared `CategoryTagsField` |
-| Category CRUD in **Library** hub | **Planned** | 3rd tab on renamed hub (Tasks / Attachments / **Categories**); FAB + form sheet |
+| `Category` entity (name, color, sortOrder, isArchived) | **Implemented** | Pure entity; `CategoryModel` (`@collection`) in `data/models/`; **empty on first launch** (no seed data) |
+| Many-to-many tags via `CategoryLink` | **Implemented** | `(entityType, entityId, categoryId)`; unique triple; cascade delete with parent entity |
+| Optional tags on task / event / payment | **Implemented** | 0..N categories; editable in forms via shared `CategoryTagsField` |
+| Category CRUD (hub tab #3) | **Implemented** | `CategoriesTab` + `CategoryFormSheet`; FAB + form sheet |
 | Rename Templates hub → **Library** | **Planned** | `TemplatesPage` → `LibraryPage`; AppBar tooltip `dashboard_tooltip_library`; keep `features/templates/` package name for `UiTemplate` |
-| Category badges on tiles / detail | **Planned** | `CategoryBadgesRow` distinct from calendar context badge |
+| Category badges on tiles / detail | **Implemented** | `CategoryBadgesRow` distinct from calendar context badge |
 | Dashboard / search filter by category | **Planned** | Phase P6 after finance MVP |
-| Category archive (not hard delete when in use) | **Planned** | `isArchived = true` when links exist |
+| Category archive (not hard delete when in use) | **Implemented** | `isArchived = true` when links exist |
 
 **Library hub tabs (target UX):**
 
@@ -135,22 +135,22 @@ User-defined **categories** are cross-cutting **tags** (many-to-many) on tasks, 
 | Attachments | Existing `AttachmentTemplatesTab` |
 | Categories | New `CategoriesTab` — CRUD, reorder, color picker, empty state |
 
-### 3.5 Finance — payments (planned)
+### 3.5 Finance — payments
 
 Local **payments** (income/expense tracking) linked optionally to tasks and/or events, tagged with categories.
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| `Payment` entity | **Planned** | `title`, `note`, `amountMinor` (int, no float), `currencyCode` (ISO 4217), `direction` (expense/income), `status` (planned/completed/cancelled), `occurredAt`, `updatedAt` |
-| Link to task and/or event | **Planned** | Independent optional `linkedTaskId` and `linkedEventId` — **both may be set** |
-| Categories on payment | **Planned** | Via `CategoryLink` only (same as tasks/events) |
-| **Finance** screen | **Planned** | Dedicated screen; entry from **dashboard AppBar** (e.g. wallet icon) |
-| Payment list + create/edit | **Planned** | `FinanceScreen` + `PaymentFormSheet`; FAB on finance screen |
-| Status toggle on list | **Planned** | **Checkbox** per row: `planned` ↔ `completed` (completed rows dimmed + strikethrough) |
-| Default currency in Settings | **Planned** | `CurrencyPreferencesRepository` (`app_default_currency_code`); section **Finance** on `CalendarSettingsPage` |
-| Currency on payment form | **Planned** | Prefilled from settings default; **editable per payment** |
-| Monthly summary (income / expense / balance) | **Planned** | Header on `FinanceScreen`; group by `currencyCode` (no FX conversion in MVP) |
-| Payments block on task/event detail | **Planned** | List linked payments + add button |
+| `Payment` entity | **Implemented** | `title`, `note`, `amountMinor` (int, no float), `currencyCode` (ISO 4217), `direction` (expense/income), `status` (planned/completed/cancelled), `occurredAt`, `updatedAt` |
+| Link to task and/or event | **Implemented** | Independent optional `linkedTaskId` and `linkedEventId` — **both may be set** |
+| Categories on payment | **Implemented** | Via `CategoryLink` only (same as tasks/events) |
+| **Finance** screen | **Implemented** | Dedicated screen; entry from **dashboard AppBar** (e.g. wallet icon) |
+| Payment list + create/edit | **Implemented** | `FinanceScreen` + `PaymentFormSheet`; FAB on finance screen |
+| Status toggle on list | **Implemented** | **Checkbox** per row: `planned` ↔ `completed` (completed rows dimmed + strikethrough) |
+| Default currency in Settings | **Implemented** | `CurrencyPreferencesRepository` (`app_default_currency_code`); section **Finance** on `CalendarSettingsPage` |
+| Currency on payment form | **Implemented** | Prefilled from settings default; **editable per payment** |
+| Monthly summary (income / expense / balance) | **Implemented** | Header on `FinanceScreen` (`FinanceSummaryHeader`); group by `currencyCode` (no FX conversion in MVP) |
+| Payments block on task/event detail | **Implemented** | List linked payments + add button |
 | Recurring payments | **Out of MVP** | No `recurrenceRuleJson` on `Payment` initially |
 | Budgets / multi-currency conversion / export | **Planned** | Post-MVP |
 

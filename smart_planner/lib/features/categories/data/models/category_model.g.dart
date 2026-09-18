@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'category.dart';
+part of 'category_model.dart';
 
 // **************************************************************************
 // IsarCollectionGenerator
@@ -9,13 +9,13 @@ part of 'category.dart';
 // coverage:ignore-file
 // ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
 
-extension GetCategoryCollection on Isar {
-  IsarCollection<Category> get categorys => this.collection();
+extension GetCategoryModelCollection on Isar {
+  IsarCollection<CategoryModel> get categoryModels => this.collection();
 }
 
-const CategorySchema = CollectionSchema(
-  name: r'Category',
-  id: 5751694338128944171,
+const CategoryModelSchema = CollectionSchema(
+  name: r'CategoryModel',
+  id: 2062173352312629051,
   properties: {
     r'colorValue': PropertySchema(
       id: 0,
@@ -40,10 +40,10 @@ const CategorySchema = CollectionSchema(
     ),
   },
 
-  estimateSize: _categoryEstimateSize,
-  serialize: _categorySerialize,
-  deserialize: _categoryDeserialize,
-  deserializeProp: _categoryDeserializeProp,
+  estimateSize: _categoryModelEstimateSize,
+  serialize: _categoryModelSerialize,
+  deserialize: _categoryModelDeserialize,
+  deserializeProp: _categoryModelDeserializeProp,
   idName: r'id',
   indexes: {
     r'name': IndexSchema(
@@ -63,14 +63,14 @@ const CategorySchema = CollectionSchema(
   links: {},
   embeddedSchemas: {},
 
-  getId: _categoryGetId,
-  getLinks: _categoryGetLinks,
-  attach: _categoryAttach,
+  getId: _categoryModelGetId,
+  getLinks: _categoryModelGetLinks,
+  attach: _categoryModelAttach,
   version: '3.3.2',
 );
 
-int _categoryEstimateSize(
-  Category object,
+int _categoryModelEstimateSize(
+  CategoryModel object,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
@@ -79,8 +79,8 @@ int _categoryEstimateSize(
   return bytesCount;
 }
 
-void _categorySerialize(
-  Category object,
+void _categoryModelSerialize(
+  CategoryModel object,
   IsarWriter writer,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
@@ -92,13 +92,13 @@ void _categorySerialize(
   writer.writeDateTime(offsets[4], object.updatedAt);
 }
 
-Category _categoryDeserialize(
+CategoryModel _categoryModelDeserialize(
   Id id,
   IsarReader reader,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  final object = Category();
+  final object = CategoryModel();
   object.colorValue = reader.readLong(offsets[0]);
   object.id = id;
   object.isArchived = reader.readBool(offsets[1]);
@@ -108,7 +108,7 @@ Category _categoryDeserialize(
   return object;
 }
 
-P _categoryDeserializeProp<P>(
+P _categoryModelDeserializeProp<P>(
   IsarReader reader,
   int propertyId,
   int offset,
@@ -130,26 +130,31 @@ P _categoryDeserializeProp<P>(
   }
 }
 
-Id _categoryGetId(Category object) {
+Id _categoryModelGetId(CategoryModel object) {
   return object.id;
 }
 
-List<IsarLinkBase<dynamic>> _categoryGetLinks(Category object) {
+List<IsarLinkBase<dynamic>> _categoryModelGetLinks(CategoryModel object) {
   return [];
 }
 
-void _categoryAttach(IsarCollection<dynamic> col, Id id, Category object) {
+void _categoryModelAttach(
+  IsarCollection<dynamic> col,
+  Id id,
+  CategoryModel object,
+) {
   object.id = id;
 }
 
-extension CategoryQueryWhereSort on QueryBuilder<Category, Category, QWhere> {
-  QueryBuilder<Category, Category, QAfterWhere> anyId() {
+extension CategoryModelQueryWhereSort
+    on QueryBuilder<CategoryModel, CategoryModel, QWhere> {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhere> anyName() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhere> anyName() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'name'),
@@ -158,14 +163,19 @@ extension CategoryQueryWhereSort on QueryBuilder<Category, Category, QWhere> {
   }
 }
 
-extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
-  QueryBuilder<Category, Category, QAfterWhereClause> idEqualTo(Id id) {
+extension CategoryModelQueryWhere
+    on QueryBuilder<CategoryModel, CategoryModel, QWhereClause> {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause> idEqualTo(
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhereClause> idNotEqualTo(Id id) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause> idNotEqualTo(
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -187,7 +197,7 @@ extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhereClause> idGreaterThan(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause> idGreaterThan(
     Id id, {
     bool include = false,
   }) {
@@ -198,7 +208,7 @@ extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhereClause> idLessThan(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause> idLessThan(
     Id id, {
     bool include = false,
   }) {
@@ -209,7 +219,7 @@ extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhereClause> idBetween(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause> idBetween(
     Id lowerId,
     Id upperId, {
     bool includeLower = true,
@@ -227,7 +237,9 @@ extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhereClause> nameEqualTo(String name) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause> nameEqualTo(
+    String name,
+  ) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IndexWhereClause.equalTo(indexName: r'name', value: [name]),
@@ -235,7 +247,7 @@ extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhereClause> nameNotEqualTo(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause> nameNotEqualTo(
     String name,
   ) {
     return QueryBuilder.apply(this, (query) {
@@ -279,7 +291,7 @@ extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhereClause> nameGreaterThan(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause> nameGreaterThan(
     String name, {
     bool include = false,
   }) {
@@ -295,7 +307,7 @@ extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhereClause> nameLessThan(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause> nameLessThan(
     String name, {
     bool include = false,
   }) {
@@ -311,7 +323,7 @@ extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhereClause> nameBetween(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause> nameBetween(
     String lowerName,
     String upperName, {
     bool includeLower = true,
@@ -330,7 +342,7 @@ extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhereClause> nameStartsWith(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause> nameStartsWith(
     String NamePrefix,
   ) {
     return QueryBuilder.apply(this, (query) {
@@ -344,7 +356,7 @@ extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhereClause> nameIsEmpty() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause> nameIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IndexWhereClause.equalTo(indexName: r'name', value: ['']),
@@ -352,7 +364,8 @@ extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
     });
   }
 
-  QueryBuilder<Category, Category, QAfterWhereClause> nameIsNotEmpty() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterWhereClause>
+  nameIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -375,11 +388,10 @@ extension CategoryQueryWhere on QueryBuilder<Category, Category, QWhereClause> {
   }
 }
 
-extension CategoryQueryFilter
-    on QueryBuilder<Category, Category, QFilterCondition> {
-  QueryBuilder<Category, Category, QAfterFilterCondition> colorValueEqualTo(
-    int value,
-  ) {
+extension CategoryModelQueryFilter
+    on QueryBuilder<CategoryModel, CategoryModel, QFilterCondition> {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  colorValueEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'colorValue', value: value),
@@ -387,10 +399,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> colorValueGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  colorValueGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
@@ -402,10 +412,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> colorValueLessThan(
-    int value, {
-    bool include = false,
-  }) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  colorValueLessThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.lessThan(
@@ -417,7 +425,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> colorValueBetween(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  colorValueBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -436,7 +445,9 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> idEqualTo(Id value) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition> idEqualTo(
+    Id value,
+  ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'id', value: value),
@@ -444,10 +455,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> idGreaterThan(
-    Id value, {
-    bool include = false,
-  }) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  idGreaterThan(Id value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
@@ -459,7 +468,7 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> idLessThan(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition> idLessThan(
     Id value, {
     bool include = false,
   }) {
@@ -474,7 +483,7 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> idBetween(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition> idBetween(
     Id lower,
     Id upper, {
     bool includeLower = true,
@@ -493,9 +502,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> isArchivedEqualTo(
-    bool value,
-  ) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  isArchivedEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'isArchived', value: value),
@@ -503,7 +511,7 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> nameEqualTo(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition> nameEqualTo(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -518,7 +526,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> nameGreaterThan(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  nameGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -535,7 +544,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> nameLessThan(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  nameLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -552,7 +562,7 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> nameBetween(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition> nameBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -573,10 +583,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> nameStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  nameStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.startsWith(
@@ -588,10 +596,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> nameEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  nameEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.endsWith(
@@ -603,10 +609,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> nameContains(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  nameContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.contains(
@@ -618,7 +622,7 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> nameMatches(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition> nameMatches(
     String pattern, {
     bool caseSensitive = true,
   }) {
@@ -633,7 +637,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> nameIsEmpty() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  nameIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'name', value: ''),
@@ -641,7 +646,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> nameIsNotEmpty() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  nameIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(property: r'name', value: ''),
@@ -649,9 +655,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> sortOrderEqualTo(
-    int value,
-  ) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  sortOrderEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'sortOrder', value: value),
@@ -659,10 +664,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> sortOrderGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  sortOrderGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
@@ -674,10 +677,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> sortOrderLessThan(
-    int value, {
-    bool include = false,
-  }) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  sortOrderLessThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.lessThan(
@@ -689,7 +690,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> sortOrderBetween(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  sortOrderBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -708,9 +710,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> updatedAtEqualTo(
-    DateTime value,
-  ) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  updatedAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'updatedAt', value: value),
@@ -718,10 +719,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> updatedAtGreaterThan(
-    DateTime value, {
-    bool include = false,
-  }) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  updatedAtGreaterThan(DateTime value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
@@ -733,10 +732,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> updatedAtLessThan(
-    DateTime value, {
-    bool include = false,
-  }) {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  updatedAtLessThan(DateTime value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.lessThan(
@@ -748,7 +745,8 @@ extension CategoryQueryFilter
     });
   }
 
-  QueryBuilder<Category, Category, QAfterFilterCondition> updatedAtBetween(
+  QueryBuilder<CategoryModel, CategoryModel, QAfterFilterCondition>
+  updatedAtBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
@@ -768,164 +766,173 @@ extension CategoryQueryFilter
   }
 }
 
-extension CategoryQueryObject
-    on QueryBuilder<Category, Category, QFilterCondition> {}
+extension CategoryModelQueryObject
+    on QueryBuilder<CategoryModel, CategoryModel, QFilterCondition> {}
 
-extension CategoryQueryLinks
-    on QueryBuilder<Category, Category, QFilterCondition> {}
+extension CategoryModelQueryLinks
+    on QueryBuilder<CategoryModel, CategoryModel, QFilterCondition> {}
 
-extension CategoryQuerySortBy on QueryBuilder<Category, Category, QSortBy> {
-  QueryBuilder<Category, Category, QAfterSortBy> sortByColorValue() {
+extension CategoryModelQuerySortBy
+    on QueryBuilder<CategoryModel, CategoryModel, QSortBy> {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> sortByColorValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'colorValue', Sort.asc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> sortByColorValueDesc() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy>
+  sortByColorValueDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'colorValue', Sort.desc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> sortByIsArchived() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> sortByIsArchived() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isArchived', Sort.asc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> sortByIsArchivedDesc() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy>
+  sortByIsArchivedDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isArchived', Sort.desc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> sortByName() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> sortByNameDesc() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> sortByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> sortBySortOrder() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> sortBySortOrder() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortOrder', Sort.asc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> sortBySortOrderDesc() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy>
+  sortBySortOrderDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortOrder', Sort.desc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> sortByUpdatedAt() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> sortByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> sortByUpdatedAtDesc() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy>
+  sortByUpdatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 }
 
-extension CategoryQuerySortThenBy
-    on QueryBuilder<Category, Category, QSortThenBy> {
-  QueryBuilder<Category, Category, QAfterSortBy> thenByColorValue() {
+extension CategoryModelQuerySortThenBy
+    on QueryBuilder<CategoryModel, CategoryModel, QSortThenBy> {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> thenByColorValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'colorValue', Sort.asc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> thenByColorValueDesc() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy>
+  thenByColorValueDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'colorValue', Sort.desc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> thenById() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> thenByIdDesc() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> thenByIsArchived() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> thenByIsArchived() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isArchived', Sort.asc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> thenByIsArchivedDesc() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy>
+  thenByIsArchivedDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isArchived', Sort.desc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> thenByName() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> thenByNameDesc() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> thenByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> thenBySortOrder() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> thenBySortOrder() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortOrder', Sort.asc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> thenBySortOrderDesc() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy>
+  thenBySortOrderDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortOrder', Sort.desc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> thenByUpdatedAt() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy> thenByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Category, Category, QAfterSortBy> thenByUpdatedAtDesc() {
+  QueryBuilder<CategoryModel, CategoryModel, QAfterSortBy>
+  thenByUpdatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 }
 
-extension CategoryQueryWhereDistinct
-    on QueryBuilder<Category, Category, QDistinct> {
-  QueryBuilder<Category, Category, QDistinct> distinctByColorValue() {
+extension CategoryModelQueryWhereDistinct
+    on QueryBuilder<CategoryModel, CategoryModel, QDistinct> {
+  QueryBuilder<CategoryModel, CategoryModel, QDistinct> distinctByColorValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'colorValue');
     });
   }
 
-  QueryBuilder<Category, Category, QDistinct> distinctByIsArchived() {
+  QueryBuilder<CategoryModel, CategoryModel, QDistinct> distinctByIsArchived() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isArchived');
     });
   }
 
-  QueryBuilder<Category, Category, QDistinct> distinctByName({
+  QueryBuilder<CategoryModel, CategoryModel, QDistinct> distinctByName({
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -933,52 +940,52 @@ extension CategoryQueryWhereDistinct
     });
   }
 
-  QueryBuilder<Category, Category, QDistinct> distinctBySortOrder() {
+  QueryBuilder<CategoryModel, CategoryModel, QDistinct> distinctBySortOrder() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'sortOrder');
     });
   }
 
-  QueryBuilder<Category, Category, QDistinct> distinctByUpdatedAt() {
+  QueryBuilder<CategoryModel, CategoryModel, QDistinct> distinctByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'updatedAt');
     });
   }
 }
 
-extension CategoryQueryProperty
-    on QueryBuilder<Category, Category, QQueryProperty> {
-  QueryBuilder<Category, int, QQueryOperations> idProperty() {
+extension CategoryModelQueryProperty
+    on QueryBuilder<CategoryModel, CategoryModel, QQueryProperty> {
+  QueryBuilder<CategoryModel, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
     });
   }
 
-  QueryBuilder<Category, int, QQueryOperations> colorValueProperty() {
+  QueryBuilder<CategoryModel, int, QQueryOperations> colorValueProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'colorValue');
     });
   }
 
-  QueryBuilder<Category, bool, QQueryOperations> isArchivedProperty() {
+  QueryBuilder<CategoryModel, bool, QQueryOperations> isArchivedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isArchived');
     });
   }
 
-  QueryBuilder<Category, String, QQueryOperations> nameProperty() {
+  QueryBuilder<CategoryModel, String, QQueryOperations> nameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'name');
     });
   }
 
-  QueryBuilder<Category, int, QQueryOperations> sortOrderProperty() {
+  QueryBuilder<CategoryModel, int, QQueryOperations> sortOrderProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'sortOrder');
     });
   }
 
-  QueryBuilder<Category, DateTime, QQueryOperations> updatedAtProperty() {
+  QueryBuilder<CategoryModel, DateTime, QQueryOperations> updatedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'updatedAt');
     });

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smart_planner/core/presentation/widgets/delete_undo_snackbar.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_recurrence.dart';
 import 'package:smart_planner/features/calendar_integration/domain/deleted_calendar_event_snapshot.dart';

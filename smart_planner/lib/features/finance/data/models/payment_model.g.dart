@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'payment.dart';
+part of 'payment_model.dart';
 
 // **************************************************************************
 // IsarCollectionGenerator
@@ -9,13 +9,13 @@ part of 'payment.dart';
 // coverage:ignore-file
 // ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
 
-extension GetPaymentCollection on Isar {
-  IsarCollection<Payment> get payments => this.collection();
+extension GetPaymentModelCollection on Isar {
+  IsarCollection<PaymentModel> get paymentModels => this.collection();
 }
 
-const PaymentSchema = CollectionSchema(
-  name: r'Payment',
-  id: -6533700744042574122,
+const PaymentModelSchema = CollectionSchema(
+  name: r'PaymentModel',
+  id: -5459064031591241697,
   properties: {
     r'amountMinor': PropertySchema(
       id: 0,
@@ -31,7 +31,7 @@ const PaymentSchema = CollectionSchema(
       id: 2,
       name: r'direction',
       type: IsarType.byte,
-      enumMap: _PaymentdirectionEnumValueMap,
+      enumMap: _PaymentModeldirectionEnumValueMap,
     ),
     r'linkedEventId': PropertySchema(
       id: 3,
@@ -53,7 +53,7 @@ const PaymentSchema = CollectionSchema(
       id: 7,
       name: r'status',
       type: IsarType.byte,
-      enumMap: _PaymentstatusEnumValueMap,
+      enumMap: _PaymentModelstatusEnumValueMap,
     ),
     r'title': PropertySchema(id: 8, name: r'title', type: IsarType.string),
     r'updatedAt': PropertySchema(
@@ -63,10 +63,10 @@ const PaymentSchema = CollectionSchema(
     ),
   },
 
-  estimateSize: _paymentEstimateSize,
-  serialize: _paymentSerialize,
-  deserialize: _paymentDeserialize,
-  deserializeProp: _paymentDeserializeProp,
+  estimateSize: _paymentModelEstimateSize,
+  serialize: _paymentModelSerialize,
+  deserialize: _paymentModelDeserialize,
+  deserializeProp: _paymentModelDeserializeProp,
   idName: r'id',
   indexes: {
     r'title': IndexSchema(
@@ -86,14 +86,14 @@ const PaymentSchema = CollectionSchema(
   links: {},
   embeddedSchemas: {},
 
-  getId: _paymentGetId,
-  getLinks: _paymentGetLinks,
-  attach: _paymentAttach,
+  getId: _paymentModelGetId,
+  getLinks: _paymentModelGetLinks,
+  attach: _paymentModelAttach,
   version: '3.3.2',
 );
 
-int _paymentEstimateSize(
-  Payment object,
+int _paymentModelEstimateSize(
+  PaymentModel object,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
@@ -109,8 +109,8 @@ int _paymentEstimateSize(
   return bytesCount;
 }
 
-void _paymentSerialize(
-  Payment object,
+void _paymentModelSerialize(
+  PaymentModel object,
   IsarWriter writer,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
@@ -127,17 +127,17 @@ void _paymentSerialize(
   writer.writeDateTime(offsets[9], object.updatedAt);
 }
 
-Payment _paymentDeserialize(
+PaymentModel _paymentModelDeserialize(
   Id id,
   IsarReader reader,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  final object = Payment();
+  final object = PaymentModel();
   object.amountMinor = reader.readLong(offsets[0]);
   object.currencyCode = reader.readString(offsets[1]);
   object.direction =
-      _PaymentdirectionValueEnumMap[reader.readByteOrNull(offsets[2])] ??
+      _PaymentModeldirectionValueEnumMap[reader.readByteOrNull(offsets[2])] ??
       PaymentDirection.expense;
   object.id = id;
   object.linkedEventId = reader.readLongOrNull(offsets[3]);
@@ -145,14 +145,14 @@ Payment _paymentDeserialize(
   object.note = reader.readStringOrNull(offsets[5]);
   object.occurredAt = reader.readDateTime(offsets[6]);
   object.status =
-      _PaymentstatusValueEnumMap[reader.readByteOrNull(offsets[7])] ??
+      _PaymentModelstatusValueEnumMap[reader.readByteOrNull(offsets[7])] ??
       PaymentStatus.planned;
   object.title = reader.readString(offsets[8]);
   object.updatedAt = reader.readDateTime(offsets[9]);
   return object;
 }
 
-P _paymentDeserializeProp<P>(
+P _paymentModelDeserializeProp<P>(
   IsarReader reader,
   int propertyId,
   int offset,
@@ -164,7 +164,9 @@ P _paymentDeserializeProp<P>(
     case 1:
       return (reader.readString(offset)) as P;
     case 2:
-      return (_PaymentdirectionValueEnumMap[reader.readByteOrNull(offset)] ??
+      return (_PaymentModeldirectionValueEnumMap[reader.readByteOrNull(
+                offset,
+              )] ??
               PaymentDirection.expense)
           as P;
     case 3:
@@ -176,7 +178,7 @@ P _paymentDeserializeProp<P>(
     case 6:
       return (reader.readDateTime(offset)) as P;
     case 7:
-      return (_PaymentstatusValueEnumMap[reader.readByteOrNull(offset)] ??
+      return (_PaymentModelstatusValueEnumMap[reader.readByteOrNull(offset)] ??
               PaymentStatus.planned)
           as P;
     case 8:
@@ -188,42 +190,47 @@ P _paymentDeserializeProp<P>(
   }
 }
 
-const _PaymentdirectionEnumValueMap = {'expense': 0, 'income': 1};
-const _PaymentdirectionValueEnumMap = {
+const _PaymentModeldirectionEnumValueMap = {'expense': 0, 'income': 1};
+const _PaymentModeldirectionValueEnumMap = {
   0: PaymentDirection.expense,
   1: PaymentDirection.income,
 };
-const _PaymentstatusEnumValueMap = {
+const _PaymentModelstatusEnumValueMap = {
   'planned': 0,
   'completed': 1,
   'cancelled': 2,
 };
-const _PaymentstatusValueEnumMap = {
+const _PaymentModelstatusValueEnumMap = {
   0: PaymentStatus.planned,
   1: PaymentStatus.completed,
   2: PaymentStatus.cancelled,
 };
 
-Id _paymentGetId(Payment object) {
+Id _paymentModelGetId(PaymentModel object) {
   return object.id;
 }
 
-List<IsarLinkBase<dynamic>> _paymentGetLinks(Payment object) {
+List<IsarLinkBase<dynamic>> _paymentModelGetLinks(PaymentModel object) {
   return [];
 }
 
-void _paymentAttach(IsarCollection<dynamic> col, Id id, Payment object) {
+void _paymentModelAttach(
+  IsarCollection<dynamic> col,
+  Id id,
+  PaymentModel object,
+) {
   object.id = id;
 }
 
-extension PaymentQueryWhereSort on QueryBuilder<Payment, Payment, QWhere> {
-  QueryBuilder<Payment, Payment, QAfterWhere> anyId() {
+extension PaymentModelQueryWhereSort
+    on QueryBuilder<PaymentModel, PaymentModel, QWhere> {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhere> anyTitle() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhere> anyTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'title'),
@@ -232,14 +239,17 @@ extension PaymentQueryWhereSort on QueryBuilder<Payment, Payment, QWhere> {
   }
 }
 
-extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
-  QueryBuilder<Payment, Payment, QAfterWhereClause> idEqualTo(Id id) {
+extension PaymentModelQueryWhere
+    on QueryBuilder<PaymentModel, PaymentModel, QWhereClause> {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause> idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhereClause> idNotEqualTo(Id id) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause> idNotEqualTo(
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -261,7 +271,7 @@ extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhereClause> idGreaterThan(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause> idGreaterThan(
     Id id, {
     bool include = false,
   }) {
@@ -272,7 +282,7 @@ extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhereClause> idLessThan(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause> idLessThan(
     Id id, {
     bool include = false,
   }) {
@@ -283,7 +293,7 @@ extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhereClause> idBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause> idBetween(
     Id lowerId,
     Id upperId, {
     bool includeLower = true,
@@ -301,7 +311,9 @@ extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhereClause> titleEqualTo(String title) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause> titleEqualTo(
+    String title,
+  ) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IndexWhereClause.equalTo(indexName: r'title', value: [title]),
@@ -309,7 +321,7 @@ extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhereClause> titleNotEqualTo(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause> titleNotEqualTo(
     String title,
   ) {
     return QueryBuilder.apply(this, (query) {
@@ -353,7 +365,7 @@ extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhereClause> titleGreaterThan(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause> titleGreaterThan(
     String title, {
     bool include = false,
   }) {
@@ -369,7 +381,7 @@ extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhereClause> titleLessThan(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause> titleLessThan(
     String title, {
     bool include = false,
   }) {
@@ -385,7 +397,7 @@ extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhereClause> titleBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause> titleBetween(
     String lowerTitle,
     String upperTitle, {
     bool includeLower = true,
@@ -404,7 +416,7 @@ extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhereClause> titleStartsWith(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause> titleStartsWith(
     String TitlePrefix,
   ) {
     return QueryBuilder.apply(this, (query) {
@@ -418,7 +430,7 @@ extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhereClause> titleIsEmpty() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause> titleIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IndexWhereClause.equalTo(indexName: r'title', value: ['']),
@@ -426,7 +438,8 @@ extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterWhereClause> titleIsNotEmpty() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterWhereClause>
+  titleIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -449,11 +462,10 @@ extension PaymentQueryWhere on QueryBuilder<Payment, Payment, QWhereClause> {
   }
 }
 
-extension PaymentQueryFilter
-    on QueryBuilder<Payment, Payment, QFilterCondition> {
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> amountMinorEqualTo(
-    int value,
-  ) {
+extension PaymentModelQueryFilter
+    on QueryBuilder<PaymentModel, PaymentModel, QFilterCondition> {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  amountMinorEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'amountMinor', value: value),
@@ -461,10 +473,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> amountMinorGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  amountMinorGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
@@ -476,10 +486,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> amountMinorLessThan(
-    int value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  amountMinorLessThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.lessThan(
@@ -491,7 +499,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> amountMinorBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  amountMinorBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -510,10 +519,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> currencyCodeEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  currencyCodeEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(
@@ -525,7 +532,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> currencyCodeGreaterThan(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  currencyCodeGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -542,7 +550,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> currencyCodeLessThan(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  currencyCodeLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -559,7 +568,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> currencyCodeBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  currencyCodeBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -580,10 +590,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> currencyCodeStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  currencyCodeStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.startsWith(
@@ -595,10 +603,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> currencyCodeEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  currencyCodeEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.endsWith(
@@ -610,10 +616,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> currencyCodeContains(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  currencyCodeContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.contains(
@@ -625,10 +629,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> currencyCodeMatches(
-    String pattern, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  currencyCodeMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.matches(
@@ -640,7 +642,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> currencyCodeIsEmpty() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  currencyCodeIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'currencyCode', value: ''),
@@ -648,7 +651,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition>
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
   currencyCodeIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -657,9 +660,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> directionEqualTo(
-    PaymentDirection value,
-  ) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  directionEqualTo(PaymentDirection value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'direction', value: value),
@@ -667,10 +669,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> directionGreaterThan(
-    PaymentDirection value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  directionGreaterThan(PaymentDirection value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
@@ -682,10 +682,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> directionLessThan(
-    PaymentDirection value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  directionLessThan(PaymentDirection value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.lessThan(
@@ -697,7 +695,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> directionBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  directionBetween(
     PaymentDirection lower,
     PaymentDirection upper, {
     bool includeLower = true,
@@ -716,7 +715,9 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> idEqualTo(Id value) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> idEqualTo(
+    Id value,
+  ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'id', value: value),
@@ -724,7 +725,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> idGreaterThan(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> idGreaterThan(
     Id value, {
     bool include = false,
   }) {
@@ -739,7 +740,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> idLessThan(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> idLessThan(
     Id value, {
     bool include = false,
   }) {
@@ -754,7 +755,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> idBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> idBetween(
     Id lower,
     Id upper, {
     bool includeLower = true,
@@ -773,7 +774,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> linkedEventIdIsNull() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  linkedEventIdIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const FilterCondition.isNull(property: r'linkedEventId'),
@@ -781,7 +783,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition>
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
   linkedEventIdIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -790,9 +792,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> linkedEventIdEqualTo(
-    int? value,
-  ) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  linkedEventIdEqualTo(int? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'linkedEventId', value: value),
@@ -800,7 +801,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition>
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
   linkedEventIdGreaterThan(int? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -813,10 +814,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> linkedEventIdLessThan(
-    int? value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  linkedEventIdLessThan(int? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.lessThan(
@@ -828,7 +827,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> linkedEventIdBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  linkedEventIdBetween(
     int? lower,
     int? upper, {
     bool includeLower = true,
@@ -847,7 +847,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> linkedTaskIdIsNull() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  linkedTaskIdIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const FilterCondition.isNull(property: r'linkedTaskId'),
@@ -855,7 +856,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition>
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
   linkedTaskIdIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -864,9 +865,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> linkedTaskIdEqualTo(
-    int? value,
-  ) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  linkedTaskIdEqualTo(int? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'linkedTaskId', value: value),
@@ -874,10 +874,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> linkedTaskIdGreaterThan(
-    int? value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  linkedTaskIdGreaterThan(int? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
@@ -889,10 +887,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> linkedTaskIdLessThan(
-    int? value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  linkedTaskIdLessThan(int? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.lessThan(
@@ -904,7 +900,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> linkedTaskIdBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  linkedTaskIdBetween(
     int? lower,
     int? upper, {
     bool includeLower = true,
@@ -923,7 +920,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> noteIsNull() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> noteIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const FilterCondition.isNull(property: r'note'),
@@ -931,7 +928,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> noteIsNotNull() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  noteIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const FilterCondition.isNotNull(property: r'note'),
@@ -939,7 +937,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> noteEqualTo(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> noteEqualTo(
     String? value, {
     bool caseSensitive = true,
   }) {
@@ -954,7 +952,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> noteGreaterThan(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  noteGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
@@ -971,7 +970,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> noteLessThan(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> noteLessThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
@@ -988,7 +987,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> noteBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> noteBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -1009,10 +1008,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> noteStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  noteStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.startsWith(
@@ -1024,7 +1021,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> noteEndsWith(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> noteEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -1039,7 +1036,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> noteContains(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> noteContains(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -1054,7 +1051,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> noteMatches(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> noteMatches(
     String pattern, {
     bool caseSensitive = true,
   }) {
@@ -1069,7 +1066,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> noteIsEmpty() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  noteIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'note', value: ''),
@@ -1077,7 +1075,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> noteIsNotEmpty() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  noteIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(property: r'note', value: ''),
@@ -1085,9 +1084,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> occurredAtEqualTo(
-    DateTime value,
-  ) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  occurredAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'occurredAt', value: value),
@@ -1095,10 +1093,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> occurredAtGreaterThan(
-    DateTime value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  occurredAtGreaterThan(DateTime value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
@@ -1110,10 +1106,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> occurredAtLessThan(
-    DateTime value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  occurredAtLessThan(DateTime value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.lessThan(
@@ -1125,7 +1119,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> occurredAtBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  occurredAtBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
@@ -1144,7 +1139,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> statusEqualTo(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> statusEqualTo(
     PaymentStatus value,
   ) {
     return QueryBuilder.apply(this, (query) {
@@ -1154,10 +1149,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> statusGreaterThan(
-    PaymentStatus value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  statusGreaterThan(PaymentStatus value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
@@ -1169,10 +1162,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> statusLessThan(
-    PaymentStatus value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  statusLessThan(PaymentStatus value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.lessThan(
@@ -1184,7 +1175,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> statusBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> statusBetween(
     PaymentStatus lower,
     PaymentStatus upper, {
     bool includeLower = true,
@@ -1203,7 +1194,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> titleEqualTo(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> titleEqualTo(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -1218,7 +1209,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> titleGreaterThan(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  titleGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -1235,7 +1227,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> titleLessThan(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> titleLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -1252,7 +1244,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> titleBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> titleBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -1273,10 +1265,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> titleStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  titleStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.startsWith(
@@ -1288,7 +1278,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> titleEndsWith(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> titleEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -1303,7 +1293,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> titleContains(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> titleContains(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -1318,7 +1308,7 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> titleMatches(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition> titleMatches(
     String pattern, {
     bool caseSensitive = true,
   }) {
@@ -1333,7 +1323,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> titleIsEmpty() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  titleIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'title', value: ''),
@@ -1341,7 +1332,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> titleIsNotEmpty() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  titleIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(property: r'title', value: ''),
@@ -1349,9 +1341,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> updatedAtEqualTo(
-    DateTime value,
-  ) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  updatedAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'updatedAt', value: value),
@@ -1359,10 +1350,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> updatedAtGreaterThan(
-    DateTime value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  updatedAtGreaterThan(DateTime value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
@@ -1374,10 +1363,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> updatedAtLessThan(
-    DateTime value, {
-    bool include = false,
-  }) {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  updatedAtLessThan(DateTime value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.lessThan(
@@ -1389,7 +1376,8 @@ extension PaymentQueryFilter
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterFilterCondition> updatedAtBetween(
+  QueryBuilder<PaymentModel, PaymentModel, QAfterFilterCondition>
+  updatedAtBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
@@ -1409,278 +1397,289 @@ extension PaymentQueryFilter
   }
 }
 
-extension PaymentQueryObject
-    on QueryBuilder<Payment, Payment, QFilterCondition> {}
+extension PaymentModelQueryObject
+    on QueryBuilder<PaymentModel, PaymentModel, QFilterCondition> {}
 
-extension PaymentQueryLinks
-    on QueryBuilder<Payment, Payment, QFilterCondition> {}
+extension PaymentModelQueryLinks
+    on QueryBuilder<PaymentModel, PaymentModel, QFilterCondition> {}
 
-extension PaymentQuerySortBy on QueryBuilder<Payment, Payment, QSortBy> {
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByAmountMinor() {
+extension PaymentModelQuerySortBy
+    on QueryBuilder<PaymentModel, PaymentModel, QSortBy> {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByAmountMinor() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'amountMinor', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByAmountMinorDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy>
+  sortByAmountMinorDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'amountMinor', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByCurrencyCode() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByCurrencyCode() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'currencyCode', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByCurrencyCodeDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy>
+  sortByCurrencyCodeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'currencyCode', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByDirection() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByDirection() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'direction', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByDirectionDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByDirectionDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'direction', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByLinkedEventId() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByLinkedEventId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedEventId', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByLinkedEventIdDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy>
+  sortByLinkedEventIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedEventId', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByLinkedTaskId() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByLinkedTaskId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedTaskId', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByLinkedTaskIdDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy>
+  sortByLinkedTaskIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedTaskId', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByNote() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByNote() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'note', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByNoteDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByNoteDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'note', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByOccurredAt() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByOccurredAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'occurredAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByOccurredAtDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy>
+  sortByOccurredAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'occurredAt', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByStatus() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByStatus() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'status', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByStatusDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByStatusDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'status', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByTitle() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByTitleDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByTitleDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByUpdatedAt() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> sortByUpdatedAtDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> sortByUpdatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 }
 
-extension PaymentQuerySortThenBy
-    on QueryBuilder<Payment, Payment, QSortThenBy> {
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByAmountMinor() {
+extension PaymentModelQuerySortThenBy
+    on QueryBuilder<PaymentModel, PaymentModel, QSortThenBy> {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByAmountMinor() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'amountMinor', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByAmountMinorDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy>
+  thenByAmountMinorDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'amountMinor', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByCurrencyCode() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByCurrencyCode() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'currencyCode', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByCurrencyCodeDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy>
+  thenByCurrencyCodeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'currencyCode', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByDirection() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByDirection() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'direction', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByDirectionDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByDirectionDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'direction', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenById() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByIdDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByLinkedEventId() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByLinkedEventId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedEventId', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByLinkedEventIdDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy>
+  thenByLinkedEventIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedEventId', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByLinkedTaskId() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByLinkedTaskId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedTaskId', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByLinkedTaskIdDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy>
+  thenByLinkedTaskIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'linkedTaskId', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByNote() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByNote() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'note', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByNoteDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByNoteDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'note', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByOccurredAt() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByOccurredAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'occurredAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByOccurredAtDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy>
+  thenByOccurredAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'occurredAt', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByStatus() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByStatus() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'status', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByStatusDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByStatusDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'status', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByTitle() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByTitleDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByTitleDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.desc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByUpdatedAt() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Payment, Payment, QAfterSortBy> thenByUpdatedAtDesc() {
+  QueryBuilder<PaymentModel, PaymentModel, QAfterSortBy> thenByUpdatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 }
 
-extension PaymentQueryWhereDistinct
-    on QueryBuilder<Payment, Payment, QDistinct> {
-  QueryBuilder<Payment, Payment, QDistinct> distinctByAmountMinor() {
+extension PaymentModelQueryWhereDistinct
+    on QueryBuilder<PaymentModel, PaymentModel, QDistinct> {
+  QueryBuilder<PaymentModel, PaymentModel, QDistinct> distinctByAmountMinor() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'amountMinor');
     });
   }
 
-  QueryBuilder<Payment, Payment, QDistinct> distinctByCurrencyCode({
+  QueryBuilder<PaymentModel, PaymentModel, QDistinct> distinctByCurrencyCode({
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -1688,25 +1687,26 @@ extension PaymentQueryWhereDistinct
     });
   }
 
-  QueryBuilder<Payment, Payment, QDistinct> distinctByDirection() {
+  QueryBuilder<PaymentModel, PaymentModel, QDistinct> distinctByDirection() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'direction');
     });
   }
 
-  QueryBuilder<Payment, Payment, QDistinct> distinctByLinkedEventId() {
+  QueryBuilder<PaymentModel, PaymentModel, QDistinct>
+  distinctByLinkedEventId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'linkedEventId');
     });
   }
 
-  QueryBuilder<Payment, Payment, QDistinct> distinctByLinkedTaskId() {
+  QueryBuilder<PaymentModel, PaymentModel, QDistinct> distinctByLinkedTaskId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'linkedTaskId');
     });
   }
 
-  QueryBuilder<Payment, Payment, QDistinct> distinctByNote({
+  QueryBuilder<PaymentModel, PaymentModel, QDistinct> distinctByNote({
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -1714,19 +1714,19 @@ extension PaymentQueryWhereDistinct
     });
   }
 
-  QueryBuilder<Payment, Payment, QDistinct> distinctByOccurredAt() {
+  QueryBuilder<PaymentModel, PaymentModel, QDistinct> distinctByOccurredAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'occurredAt');
     });
   }
 
-  QueryBuilder<Payment, Payment, QDistinct> distinctByStatus() {
+  QueryBuilder<PaymentModel, PaymentModel, QDistinct> distinctByStatus() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'status');
     });
   }
 
-  QueryBuilder<Payment, Payment, QDistinct> distinctByTitle({
+  QueryBuilder<PaymentModel, PaymentModel, QDistinct> distinctByTitle({
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -1734,77 +1734,77 @@ extension PaymentQueryWhereDistinct
     });
   }
 
-  QueryBuilder<Payment, Payment, QDistinct> distinctByUpdatedAt() {
+  QueryBuilder<PaymentModel, PaymentModel, QDistinct> distinctByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'updatedAt');
     });
   }
 }
 
-extension PaymentQueryProperty
-    on QueryBuilder<Payment, Payment, QQueryProperty> {
-  QueryBuilder<Payment, int, QQueryOperations> idProperty() {
+extension PaymentModelQueryProperty
+    on QueryBuilder<PaymentModel, PaymentModel, QQueryProperty> {
+  QueryBuilder<PaymentModel, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
     });
   }
 
-  QueryBuilder<Payment, int, QQueryOperations> amountMinorProperty() {
+  QueryBuilder<PaymentModel, int, QQueryOperations> amountMinorProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'amountMinor');
     });
   }
 
-  QueryBuilder<Payment, String, QQueryOperations> currencyCodeProperty() {
+  QueryBuilder<PaymentModel, String, QQueryOperations> currencyCodeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'currencyCode');
     });
   }
 
-  QueryBuilder<Payment, PaymentDirection, QQueryOperations>
+  QueryBuilder<PaymentModel, PaymentDirection, QQueryOperations>
   directionProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'direction');
     });
   }
 
-  QueryBuilder<Payment, int?, QQueryOperations> linkedEventIdProperty() {
+  QueryBuilder<PaymentModel, int?, QQueryOperations> linkedEventIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'linkedEventId');
     });
   }
 
-  QueryBuilder<Payment, int?, QQueryOperations> linkedTaskIdProperty() {
+  QueryBuilder<PaymentModel, int?, QQueryOperations> linkedTaskIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'linkedTaskId');
     });
   }
 
-  QueryBuilder<Payment, String?, QQueryOperations> noteProperty() {
+  QueryBuilder<PaymentModel, String?, QQueryOperations> noteProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'note');
     });
   }
 
-  QueryBuilder<Payment, DateTime, QQueryOperations> occurredAtProperty() {
+  QueryBuilder<PaymentModel, DateTime, QQueryOperations> occurredAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'occurredAt');
     });
   }
 
-  QueryBuilder<Payment, PaymentStatus, QQueryOperations> statusProperty() {
+  QueryBuilder<PaymentModel, PaymentStatus, QQueryOperations> statusProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'status');
     });
   }
 
-  QueryBuilder<Payment, String, QQueryOperations> titleProperty() {
+  QueryBuilder<PaymentModel, String, QQueryOperations> titleProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'title');
     });
   }
 
-  QueryBuilder<Payment, DateTime, QQueryOperations> updatedAtProperty() {
+  QueryBuilder<PaymentModel, DateTime, QQueryOperations> updatedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'updatedAt');
     });

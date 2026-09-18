@@ -20,10 +20,11 @@ abstract final class OverdueBackgroundWorker {
       await OverdueMidnightRollService().runIfNeeded();
 
       final TodoRepository todoRepository = TodoRepository();
-      final List<Task> overdueTasks =
-          await todoRepository.getOverdueUncompletedTasks(
+      final List<Task> overdueTasks = (await todoRepository
+              .getOverdueUncompletedTasks(
         referenceDay: AppDateUtils.startOfDay(DateTime.now()),
-      );
+      ))
+          .getOrElse((_) => <Task>[]);
 
       if (overdueTasks.isEmpty) {
         await NotificationHelper.cancel(

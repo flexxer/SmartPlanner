@@ -24,6 +24,8 @@ smart_planner/lib/
 │
 ├── core/                              # Shared infrastructure
 │   ├── app_initializer.dart           # Isar, notifications, workmanager, task seed, [ItemReminderScheduler]
+│   ├── di/app_dependencies.dart        # Composition root: singleton graph of repositories + services
+│   ├── result/result.dart              # Result<T> sealed class (Success/Failure) + AppFailure / DatabaseFailure
 │   ├── localization/                  # easy_localization helpers + language picker
 │   │   ├── app_locales.dart           # supported locales (en, ru, es)
 │   │   ├── locale_preferences_repository.dart  # manual language override (SharedPreferences)
@@ -35,7 +37,7 @@ smart_planner/lib/
 │   │   ├── app_color_utils.dart            # WCAG contrast helpers for accent badges & labels
 │   │   ├── theme_preferences_repository.dart  # persisted ThemeMode (SharedPreferences + ValueNotifier)
 │   │   └── theme_picker_section.dart       # dropdown on CalendarSettingsPage
-│   ├── database/isar_database.dart    # Isar singleton (+ planned Category, CategoryLink, Payment)
+│   ├── database/isar_database.dart    # Isar singleton; registers all `@collection` `*Model` schemas
 │   ├── presentation/widgets/
 │   │   ├── settings_expandable_section.dart  # Grouped settings blocks
 │   │   ├── form_sheet_scaffold.dart          # Shared create/edit sheet layout
@@ -279,11 +281,28 @@ smart_planner/test/
 
 | Layer | Responsibility |
 |-------|----------------|
-| **domain** | Entities, business rules, repository interfaces; Isar `@collection` models live here for tasks (project convention). |
-| **data** | Repositories, device/API services, DTO mapping, `SharedPreferences`. |
+| **domain** | Pure entities (**no Isar**), business rules, repository interfaces (`TaskRepository`, `CalendarEventStore`, …). |
+| **data** | Isar `@collection` models (`*Model`) + `toDomain()`/`fromDomain()` mappers, repository impls, device/API services, `SharedPreferences`. |
 | **presentation** | Widgets, BLoC, navigation. |
 
 **Dependency direction:** `presentation` → `domain` ← `data`. `core` is shared by all features.
+
+---
+
+## Persistence & Result pattern (Phase 3)
+
+Each feature splits **pure domain** from **Isar persistence**:
+
+| Concern | Location | Example |
+|---------|----------|---------|
+| Pure entity (no Isar) | `features/*/domain/entities/` | `Task`, `CalendarEvent`, `Category`, `Payment`, `UiTemplate`, `AttachmentTemplate`, `EventAttachment`, `TaskAttachment` |
+| Isar `@collection` model | `features/*/data/models/` | `TaskModel`, `CalendarEventModel`, `CategoryModel`, … with `toDomain()` / `fromDomain()` |
+| Repository interface | `features/*/domain/repositories/` | `TaskRepository`, `CalendarEventStore`, `CategoryRepository`, `PaymentRepository` |
+| Repository impl | `features/*/data/**` | maps `*Model` ⇄ domain and returns `Result` |
+
+**`Result<T>`** (`core/result/result.dart`): data-layer methods return `Result<T>` (`Success<T>` / `Failure<T>`) instead of throwing. Failures are a sealed `AppFailure` hierarchy (`DatabaseFailure`, …). Callers use `.getOrElse(...)`, `.map(...)`, `.when(...)`.
+
+**Global DI** (`core/di/app_dependencies.dart`): `AppDependencies` is the composition root. It constructs and owns the singleton graph of repositories and services (`TodoRepository`, `LocalCalendarEventRepository`, `CategoryRepository`, `PaymentRepository`, `ReminderSyncService`, `TaskEventLinkService`, …).
 
 ---
 
@@ -628,4 +647,4 @@ Example prompt:
 | 2026-06-06 | Lock screen widget spec (`ANDROID_LOCK_SCREEN_WIDGET.md`); home widget paths in key-types table; removed sprint roadmap / home-widget sketch docs |
 | 2026-06-06 | **Theme settings** (system / light / dark); tuned `AppTheme` + `AppColorUtils`; bordered sections/cards; settings **Theme** section on `CalendarSettingsPage` |
 | 2026-07 | Manual outbound calendar sync; Isar-only event lists; `EventCalendarSyncService` |
-| 2026-07 | Planned: `categories/`, `finance/` features; Library hub rename; CategoryLink multi-tag; Payment + currency prefs |
+| 2026-09 | Phase 3 architecture & decoupling: pure entities + `Isar` `*Model` mappers, global DI (`AppDependencies`), `Result<T>` pattern; `flutter analyze` clean |

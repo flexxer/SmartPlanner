@@ -6,16 +6,12 @@ import 'package:smart_planner/features/calendar_integration/domain/entities/devi
 import 'package:smart_planner/features/calendar_integration/domain/linked_calendar_ids_resolver.dart';
 
 class _FakeCalendarService extends DeviceCalendarService {
-  _FakeCalendarService({
-    required this.calendars,
-    this.granted = true,
-  });
+  _FakeCalendarService({required this.calendars});
 
   final List<DeviceCalendarInfo> calendars;
-  final bool granted;
 
   @override
-  Future<bool> ensurePermissions() async => granted;
+  Future<bool> ensurePermissions() async => true;
 
   @override
   Future<List<DeviceCalendarInfo>> getCalendars() async => calendars;

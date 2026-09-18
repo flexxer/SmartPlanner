@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/localization/l10n.dart';

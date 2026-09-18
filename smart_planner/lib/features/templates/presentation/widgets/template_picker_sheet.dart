@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:smart_planner/core/result/result.dart';
 import 'package:smart_planner/features/templates/data/repositories/ui_template_repository.dart';
 import 'package:smart_planner/features/templates/domain/entities/ui_template.dart';
 
@@ -34,12 +35,12 @@ class _TemplatePickerSheetState extends State<TemplatePickerSheet> {
   Future<void> _load() async {
     final UiTemplateRepository repository =
         context.read<UiTemplateRepository>();
-    final List<UiTemplate> list = await repository.getAll();
+    final Result<List<UiTemplate>> result = await repository.getAll();
     if (!mounted) {
       return;
     }
     setState(() {
-      _templates = list;
+      _templates = result.getOrElse((_) => <UiTemplate>[]);
       _loading = false;
     });
   }

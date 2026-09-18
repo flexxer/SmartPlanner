@@ -1,8 +1,8 @@
 import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/database/isar_database.dart';
 import 'package:smart_planner/features/categories/data/category_repository_impl.dart';
+import 'package:smart_planner/features/categories/data/models/category_link_model.dart';
 import 'package:smart_planner/features/categories/domain/entities/category.dart';
-import 'package:smart_planner/features/categories/domain/entities/category_link.dart';
 import 'package:smart_planner/features/categories/domain/repositories/category_repository.dart';
 import 'package:smart_planner/features/categories/domain/tagged_entity_type.dart';
 
@@ -11,7 +11,8 @@ class CategoryTagService {
   CategoryTagService({
     CategoryRepository? categoryRepository,
     Isar? isar,
-  })  : _categoryRepository = categoryRepository ?? CategoryRepositoryImpl(isar: isar),
+  })  : _categoryRepository =
+            categoryRepository ?? CategoryRepositoryImpl(isar: isar),
         _isar = isar;
 
   final CategoryRepository _categoryRepository;
@@ -23,7 +24,7 @@ class CategoryTagService {
     required TaggedEntityType entityType,
     required int entityId,
   }) async {
-    final List<CategoryLink> links = await _db.categoryLinks
+    final List<CategoryLinkModel> links = await _db.categoryLinkModels
         .filter()
         .entityTypeEqualTo(entityType)
         .entityIdEqualTo(entityId)
@@ -34,8 +35,10 @@ class CategoryTagService {
     }
 
     final List<Category> categories = <Category>[];
-    for (final CategoryLink link in links) {
-      final Category? category = await _categoryRepository.getById(link.categoryId);
+    for (final CategoryLinkModel link in links) {
+      final Category? category =
+          (await _categoryRepository.getById(link.categoryId))
+              .getOrElse((_) => null);
       if (category != null && !category.isArchived) {
         categories.add(category);
       }
@@ -50,12 +53,12 @@ class CategoryTagService {
     required TaggedEntityType entityType,
     required int entityId,
   }) async {
-    final List<CategoryLink> links = await _db.categoryLinks
+    final List<CategoryLinkModel> links = await _db.categoryLinkModels
         .filter()
         .entityTypeEqualTo(entityType)
         .entityIdEqualTo(entityId)
         .findAll();
-    return links.map((CategoryLink link) => link.categoryId).toList();
+    return links.map((CategoryLinkModel link) => link.categoryId).toList();
   }
 
   /// Batch-load category tags for many entities (single link query + one category fetch).
@@ -68,19 +71,19 @@ class CategoryTagService {
       return const <int, List<Category>>{};
     }
 
-    final List<CategoryLink> links = await _db.categoryLinks
+    final List<CategoryLinkModel> links = await _db.categoryLinkModels
         .filter()
         .entityTypeEqualTo(entityType)
         .findAll();
 
     final List<Category> activeCategories =
-        await _categoryRepository.getActive();
+        (await _categoryRepository.getActive()).getOrElse((_) => <Category>[]);
     final Map<Id, Category> categoriesById = <Id, Category>{
       for (final Category category in activeCategories) category.id: category,
     };
 
     final Map<int, List<Category>> result = <int, List<Category>>{};
-    for (final CategoryLink link in links) {
+    for (final CategoryLinkModel link in links) {
       if (!idSet.contains(link.entityId)) {
         continue;
       }
@@ -122,18 +125,18 @@ class CategoryTagService {
     final Set<Id> uniqueIds = categoryIds.toSet();
 
     await _db.writeTxn(() async {
-      final List<CategoryLink> existing = await _db.categoryLinks
+      final List<CategoryLinkModel> existing = await _db.categoryLinkModels
           .filter()
           .entityTypeEqualTo(entityType)
           .entityIdEqualTo(entityId)
           .findAll();
 
       final Set<Id> existingIds =
-          existing.map((CategoryLink link) => link.categoryId).toSet();
+          existing.map((CategoryLinkModel link) => link.categoryId).toSet();
 
-      for (final CategoryLink link in existing) {
+      for (final CategoryLinkModel link in existing) {
         if (!uniqueIds.contains(link.categoryId)) {
-          await _db.categoryLinks.delete(link.id);
+          await _db.categoryLinkModels.delete(link.id);
         }
       }
 
@@ -141,12 +144,11 @@ class CategoryTagService {
         if (existingIds.contains(categoryId)) {
           continue;
         }
-        await _db.categoryLinks.put(
-          CategoryLink.create(
-            entityType: entityType,
-            entityId: entityId,
-            categoryId: categoryId,
-          ),
+        await _db.categoryLinkModels.put(
+          CategoryLinkModel()
+            ..entityType = entityType
+            ..entityId = entityId
+            ..categoryId = categoryId,
         );
       }
     });
@@ -174,7 +176,7 @@ class CategoryTagService {
     required int entityId,
   }) async {
     await _db.writeTxn(() async {
-      await _db.categoryLinks
+      await _db.categoryLinkModels
           .filter()
           .entityTypeEqualTo(entityType)
           .entityIdEqualTo(entityId)

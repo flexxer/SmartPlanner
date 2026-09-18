@@ -50,6 +50,9 @@ class _DefaultReminderSettingsSectionState
     if (picked == null) {
       return;
     }
+    if (!mounted) {
+      return;
+    }
     setState(() => _taskTime = picked);
     await context
         .read<NotificationPreferencesRepository>()

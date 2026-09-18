@@ -5,34 +5,33 @@ import 'package:smart_planner/features/todo_list/data/repositories/todo_reposito
 /// Single entry point for task↔event links and parent↔child attachments.
 class TaskEventLinkService {
   TaskEventLinkService({
-    required LocalCalendarEventRepository localCalendarEvents,
-    required TodoRepository todoRepository,
-  })  : _localCalendarEvents = localCalendarEvents,
-        _todoRepository = todoRepository;
+    required this.localCalendarEvents,
+    required this.todoRepository,
+  });
 
-  final LocalCalendarEventRepository _localCalendarEvents;
-  final TodoRepository _todoRepository;
+  final LocalCalendarEventRepository localCalendarEvents;
+  final TodoRepository todoRepository;
 
   Future<void> linkTaskToEvent({
     required Id taskId,
     required Id eventId,
   }) =>
-      _localCalendarEvents.linkTask(eventId: eventId, taskId: taskId);
+      localCalendarEvents.linkTask(eventId: eventId, taskId: taskId);
 
   Future<void> unlinkTaskFromEvent(Id taskId) =>
-      _localCalendarEvents.unlinkTask(taskId);
+      localCalendarEvents.unlinkTask(taskId);
 
   Future<bool> attachTaskToParent({
     required Id childTaskId,
     required Id parentTaskId,
-  }) =>
-      _todoRepository.attachTaskToParent(
+  }) async =>
+      (await todoRepository.attachTaskToParent(
         childTaskId: childTaskId,
         parentTaskId: parentTaskId,
-      );
+      )).getOrElse((_) => false);
 
   Future<void> detachTaskFromParent(Id childTaskId) =>
-      _todoRepository.detachTaskFromParent(childTaskId);
+      todoRepository.detachTaskFromParent(childTaskId);
 
   /// Applies optional event link and parent attachment after task create.
   Future<void> applyPostCreateRelations({

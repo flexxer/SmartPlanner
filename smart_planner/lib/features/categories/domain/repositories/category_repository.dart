@@ -1,23 +1,23 @@
-import 'package:isar_community/isar.dart';
+import 'package:smart_planner/core/result/result.dart';
 import 'package:smart_planner/features/categories/domain/entities/category.dart';
 
 /// Persistence contract for user-defined [Category] tags.
 abstract class CategoryRepository {
-  Future<List<Category>> getAll({bool includeArchived = false});
+  Future<Result<List<Category>>> getAll({bool includeArchived = false});
 
-  Future<List<Category>> getActive();
+  Future<Result<List<Category>>> getActive();
 
-  Future<Category?> getById(Id id);
+  Future<Result<Category?>> getById(int id);
 
-  Future<int> countLinks(Id categoryId);
+  Future<Result<int>> countLinks(int categoryId);
 
-  Future<int> nextSortOrder();
+  Future<Result<int>> nextSortOrder();
 
-  Future<Id> save(Category category);
+  Future<Result<Category>> save(Category category);
 
-  Future<void> delete(Id id);
+  Future<Result<bool>> delete(int id);
 
-  Future<void> archive(Id id);
+  Future<Result<bool>> archive(int id);
 
-  Future<void> reorder(List<Id> orderedIds);
+  Future<Result<bool>> reorder(List<int> orderedIds);
 }

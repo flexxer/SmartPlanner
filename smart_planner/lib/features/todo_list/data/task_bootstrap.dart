@@ -22,7 +22,8 @@ class TaskBootstrap {
       return;
     }
 
-    final List<Task> existing = await repository.getAllTasks();
+    final List<Task> existing =
+        (await repository.getAllTasks()).getOrElse((_) => <Task>[]);
     if (existing.isNotEmpty) {
       await prefs.setBool(_seededKey, true);
       return;
@@ -37,7 +38,8 @@ class TaskBootstrap {
       dueDate: today,
       priority: TaskPriority.high,
     );
-    final Id urgentId = await repository.saveTask(urgent);
+    await repository.saveTask(urgent);
+    final Id urgentId = urgent.id;
     await attachments.save(
       TaskAttachment.create(
         taskId: urgentId,
@@ -70,14 +72,16 @@ class TaskBootstrap {
       dueDate: today,
       priority: TaskPriority.high,
     );
-    final Id birthdayId = await repository.saveTask(birthday);
+    await repository.saveTask(birthday);
+    final Id birthdayId = birthday.id;
 
     final Task buyCake = Task.create(
       title: 'Купить торт',
       dueDate: today,
       priority: TaskPriority.medium,
     );
-    final Id buyCakeId = await repository.saveTask(buyCake);
+    await repository.saveTask(buyCake);
+    final Id buyCakeId = buyCake.id;
     await repository.attachTaskToParent(
       childTaskId: buyCakeId,
       parentTaskId: birthdayId,

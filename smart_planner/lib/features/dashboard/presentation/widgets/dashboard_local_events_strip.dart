@@ -428,7 +428,6 @@ class _LocalEventCard extends StatelessWidget {
     required this.onLongPress,
     this.compact = false,
     this.cardHeight,
-    this.stackElevation = 0,
   });
 
   final CalendarEvent event;
@@ -438,7 +437,6 @@ class _LocalEventCard extends StatelessWidget {
   final double backgroundOpacity;
   final bool compact;
   final double? cardHeight;
-  final double stackElevation;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
@@ -479,7 +477,7 @@ class _LocalEventCard extends StatelessWidget {
       opacity: cardOpacity,
       child: Material(
         color: chipColors.background.withValues(alpha: backgroundOpacity),
-        elevation: stackElevation,
+        elevation: 0,
         shadowColor: colors.shadow.withValues(alpha: 0.3),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(compact ? 10 : 12),

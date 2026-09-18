@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:smart_planner/core/database/isar_database.dart';
+import 'package:smart_planner/core/result/result.dart';
 import 'package:smart_planner/core/timezone/timezone_monitor.dart';
 import 'package:smart_planner/features/notifications/background_service.dart';
 import 'package:smart_planner/features/notifications/data/item_reminder_scheduler.dart';
@@ -22,7 +23,13 @@ class AppInitializer {
     WidgetsFlutterBinding.ensureInitialized();
     tz.initializeTimeZones();
     final bool timezoneChanged = await TimezoneMonitor.applyIfChanged();
-    await IsarDatabase.init();
+    final result = await IsarDatabase.init();
+    switch (result) {
+      case Failure(:final failure):
+        throw StateError('Database initialization failed: ${failure.message}');
+      case Success():
+        break;
+    }
     await TaskBootstrap.seedIfNeeded(TodoRepository());
     await NotificationHelper.initializePlugin();
     _itemReminders = ItemReminderScheduler();

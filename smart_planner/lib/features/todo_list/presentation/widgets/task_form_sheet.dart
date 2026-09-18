@@ -306,11 +306,11 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
       calendarId: calendarId,
       reminderAt: _reminderAt,
     )..recurrenceRule = _buildRecurrenceRule();
-    final Id taskId = await widget.repository.saveTask(task);
-    task.id = taskId;
-    await _persistCategoryTags(taskId);
     final TaskEventLinkService linkService =
         context.read<TaskEventLinkService>();
+    final Id taskId = (await widget.repository.saveTask(task)).getOrElse((_) => task).id;
+    task.id = taskId;
+    await _persistCategoryTags(taskId);
     await _syncReminderForTask(task);
     await linkService.applyPostCreateRelations(
       taskId: taskId,

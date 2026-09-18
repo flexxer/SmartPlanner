@@ -54,7 +54,7 @@ class _LanguagePickerSectionState extends State<LanguagePickerSection> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: DropdownButtonFormField<String>(
-            value: _pickerCodes.contains(_selectedCode)
+            initialValue: _pickerCodes.contains(_selectedCode)
                 ? _selectedCode
                 : AppLocales.systemLanguageCode,
             decoration: const InputDecoration(

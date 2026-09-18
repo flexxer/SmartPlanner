@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'ui_template.dart';
+part of 'ui_template_model.dart';
 
 // **************************************************************************
 // IsarCollectionGenerator
@@ -9,13 +9,13 @@ part of 'ui_template.dart';
 // coverage:ignore-file
 // ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
 
-extension GetUiTemplateCollection on Isar {
-  IsarCollection<UiTemplate> get uiTemplates => this.collection();
+extension GetUiTemplateModelCollection on Isar {
+  IsarCollection<UiTemplateModel> get uiTemplateModels => this.collection();
 }
 
-const UiTemplateSchema = CollectionSchema(
-  name: r'UiTemplate',
-  id: -4584535413842022981,
+const UiTemplateModelSchema = CollectionSchema(
+  name: r'UiTemplateModel',
+  id: 5435881659248016592,
   properties: {
     r'checklistItems': PropertySchema(
       id: 0,
@@ -35,10 +35,10 @@ const UiTemplateSchema = CollectionSchema(
     r'title': PropertySchema(id: 3, name: r'title', type: IsarType.string),
   },
 
-  estimateSize: _uiTemplateEstimateSize,
-  serialize: _uiTemplateSerialize,
-  deserialize: _uiTemplateDeserialize,
-  deserializeProp: _uiTemplateDeserializeProp,
+  estimateSize: _uiTemplateModelEstimateSize,
+  serialize: _uiTemplateModelSerialize,
+  deserialize: _uiTemplateModelDeserialize,
+  deserializeProp: _uiTemplateModelDeserializeProp,
   idName: r'id',
   indexes: {
     r'title': IndexSchema(
@@ -58,14 +58,14 @@ const UiTemplateSchema = CollectionSchema(
   links: {},
   embeddedSchemas: {},
 
-  getId: _uiTemplateGetId,
-  getLinks: _uiTemplateGetLinks,
-  attach: _uiTemplateAttach,
+  getId: _uiTemplateModelGetId,
+  getLinks: _uiTemplateModelGetLinks,
+  attach: _uiTemplateModelAttach,
   version: '3.3.2',
 );
 
-int _uiTemplateEstimateSize(
-  UiTemplate object,
+int _uiTemplateModelEstimateSize(
+  UiTemplateModel object,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
@@ -93,8 +93,8 @@ int _uiTemplateEstimateSize(
   return bytesCount;
 }
 
-void _uiTemplateSerialize(
-  UiTemplate object,
+void _uiTemplateModelSerialize(
+  UiTemplateModel object,
   IsarWriter writer,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
@@ -105,13 +105,13 @@ void _uiTemplateSerialize(
   writer.writeString(offsets[3], object.title);
 }
 
-UiTemplate _uiTemplateDeserialize(
+UiTemplateModel _uiTemplateModelDeserialize(
   Id id,
   IsarReader reader,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  final object = UiTemplate();
+  final object = UiTemplateModel();
   object.checklistItems = reader.readStringList(offsets[0]) ?? [];
   object.embeddedAttachmentJson = reader.readStringOrNull(offsets[1]);
   object.id = id;
@@ -120,7 +120,7 @@ UiTemplate _uiTemplateDeserialize(
   return object;
 }
 
-P _uiTemplateDeserializeProp<P>(
+P _uiTemplateModelDeserializeProp<P>(
   IsarReader reader,
   int propertyId,
   int offset,
@@ -140,27 +140,31 @@ P _uiTemplateDeserializeProp<P>(
   }
 }
 
-Id _uiTemplateGetId(UiTemplate object) {
+Id _uiTemplateModelGetId(UiTemplateModel object) {
   return object.id;
 }
 
-List<IsarLinkBase<dynamic>> _uiTemplateGetLinks(UiTemplate object) {
+List<IsarLinkBase<dynamic>> _uiTemplateModelGetLinks(UiTemplateModel object) {
   return [];
 }
 
-void _uiTemplateAttach(IsarCollection<dynamic> col, Id id, UiTemplate object) {
+void _uiTemplateModelAttach(
+  IsarCollection<dynamic> col,
+  Id id,
+  UiTemplateModel object,
+) {
   object.id = id;
 }
 
-extension UiTemplateQueryWhereSort
-    on QueryBuilder<UiTemplate, UiTemplate, QWhere> {
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhere> anyId() {
+extension UiTemplateModelQueryWhereSort
+    on QueryBuilder<UiTemplateModel, UiTemplateModel, QWhere> {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhere> anyTitle() {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhere> anyTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'title'),
@@ -169,15 +173,18 @@ extension UiTemplateQueryWhereSort
   }
 }
 
-extension UiTemplateQueryWhere
-    on QueryBuilder<UiTemplate, UiTemplate, QWhereClause> {
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> idEqualTo(Id id) {
+extension UiTemplateModelQueryWhere
+    on QueryBuilder<UiTemplateModel, UiTemplateModel, QWhereClause> {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause> idEqualTo(
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> idNotEqualTo(Id id) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause>
+  idNotEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -199,10 +206,8 @@ extension UiTemplateQueryWhere
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> idGreaterThan(
-    Id id, {
-    bool include = false,
-  }) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause>
+  idGreaterThan(Id id, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -210,7 +215,7 @@ extension UiTemplateQueryWhere
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> idLessThan(
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause> idLessThan(
     Id id, {
     bool include = false,
   }) {
@@ -221,7 +226,7 @@ extension UiTemplateQueryWhere
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> idBetween(
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause> idBetween(
     Id lowerId,
     Id upperId, {
     bool includeLower = true,
@@ -239,9 +244,8 @@ extension UiTemplateQueryWhere
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> titleEqualTo(
-    String title,
-  ) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause>
+  titleEqualTo(String title) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IndexWhereClause.equalTo(indexName: r'title', value: [title]),
@@ -249,9 +253,8 @@ extension UiTemplateQueryWhere
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> titleNotEqualTo(
-    String title,
-  ) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause>
+  titleNotEqualTo(String title) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -293,10 +296,8 @@ extension UiTemplateQueryWhere
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> titleGreaterThan(
-    String title, {
-    bool include = false,
-  }) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause>
+  titleGreaterThan(String title, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IndexWhereClause.between(
@@ -309,10 +310,8 @@ extension UiTemplateQueryWhere
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> titleLessThan(
-    String title, {
-    bool include = false,
-  }) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause>
+  titleLessThan(String title, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IndexWhereClause.between(
@@ -325,7 +324,8 @@ extension UiTemplateQueryWhere
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> titleBetween(
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause>
+  titleBetween(
     String lowerTitle,
     String upperTitle, {
     bool includeLower = true,
@@ -344,9 +344,8 @@ extension UiTemplateQueryWhere
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> titleStartsWith(
-    String TitlePrefix,
-  ) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause>
+  titleStartsWith(String TitlePrefix) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IndexWhereClause.between(
@@ -358,7 +357,8 @@ extension UiTemplateQueryWhere
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> titleIsEmpty() {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause>
+  titleIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IndexWhereClause.equalTo(indexName: r'title', value: ['']),
@@ -366,7 +366,8 @@ extension UiTemplateQueryWhere
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterWhereClause> titleIsNotEmpty() {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterWhereClause>
+  titleIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -389,9 +390,9 @@ extension UiTemplateQueryWhere
   }
 }
 
-extension UiTemplateQueryFilter
-    on QueryBuilder<UiTemplate, UiTemplate, QFilterCondition> {
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+extension UiTemplateModelQueryFilter
+    on QueryBuilder<UiTemplateModel, UiTemplateModel, QFilterCondition> {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsElementEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -404,7 +405,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsElementGreaterThan(
     String value, {
     bool include = false,
@@ -422,7 +423,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsElementLessThan(
     String value, {
     bool include = false,
@@ -440,7 +441,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsElementBetween(
     String lower,
     String upper, {
@@ -462,7 +463,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsElementStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -475,7 +476,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsElementEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -488,7 +489,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsElementContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -501,7 +502,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsElementMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -514,7 +515,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsElementIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -523,7 +524,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsElementIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -532,42 +533,42 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsLengthEqualTo(int length) {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(r'checklistItems', length, true, length, true);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(r'checklistItems', 0, true, 0, true);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(r'checklistItems', 0, false, 999999, true);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsLengthLessThan(int length, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(r'checklistItems', 0, true, length, include);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsLengthGreaterThan(int length, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(r'checklistItems', length, include, 999999, true);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   checklistItemsLengthBetween(
     int lower,
     int upper, {
@@ -585,7 +586,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   embeddedAttachmentJsonIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -594,7 +595,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   embeddedAttachmentJsonIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -603,7 +604,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   embeddedAttachmentJsonEqualTo(String? value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -616,7 +617,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   embeddedAttachmentJsonGreaterThan(
     String? value, {
     bool include = false,
@@ -634,7 +635,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   embeddedAttachmentJsonLessThan(
     String? value, {
     bool include = false,
@@ -652,7 +653,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   embeddedAttachmentJsonBetween(
     String? lower,
     String? upper, {
@@ -674,7 +675,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   embeddedAttachmentJsonStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -687,7 +688,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   embeddedAttachmentJsonEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -700,7 +701,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   embeddedAttachmentJsonContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -713,7 +714,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   embeddedAttachmentJsonMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -726,7 +727,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   embeddedAttachmentJsonIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -735,7 +736,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   embeddedAttachmentJsonIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -747,9 +748,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> idEqualTo(
-    Id value,
-  ) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'id', value: value),
@@ -757,10 +757,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> idGreaterThan(
-    Id value, {
-    bool include = false,
-  }) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  idGreaterThan(Id value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
@@ -772,10 +770,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> idLessThan(
-    Id value, {
-    bool include = false,
-  }) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  idLessThan(Id value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.lessThan(
@@ -787,7 +783,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> idBetween(
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  idBetween(
     Id lower,
     Id upper, {
     bool includeLower = true,
@@ -806,7 +803,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   templateDescriptionIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -815,7 +812,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   templateDescriptionIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -824,7 +821,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   templateDescriptionEqualTo(String? value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -837,7 +834,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   templateDescriptionGreaterThan(
     String? value, {
     bool include = false,
@@ -855,7 +852,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   templateDescriptionLessThan(
     String? value, {
     bool include = false,
@@ -873,7 +870,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   templateDescriptionBetween(
     String? lower,
     String? upper, {
@@ -895,7 +892,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   templateDescriptionStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -908,7 +905,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   templateDescriptionEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -921,7 +918,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   templateDescriptionContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -934,7 +931,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   templateDescriptionMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -947,7 +944,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   templateDescriptionIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -956,7 +953,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   templateDescriptionIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -968,10 +965,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> titleEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  titleEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(
@@ -983,7 +978,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> titleGreaterThan(
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  titleGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -1000,7 +996,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> titleLessThan(
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  titleLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -1017,7 +1014,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> titleBetween(
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  titleBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -1038,10 +1036,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> titleStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  titleStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.startsWith(
@@ -1053,10 +1049,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> titleEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  titleEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.endsWith(
@@ -1068,10 +1062,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> titleContains(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  titleContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.contains(
@@ -1083,10 +1075,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> titleMatches(
-    String pattern, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  titleMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.matches(
@@ -1098,7 +1088,8 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition> titleIsEmpty() {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
+  titleIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'title', value: ''),
@@ -1106,7 +1097,7 @@ extension UiTemplateQueryFilter
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterFilterCondition>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterFilterCondition>
   titleIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -1116,119 +1107,122 @@ extension UiTemplateQueryFilter
   }
 }
 
-extension UiTemplateQueryObject
-    on QueryBuilder<UiTemplate, UiTemplate, QFilterCondition> {}
+extension UiTemplateModelQueryObject
+    on QueryBuilder<UiTemplateModel, UiTemplateModel, QFilterCondition> {}
 
-extension UiTemplateQueryLinks
-    on QueryBuilder<UiTemplate, UiTemplate, QFilterCondition> {}
+extension UiTemplateModelQueryLinks
+    on QueryBuilder<UiTemplateModel, UiTemplateModel, QFilterCondition> {}
 
-extension UiTemplateQuerySortBy
-    on QueryBuilder<UiTemplate, UiTemplate, QSortBy> {
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy>
+extension UiTemplateModelQuerySortBy
+    on QueryBuilder<UiTemplateModel, UiTemplateModel, QSortBy> {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy>
   sortByEmbeddedAttachmentJson() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'embeddedAttachmentJson', Sort.asc);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy>
   sortByEmbeddedAttachmentJsonDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'embeddedAttachmentJson', Sort.desc);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy>
   sortByTemplateDescription() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'templateDescription', Sort.asc);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy>
   sortByTemplateDescriptionDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'templateDescription', Sort.desc);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy> sortByTitle() {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy> sortByTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.asc);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy> sortByTitleDesc() {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy>
+  sortByTitleDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.desc);
     });
   }
 }
 
-extension UiTemplateQuerySortThenBy
-    on QueryBuilder<UiTemplate, UiTemplate, QSortThenBy> {
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy>
+extension UiTemplateModelQuerySortThenBy
+    on QueryBuilder<UiTemplateModel, UiTemplateModel, QSortThenBy> {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy>
   thenByEmbeddedAttachmentJson() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'embeddedAttachmentJson', Sort.asc);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy>
   thenByEmbeddedAttachmentJsonDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'embeddedAttachmentJson', Sort.desc);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy> thenById() {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy> thenByIdDesc() {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy> thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy>
   thenByTemplateDescription() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'templateDescription', Sort.asc);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy>
   thenByTemplateDescriptionDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'templateDescription', Sort.desc);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy> thenByTitle() {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy> thenByTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.asc);
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QAfterSortBy> thenByTitleDesc() {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QAfterSortBy>
+  thenByTitleDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.desc);
     });
   }
 }
 
-extension UiTemplateQueryWhereDistinct
-    on QueryBuilder<UiTemplate, UiTemplate, QDistinct> {
-  QueryBuilder<UiTemplate, UiTemplate, QDistinct> distinctByChecklistItems() {
+extension UiTemplateModelQueryWhereDistinct
+    on QueryBuilder<UiTemplateModel, UiTemplateModel, QDistinct> {
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QDistinct>
+  distinctByChecklistItems() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'checklistItems');
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QDistinct>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QDistinct>
   distinctByEmbeddedAttachmentJson({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(
@@ -1238,7 +1232,7 @@ extension UiTemplateQueryWhereDistinct
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QDistinct>
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QDistinct>
   distinctByTemplateDescription({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(
@@ -1248,7 +1242,7 @@ extension UiTemplateQueryWhereDistinct
     });
   }
 
-  QueryBuilder<UiTemplate, UiTemplate, QDistinct> distinctByTitle({
+  QueryBuilder<UiTemplateModel, UiTemplateModel, QDistinct> distinctByTitle({
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -1257,36 +1251,36 @@ extension UiTemplateQueryWhereDistinct
   }
 }
 
-extension UiTemplateQueryProperty
-    on QueryBuilder<UiTemplate, UiTemplate, QQueryProperty> {
-  QueryBuilder<UiTemplate, int, QQueryOperations> idProperty() {
+extension UiTemplateModelQueryProperty
+    on QueryBuilder<UiTemplateModel, UiTemplateModel, QQueryProperty> {
+  QueryBuilder<UiTemplateModel, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
     });
   }
 
-  QueryBuilder<UiTemplate, List<String>, QQueryOperations>
+  QueryBuilder<UiTemplateModel, List<String>, QQueryOperations>
   checklistItemsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'checklistItems');
     });
   }
 
-  QueryBuilder<UiTemplate, String?, QQueryOperations>
+  QueryBuilder<UiTemplateModel, String?, QQueryOperations>
   embeddedAttachmentJsonProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'embeddedAttachmentJson');
     });
   }
 
-  QueryBuilder<UiTemplate, String?, QQueryOperations>
+  QueryBuilder<UiTemplateModel, String?, QQueryOperations>
   templateDescriptionProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'templateDescription');
     });
   }
 
-  QueryBuilder<UiTemplate, String, QQueryOperations> titleProperty() {
+  QueryBuilder<UiTemplateModel, String, QQueryOperations> titleProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'title');
     });

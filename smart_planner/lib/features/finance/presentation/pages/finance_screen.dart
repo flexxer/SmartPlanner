@@ -43,10 +43,11 @@ class _FinanceScreenState extends State<FinanceScreen> {
     final CategoryTagService tagService = context.read<CategoryTagService>();
     final CategoryRepository categoryRepository =
         context.read<CategoryRepository>();
-    final List<Payment> monthPayments = await repository.getForMonth(
+    final List<Payment> monthPayments = (await repository.getForMonth(
       year: _focusedMonth.year,
       month: _focusedMonth.month,
-    );
+    ))
+        .getOrElse((_) => <Payment>[]);
     final Map<int, List<Id>> categoryIdsByPaymentId = <int, List<Id>>{};
     for (final Payment payment in monthPayments) {
       categoryIdsByPaymentId[payment.id] = await tagService.getTagIds(
@@ -54,7 +55,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
         entityId: payment.id,
       );
     }
-    final List<Category> categories = await categoryRepository.getActive();
+    final List<Category> categories =
+        (await categoryRepository.getActive()).getOrElse((_) => <Category>[]);
     final Map<int, Category> categoriesById = <int, Category>{
       for (final Category category in categories) category.id: category,
     };

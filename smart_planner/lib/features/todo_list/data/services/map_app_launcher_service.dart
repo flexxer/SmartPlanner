@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:map_launcher/map_launcher.dart';
 
 /// Opens installed map apps (Google Maps, Yandex, etc.) at coordinates only.
@@ -12,18 +11,18 @@ class MapAppLauncherService {
     required double latitude,
     required double longitude,
   }) async {
-    final List<AvailableMap> maps = await MapLauncher.installedMaps;
+    final MarkerRequest request = MapLauncher.marker(
+      LocationCoords(latitude, longitude),
+    );
+    final List<SupportedMap> maps = (await request.getSupportedMaps(MapApp.all))
+        .where((SupportedMap map) => map.isInstalled)
+        .toList(growable: false);
     if (maps.isEmpty) {
       return false;
     }
 
-    final Coords coords = Coords(latitude, longitude);
-
     if (maps.length == 1) {
-      await maps.first.showMarker(
-        coords: coords,
-        title: '',
-      );
+      await maps.single.show();
       return true;
     }
 
@@ -31,7 +30,7 @@ class MapAppLauncherService {
       return false;
     }
 
-    final AvailableMap? chosen = await showModalBottomSheet<AvailableMap>(
+    final SupportedMap? chosen = await showModalBottomSheet<SupportedMap>(
       context: context,
       builder: (BuildContext sheetContext) {
         return SafeArea(
@@ -46,13 +45,13 @@ class MapAppLauncherService {
                 ),
               ),
               ...maps.map(
-                (AvailableMap map) => ListTile(
-                  leading: SvgPicture.asset(
-                    map.icon,
+                (SupportedMap map) => ListTile(
+                  leading: Image.memory(
+                    map.iconBytes,
                     height: 30,
                     width: 30,
                   ),
-                  title: Text(map.mapName),
+                  title: Text(map.name),
                   onTap: () => Navigator.of(sheetContext).pop(map),
                 ),
               ),
@@ -66,10 +65,7 @@ class MapAppLauncherService {
       return false;
     }
 
-    await chosen.showMarker(
-      coords: coords,
-      title: '',
-    );
+    await chosen.show();
     return true;
   }
 }

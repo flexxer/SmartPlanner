@@ -31,24 +31,14 @@ import 'package:smart_planner/features/notifications/notification_helper.dart';
 class DayStatusNotificationController {
 
   DayStatusNotificationController({
-
-    required DayStatusTodayLoader todayLoader,
-
-    required NotificationPreferencesRepository preferences,
-
-  })  : _todayLoader = todayLoader,
-
-        _preferences = preferences;
-
-
+    required this.todayLoader,
+    required this.preferences,
+  });
 
   static const int notificationId = 7391;
 
-
-
-  final DayStatusTodayLoader _todayLoader;
-
-  final NotificationPreferencesRepository _preferences;
+  final DayStatusTodayLoader todayLoader;
+  final NotificationPreferencesRepository preferences;
 
 
   AndroidFlutterLocalNotificationsPlugin? get _android =>
@@ -75,7 +65,7 @@ class DayStatusNotificationController {
 
     }
 
-    if (!await _preferences.isDayStatusBarEnabled()) {
+    if (!await preferences.isDayStatusBarEnabled()) {
 
       return;
 
@@ -89,7 +79,7 @@ class DayStatusNotificationController {
 
   Future<void> setDayStatusBarEnabled(bool enabled) async {
 
-    await _preferences.setDayStatusBarEnabled(enabled);
+    await preferences.setDayStatusBarEnabled(enabled);
 
     if (!_supportsForegroundService) {
 
@@ -113,8 +103,8 @@ class DayStatusNotificationController {
 
   Future<void> setDayStatusBarPinned(bool pinned) async {
     // Pinned mode is enforced by product requirement and no longer toggled.
-    await _preferences.setDayStatusBarPinned(true);
-    if (_supportsForegroundService && await _preferences.isDayStatusBarEnabled()) {
+    await preferences.setDayStatusBarPinned(true);
+    if (_supportsForegroundService && await preferences.isDayStatusBarEnabled()) {
       await syncTodayStatus();
     }
 
@@ -130,7 +120,7 @@ class DayStatusNotificationController {
 
     }
 
-    if (!await _preferences.isDayStatusBarEnabled()) {
+    if (!await preferences.isDayStatusBarEnabled()) {
 
       return;
 
@@ -152,7 +142,7 @@ class DayStatusNotificationController {
 
       final DayStatusNotificationContent content = await _loadTodayContent();
 
-      await _preferences.setDayStatusBarPinned(true);
+      await preferences.setDayStatusBarPinned(true);
       final AndroidNotificationDetails details = _notificationDetails();
 
 
@@ -197,7 +187,7 @@ class DayStatusNotificationController {
 
   Future<DayStatusNotificationContent> _loadTodayContent() async {
 
-    final DayStatusTodaySnapshot snapshot = await _todayLoader.load();
+    final DayStatusTodaySnapshot snapshot = await todayLoader.load();
 
     return DayStatusNotificationBuilder.build(
 

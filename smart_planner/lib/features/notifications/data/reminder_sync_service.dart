@@ -48,9 +48,10 @@ class ReminderSyncService {
   }) async {
     for (final CalendarEvent incoming in fromDevice) {
       try {
-        final CalendarEvent? stored = await localEvents.findByDeviceEventId(
+        final CalendarEvent? stored = (await localEvents.findByDeviceEventId(
           incoming.deviceEventId,
-        );
+        ))
+            .getOrElse((_) => null);
         if (stored != null) {
           await _scheduler.syncEvent(stored);
         }

@@ -9,17 +9,16 @@ import 'package:smart_planner/features/todo_list/domain/task_attachment_codec.da
 
 /// Creates [TaskAttachment] rows from a [UiTemplate] after a task is saved.
 class UiTemplateApplicator {
-  UiTemplateApplicator({
-    required TaskAttachmentRepository attachmentRepository,
-  }) : _attachmentRepository = attachmentRepository;
+  UiTemplateApplicator({required this.attachmentRepository});
 
-  final TaskAttachmentRepository _attachmentRepository;
+  final TaskAttachmentRepository attachmentRepository;
 
   Future<void> applyToTask({
     required Id taskId,
     required UiTemplate template,
   }) async {
-    int sortOrder = await _attachmentRepository.nextSortOrder(taskId);
+    int sortOrder =
+        (await attachmentRepository.nextSortOrder(taskId)).getOrElse((_) => 0);
 
     final List<String> lines = template.checklistItems
         .map((String s) => s.trim())
@@ -43,7 +42,7 @@ class UiTemplateApplicator {
           items: items,
         ).toJson(),
       );
-      await _attachmentRepository.save(
+      await attachmentRepository.save(
         TaskAttachment.create(
           taskId: taskId,
           type: TaskAttachmentType.checklist,
@@ -58,7 +57,7 @@ class UiTemplateApplicator {
       template.embeddedAttachmentJson,
     );
     if (embedded != null) {
-      await _attachmentRepository.save(
+      await attachmentRepository.save(
         TaskAttachment.create(
           taskId: taskId,
           type: embedded.type,

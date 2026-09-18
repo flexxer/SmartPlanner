@@ -30,7 +30,8 @@ class AttachmentTemplatesTabState extends State<AttachmentTemplatesTab> {
     setState(() => _loading = true);
     final AttachmentTemplateRepository repository =
         context.read<AttachmentTemplateRepository>();
-    final List<AttachmentTemplate> list = await repository.getAll();
+    final List<AttachmentTemplate> list =
+        (await repository.getAll()).getOrElse((_) => <AttachmentTemplate>[]);
     if (!mounted) {
       return;
     }
@@ -62,7 +63,8 @@ class AttachmentTemplatesTabState extends State<AttachmentTemplatesTab> {
   Future<void> _duplicate(AttachmentTemplate source) async {
     final AttachmentTemplateRepository repository =
         context.read<AttachmentTemplateRepository>();
-    final int sortOrder = await repository.nextSortOrder();
+    final int sortOrder =
+        (await repository.nextSortOrder()).getOrElse((_) => 0);
     final AttachmentTemplate copy = AttachmentTemplateFactory.duplicate(
       source,
       sortOrder: sortOrder,
@@ -105,9 +107,6 @@ class AttachmentTemplatesTabState extends State<AttachmentTemplatesTab> {
 
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
       final AttachmentTemplate item = _templates.removeAt(oldIndex);
       _templates.insert(newIndex, item);
     });
@@ -130,7 +129,7 @@ class AttachmentTemplatesTabState extends State<AttachmentTemplatesTab> {
         padding: const EdgeInsets.fromLTRB(0, 8, 0, 88),
         buildDefaultDragHandles: false,
         itemCount: _templates.length,
-        onReorder: _onReorder,
+        onReorderItem: _onReorder,
         itemBuilder: (BuildContext context, int index) {
           final AttachmentTemplate template = _templates[index];
           return _AttachmentTemplateTile(

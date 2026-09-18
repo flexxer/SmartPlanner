@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/app_initializer.dart';
@@ -157,7 +158,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       await mutate();
       await _emitReloadedTasks(current, emit);
     } catch (error) {
-      emit(DashboardError(error.toString()));
+      _reportMutationError(error);
     }
   }
 
@@ -180,7 +181,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       }
       await _emitReloadedTasks(current, emit);
     } catch (error) {
-      emit(DashboardError(error.toString()));
+      _reportMutationError(error);
     }
   }
 
@@ -203,7 +204,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       }
       await _emitReloadedTasks(current, emit);
     } catch (error) {
-      emit(DashboardError(error.toString()));
+      _reportMutationError(error);
     }
   }
 
@@ -242,7 +243,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       }
       await _emitReloadedTasks(current, emit);
     } catch (error) {
-      emit(DashboardError(error.toString()));
+      _reportMutationError(error);
     }
   }
 
@@ -325,7 +326,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       }
       await _emitReloadedTasks(current, emit);
     } catch (error) {
-      emit(DashboardError(error.toString()));
+      _reportMutationError(error);
     }
   }
 
@@ -437,7 +438,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       }
       await _emitReloadedTasks(current, emit);
     } catch (error) {
-      emit(DashboardError(error.toString()));
+      _reportMutationError(error);
     }
   }
 
@@ -503,7 +504,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         ),
       );
     } catch (error) {
-      emit(DashboardError(error.toString()));
+      _reportMutationError(error);
     }
   }
 
@@ -543,6 +544,12 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     }
   }
 
+  /// Logs a failed mutation while keeping the current [DashboardLoaded] state,
+  /// instead of replacing the whole screen with an error state.
+  void _reportMutationError(Object error) {
+    debugPrint('Dashboard update failed: $error');
+  }
+
   Future<void> _onToggleTaskCompletion(
     ToggleTaskCompletion event,
     Emitter<DashboardState> emit,
@@ -559,7 +566,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       }
       await _emitReloadedTasks(current, emit);
     } catch (error) {
-      emit(DashboardError(error.toString()));
+      _reportMutationError(error);
     }
   }
 

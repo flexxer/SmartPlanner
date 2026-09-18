@@ -27,44 +27,46 @@ class DayStatusTodaySnapshot {
 /// Loads today's dashboard data for status notification and home widget.
 class DayStatusTodayLoader {
   DayStatusTodayLoader({
-    required TodoRepository todoRepository,
+    required this.todoRepository,
     LocalCalendarEventRepository? localCalendarEvents,
-  })  : _todoRepository = todoRepository,
-        _localCalendarEvents =
+  }) : _localCalendarEvents =
             localCalendarEvents ?? LocalCalendarEventRepository();
 
-  final TodoRepository _todoRepository;
+  final TodoRepository todoRepository;
   final LocalCalendarEventRepository _localCalendarEvents;
 
   Future<DayStatusTodaySnapshot> load({DateTime? now}) async {
     final DateTime clock = now ?? DateTime.now();
     final DateTime today = AppDateUtils.startOfDay(clock);
 
-    final List<Object> parallel = await Future.wait<Object>(
-      <Future<Object>>[
-        _todoRepository.getUncompletedTasksForDate(today),
-        _todoRepository.getCompletedTasksForDate(today),
-        _todoRepository.getUndatedTasks(),
-        _todoRepository.getOverdueUncompletedTasks(referenceDay: today),
-        _loadTodayCalendarEvents(today),
-      ],
-    );
-
-    final List<Task> activeTasks = parallel[0] as List<Task>
+    final List<Task> activeTasks = (await todoRepository
+            .getUncompletedTasksForDate(today))
+        .getOrElse((_) => <Task>[])
       ..sort(TodoRepository.compareTasksByPriority);
+    final List<Task> completedTasks =
+        (await todoRepository.getCompletedTasksForDate(today))
+            .getOrElse((_) => <Task>[]);
+    final List<Task> backlogTasks =
+        (await todoRepository.getUndatedTasks()).getOrElse((_) => <Task>[]);
+    final List<Task> overdueTasks = (await todoRepository
+            .getOverdueUncompletedTasks(referenceDay: today))
+        .getOrElse((_) => <Task>[]);
+    final List<CalendarEvent> calendarEvents =
+        await _loadTodayCalendarEvents(today);
 
     return DayStatusTodaySnapshot(
       activeTasks: activeTasks,
-      completedTasks: parallel[1] as List<Task>,
-      backlogTasks: parallel[2] as List<Task>,
-      overdueTasks: parallel[3] as List<Task>,
-      calendarEvents: parallel[4] as List<CalendarEvent>,
+      completedTasks: completedTasks,
+      backlogTasks: backlogTasks,
+      overdueTasks: overdueTasks,
+      calendarEvents: calendarEvents,
       now: clock,
     );
   }
 
   Future<List<CalendarEvent>> _loadTodayCalendarEvents(DateTime today) async {
-    final List<CalendarEvent> allStored = await _localCalendarEvents.getAll();
+    final List<CalendarEvent> allStored =
+        (await _localCalendarEvents.getAll()).getOrElse((_) => <CalendarEvent>[]);
     return VisibleCalendarEventsMerger.fromStored(
       selectedDay: today,
       allStored: allStored,

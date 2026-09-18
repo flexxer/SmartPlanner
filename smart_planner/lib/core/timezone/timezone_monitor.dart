@@ -14,7 +14,8 @@ class TimezoneMonitor {
     final String? previousTimeZone = prefs.getString(lastKnownTimezoneKey);
 
     try {
-      final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+      final String timeZoneName =
+          (await FlutterTimezone.getLocalTimezone()).identifier;
       tz.setLocalLocation(tz.getLocation(timeZoneName));
       await prefs.setString(lastKnownTimezoneKey, timeZoneName);
       return previousTimeZone != null && previousTimeZone != timeZoneName;

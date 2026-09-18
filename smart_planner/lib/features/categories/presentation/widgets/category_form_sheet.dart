@@ -72,7 +72,8 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
           ..colorValue = _colorValue;
         await repository.save(category);
       } else {
-        final int sortOrder = await repository.nextSortOrder();
+        final int sortOrder =
+            (await repository.nextSortOrder()).getOrElse((_) => 0);
         await repository.save(
           Category.create(
             name: name,
@@ -102,7 +103,12 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
     final CategoryRepository repository =
         context.read<CategoryRepository>();
     final Category category = widget.categoryToEdit!;
-    final int linkCount = await repository.countLinks(category.id);
+    final int linkCount =
+        (await repository.countLinks(category.id)).getOrElse((_) => 0);
+
+    if (!mounted) {
+      return;
+    }
 
     final bool? confirmed = await showDialog<bool>(
       context: context,

@@ -42,7 +42,8 @@ class AttachmentTemplateApplicator {
     if (!attachmentTemplateIsReady(template)) {
       return false;
     }
-    final int sortOrder = await repository.nextSortOrder(taskId);
+    final int sortOrder =
+        (await repository.nextSortOrder(taskId)).getOrElse((_) => 0);
     final String? label = _labelForTemplate(template);
     await repository.save(
       TaskAttachment.create(
@@ -64,7 +65,8 @@ class AttachmentTemplateApplicator {
     if (!attachmentTemplateIsReady(template)) {
       return false;
     }
-    final int sortOrder = await repository.nextSortOrder(eventId);
+    final int sortOrder =
+        (await repository.nextSortOrder(eventId)).getOrElse((_) => 0);
     final String? label = _labelForTemplate(template);
     await repository.save(
       EventAttachment.create(

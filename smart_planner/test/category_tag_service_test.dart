@@ -5,17 +5,16 @@ import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/categories/data/category_repository_impl.dart';
 import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
 import 'package:smart_planner/features/categories/domain/entities/category.dart';
-import 'package:smart_planner/features/categories/domain/entities/category_link.dart';
+import 'package:smart_planner/features/categories/data/models/category_link_model.dart';
 import 'package:smart_planner/features/categories/domain/tagged_entity_type.dart';
-import 'package:smart_planner/features/finance/domain/entities/payment.dart';
-import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
+import 'package:smart_planner/features/categories/data/models/category_model.dart';
+import 'package:smart_planner/features/finance/data/models/payment_model.dart';
+import 'package:smart_planner/features/todo_list/data/models/task_model.dart';
 
 /// Allows Isar to download its native core once in unit tests.
 class _IsarTestHttpOverrides extends HttpOverrides {
   @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context);
-  }
+  HttpClient createHttpClient(SecurityContext? context) => HttpClient();
 }
 
 void main() {
@@ -38,10 +37,10 @@ void main() {
     tempDir = await Directory.systemTemp.createTemp('daylinx_isar_test');
     isar = await Isar.open(
       <CollectionSchema<dynamic>>[
-        TaskSchema,
-        CategorySchema,
-        CategoryLinkSchema,
-        PaymentSchema,
+        TaskModelSchema,
+        CategoryModelSchema,
+        CategoryLinkModelSchema,
+        PaymentModelSchema,
       ],
       directory: tempDir.path,
       name: 'test_${DateTime.now().microsecondsSinceEpoch}',
@@ -63,9 +62,10 @@ void main() {
   });
 
   Future<Category> saveCategory(String name) async {
-    final Id id = await categoryRepository.save(Category.create(name: name));
-    final Category? category = await categoryRepository.getById(id);
-    return category!;
+    final Category saved = (await categoryRepository
+            .save(Category.create(name: name)))
+        .getOrElse((failure) => throw StateError('$failure'));
+    return saved;
   }
 
   test('setTags replaces links for an entity', () async {
@@ -141,7 +141,8 @@ void main() {
     );
     expect(tags, isEmpty);
 
-    final int linkCount = await categoryRepository.countLinks(tag.id);
+    final int linkCount =
+        (await categoryRepository.countLinks(tag.id)).getOrElse((_) => 0);
     expect(linkCount, 0);
   });
 

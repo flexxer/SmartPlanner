@@ -1,38 +1,12 @@
-import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/finance/domain/payment_direction.dart';
 import 'package:smart_planner/features/finance/domain/payment_status.dart';
 
-part 'payment.g.dart';
-
 /// Local income/expense row; amounts stored as minor units (no float).
-@collection
+///
+/// Pure domain model — no Isar annotations. Persistence is handled by
+/// `PaymentModel` in the data layer.
 class Payment {
-  Id id = Isar.autoIncrement;
-
-  @Index(type: IndexType.value, caseSensitive: false)
-  late String title;
-
-  String? note;
-
-  int amountMinor = 0;
-
-  String currencyCode = 'USD';
-
-  @Enumerated(EnumType.ordinal)
-  late PaymentDirection direction;
-
-  @Enumerated(EnumType.ordinal)
-  PaymentStatus status = PaymentStatus.planned;
-
-  DateTime occurredAt = DateTime.now();
-
-  DateTime updatedAt = DateTime.now();
-
-  int? linkedTaskId;
-
-  int? linkedEventId;
-
-  Payment();
+  Payment({this.id = 0});
 
   factory Payment.create({
     required String title,
@@ -58,4 +32,27 @@ class Payment {
       ..linkedTaskId = linkedTaskId
       ..linkedEventId = linkedEventId;
   }
+
+  /// Database id; `0` until persisted.
+  int id;
+
+  String title = '';
+
+  String? note;
+
+  int amountMinor = 0;
+
+  String currencyCode = 'USD';
+
+  PaymentDirection direction = PaymentDirection.expense;
+
+  PaymentStatus status = PaymentStatus.planned;
+
+  DateTime occurredAt = DateTime.now();
+
+  DateTime updatedAt = DateTime.now();
+
+  int? linkedTaskId;
+
+  int? linkedEventId;
 }

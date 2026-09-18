@@ -63,6 +63,9 @@ class _DayStatusServiceHostState extends State<DayStatusServiceHost>
     }
 
     await _syncDayStatusSurfaces();
+    if (!mounted) {
+      return;
+    }
     await context.read<DeepLinkService>().handleAppResumed();
     if (mounted) {
       context.read<DashboardBloc>().add(const LoadDashboardData());

@@ -14,7 +14,8 @@ class DashboardTaskMutations {
   final DashboardDependencies _deps;
 
   Future<Task?> toggleCompletion(Id taskId) async {
-    final Task? task = await _deps.todoRepository.getTaskById(taskId);
+    final Task? task =
+        (await _deps.todoRepository.getTaskById(taskId)).getOrElse((_) => null);
     if (task == null) {
       return null;
     }
@@ -28,7 +29,8 @@ class DashboardTaskMutations {
     required Id taskId,
     required DateTime referenceDate,
   }) async {
-    final Task? task = await _deps.todoRepository.getTaskById(taskId);
+    final Task? task =
+        (await _deps.todoRepository.getTaskById(taskId)).getOrElse((_) => null);
     if (task == null || task.isCompleted) {
       return false;
     }
@@ -42,7 +44,8 @@ class DashboardTaskMutations {
     required Id taskId,
     required DateTime newDueDate,
   }) async {
-    final Task? task = await _deps.todoRepository.getTaskById(taskId);
+    final Task? task =
+        (await _deps.todoRepository.getTaskById(taskId)).getOrElse((_) => null);
     if (task == null || task.isCompleted) {
       return false;
     }
@@ -87,7 +90,8 @@ class DashboardTaskMutations {
     required int itemLocalId,
   }) async {
     final TaskAttachment? attachment =
-        await _deps.attachmentRepository.getById(attachmentId);
+        (await _deps.attachmentRepository.getById(attachmentId))
+            .getOrElse((_) => null);
     if (attachment == null) {
       return false;
     }
@@ -111,7 +115,8 @@ class DashboardTaskMutations {
       _deps.taskEventLinks.unlinkTaskFromEvent(taskId);
 
   Future<bool> updateTaskFields(Task updated) async {
-    final Task? existing = await _deps.todoRepository.getTaskById(updated.id);
+    final Task? existing =
+        (await _deps.todoRepository.getTaskById(updated.id)).getOrElse((_) => null);
     if (existing == null) {
       return false;
     }
@@ -129,14 +134,17 @@ class DashboardTaskMutations {
   }
 
   Future<DeletedTaskSnapshot?> captureTaskForDelete(Id taskId) async {
-    final Task? task = await _deps.todoRepository.getTaskById(taskId);
+    final Task? task =
+        (await _deps.todoRepository.getTaskById(taskId)).getOrElse((_) => null);
     if (task == null) {
       return null;
     }
-    final List<TaskAttachment> attachments =
-        await _deps.attachmentRepository.getAttachmentsForTask(taskId);
-    final List<Task> children =
-        await _deps.todoRepository.getAllChildTasks(taskId);
+    final List<TaskAttachment> attachments = (await _deps.attachmentRepository
+            .getAttachmentsForTask(taskId))
+        .getOrElse((_) => <TaskAttachment>[]);
+    final List<Task> children = (await _deps.todoRepository
+            .getAllChildTasks(taskId))
+        .getOrElse((_) => <Task>[]);
     return DeletedTaskSnapshot(
       task: taskSnapshot(task),
       attachments: attachments.map(taskAttachmentSnapshot).toList(),
@@ -157,8 +165,9 @@ class DashboardTaskMutations {
     await _deps.taskEventLinks.unlinkTaskFromEvent(taskId);
     await _deps.attachmentRepository.deleteAllForTask(taskId);
 
-    final List<Task> children =
-        await _deps.todoRepository.getAllChildTasks(taskId);
+    final List<Task> children = (await _deps.todoRepository
+            .getAllChildTasks(taskId))
+        .getOrElse((_) => <Task>[]);
     for (final Task child in children) {
       TaskHierarchy.detach(child);
       await _deps.todoRepository.updateTask(child);
@@ -174,7 +183,9 @@ class DashboardTaskMutations {
       await _deps.attachmentRepository.save(attachment);
     }
     for (final DeletedChildParentState child in snapshot.children) {
-      final Task? task = await _deps.todoRepository.getTaskById(child.childId);
+      final Task? task =
+          (await _deps.todoRepository.getTaskById(child.childId))
+              .getOrElse((_) => null);
       if (task == null) {
         continue;
       }

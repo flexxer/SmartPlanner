@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:smart_planner/core/result/result.dart';
 import 'package:smart_planner/core/theme/app_theme.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_state.dart';
@@ -33,12 +34,12 @@ class TaskTemplatesTabState extends State<TaskTemplatesTab> {
     setState(() => _loading = true);
     final UiTemplateRepository repository =
         context.read<UiTemplateRepository>();
-    final List<UiTemplate> list = await repository.getAll();
+    final Result<List<UiTemplate>> result = await repository.getAll();
     if (!mounted) {
       return;
     }
     setState(() {
-      _templates = list;
+      _templates = result.getOrElse((_) => <UiTemplate>[]);
       _loading = false;
     });
   }
@@ -107,7 +108,16 @@ class TaskTemplatesTabState extends State<TaskTemplatesTab> {
       return;
     }
 
-    await context.read<UiTemplateRepository>().delete(template.id);
+    final Result<bool> result =
+        await context.read<UiTemplateRepository>().delete(template.id);
+    if (result.isFailure) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('common_error_generic'.tr())),
+        );
+      }
+      return;
+    }
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('templates_deleted'.tr())),

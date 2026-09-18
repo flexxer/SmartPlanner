@@ -1,0 +1,14 @@
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+android/.gradle/
+android/app/build/
+ios/Pods/
+.git/
+node_modules/
+*.log
+.env
+.env.*
+*.keystore
+*.jks

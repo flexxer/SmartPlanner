@@ -65,7 +65,8 @@ class _CalendarGridScreenState extends State<CalendarGridScreen> {
     final DashboardDayMarkersRepository markersRepo =
         context.read<DashboardDayMarkersRepository>();
 
-    final List<CalendarEvent> allStored = await localRepo.getAll();
+    final List<CalendarEvent> allStored =
+        (await localRepo.getAll()).getOrElse((_) => <CalendarEvent>[]);
     final List<CalendarEvent> stored =
         VisibleCalendarEventsMerger.fromStoredForRange(
       rangeStart: range.start,
@@ -170,6 +171,9 @@ class _CalendarGridScreenState extends State<CalendarGridScreen> {
     }
     context.read<DashboardDayMarkersRepository>().invalidate();
     await _loadData();
+    if (!mounted) {
+      return;
+    }
     context.read<DashboardBloc>().add(const LoadDashboardData());
   }
 
@@ -194,6 +198,9 @@ class _CalendarGridScreenState extends State<CalendarGridScreen> {
     }
     context.read<DashboardDayMarkersRepository>().invalidate();
     await _loadData();
+    if (!mounted) {
+      return;
+    }
     context.read<DashboardBloc>().add(const LoadDashboardData());
   }
 

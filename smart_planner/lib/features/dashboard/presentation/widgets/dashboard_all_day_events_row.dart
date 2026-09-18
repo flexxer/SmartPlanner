@@ -1,12 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/theme/app_color_utils.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_context_colors.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_occurrence.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
-import 'package:smart_planner/features/dashboard/presentation/widgets/dashboard_local_events_strip.dart';
 
 /// All-day event chips shown above the timed events strip.
 class DashboardAllDayEventsRow extends StatelessWidget {

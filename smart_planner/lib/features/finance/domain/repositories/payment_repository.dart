@@ -1,25 +1,24 @@
-import 'package:isar_community/isar.dart';
+import 'package:smart_planner/core/result/result.dart';
 import 'package:smart_planner/features/finance/domain/entities/payment.dart';
-import 'package:smart_planner/features/finance/domain/payment_status.dart';
 
 /// Persistence contract for local [Payment] rows.
 abstract class PaymentRepository {
-  Future<List<Payment>> getAll();
+  Future<Result<List<Payment>>> getAll();
 
-  Future<Payment?> getById(Id id);
+  Future<Result<Payment?>> getById(int id);
 
-  Future<List<Payment>> getForMonth({
+  Future<Result<List<Payment>>> getForMonth({
     required int year,
     required int month,
   });
 
-  Future<List<Payment>> getByTaskId(int taskId);
+  Future<Result<List<Payment>>> getByTaskId(int taskId);
 
-  Future<List<Payment>> getByEventId(int eventId);
+  Future<Result<List<Payment>>> getByEventId(int eventId);
 
-  Future<Id> save(Payment payment);
+  Future<Result<Payment>> save(Payment payment);
 
-  Future<void> delete(Id id);
+  Future<Result<bool>> delete(int id);
 
-  Future<Payment?> togglePlannedCompleted(Id id);
+  Future<Result<Payment?>> togglePlannedCompleted(int id);
 }

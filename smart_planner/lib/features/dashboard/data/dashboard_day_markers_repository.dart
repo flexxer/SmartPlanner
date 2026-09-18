@@ -10,13 +10,12 @@ import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 /// Cached week-range markers for the dashboard date strip (Isar events only).
 class DashboardDayMarkersRepository {
   DashboardDayMarkersRepository({
-    required TodoRepository todoRepository,
-    required LocalCalendarEventRepository localCalendarEventRepository,
-  })  : _todoRepository = todoRepository,
-        _localCalendarEventRepository = localCalendarEventRepository;
+    required this.todoRepository,
+    required this.localCalendarEventRepository,
+  });
 
-  final TodoRepository _todoRepository;
-  final LocalCalendarEventRepository _localCalendarEventRepository;
+  final TodoRepository todoRepository;
+  final LocalCalendarEventRepository localCalendarEventRepository;
 
   String? _cacheKey;
   Map<int, DayActivityMarker>? _cachedMarkers;
@@ -41,7 +40,8 @@ class DashboardDayMarkersRepository {
       return _cachedMarkers!;
     }
 
-    final List<Task> tasks = await _todoRepository.getUncompletedTasks();
+    final List<Task> tasks =
+        (await todoRepository.getUncompletedTasks()).getOrElse((_) => <Task>[]);
     final List<CalendarEvent> events = await _loadStoredEventsForMarkers(
       rangeStart: start,
       rangeEnd: end,
@@ -64,7 +64,7 @@ class DashboardDayMarkersRepository {
     required DateTime rangeEnd,
   }) async {
     final List<CalendarEvent> allStored =
-        await _localCalendarEventRepository.getAll();
+        (await localCalendarEventRepository.getAll()).getOrElse((_) => <CalendarEvent>[]);
     return VisibleCalendarEventsMerger.fromStoredForRange(
       rangeStart: rangeStart,
       rangeEnd: rangeEnd,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:smart_planner/app.dart';
 import 'package:smart_planner/core/app_initializer.dart';
+import 'package:smart_planner/core/di/app_dependencies.dart';
 import 'package:smart_planner/core/localization/app_locales.dart';
 import 'package:smart_planner/core/localization/locale_preferences_repository.dart';
 import 'package:smart_planner/core/theme/theme_preferences_repository.dart';
@@ -15,6 +16,7 @@ Future<void> main() async {
   await AppInitializer.init();
   await EasyLocalization.ensureInitialized();
 
+  final AppDependencies dependencies = AppDependencies();
   final LocalePreferencesRepository localePreferences =
       LocalePreferencesRepository();
   final ThemePreferencesRepository themePreferences =
@@ -30,6 +32,7 @@ Future<void> main() async {
       startLocale: savedLocale,
       useOnlyLangCode: true,
       child: DayLinxApp(
+        dependencies: dependencies,
         localePreferences: localePreferences,
         themePreferences: themePreferences,
       ),

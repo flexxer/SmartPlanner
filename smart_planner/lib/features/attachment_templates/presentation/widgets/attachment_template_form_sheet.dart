@@ -211,7 +211,7 @@ class _AttachmentTemplateFormSheetState extends State<AttachmentTemplateFormShee
       title: title,
       type: _type,
       payloadJson: payload,
-      sortOrder: await repository.nextSortOrder(),
+      sortOrder: (await repository.nextSortOrder()).getOrElse((_) => 0),
     );
     if (existing != null) {
       template
@@ -253,7 +253,7 @@ class _AttachmentTemplateFormSheetState extends State<AttachmentTemplateFormShee
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<TaskAttachmentType>(
-                value: _type,
+                initialValue: _type,
                 decoration: InputDecoration(
                   labelText: 'attachment_select_type'.tr(),
                   border: const OutlineInputBorder(),

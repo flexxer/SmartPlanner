@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:smart_planner/core/database/isar_database.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
-import 'package:smart_planner/features/notifications/background_service.dart';
 import 'package:smart_planner/features/notifications/data/notification_preferences_repository.dart';
 import 'package:smart_planner/features/notifications/notification_channels.dart';
 import 'package:smart_planner/features/notifications/notification_helper.dart';
@@ -46,8 +45,9 @@ abstract final class TaskDailyDigestWorker {
 
       final DateTime today = AppDateUtils.startOfDay(DateTime.now());
       final TodoRepository repository = TodoRepository();
-      final List<Task> dueToday =
-          await repository.getUncompletedTasksForDate(today);
+      final List<Task> dueToday = (await repository
+              .getUncompletedTasksForDate(today))
+          .getOrElse((_) => <Task>[]);
       final List<Task> rootDue =
           dueToday.where(TaskHierarchy.isRoot).toList(growable: false);
 

@@ -1,11 +1,12 @@
 import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/database/isar_database.dart';
+import 'package:smart_planner/features/calendar_integration/data/models/calendar_event_model.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
-import 'package:smart_planner/features/categories/data/category_repository_impl.dart';
 import 'package:smart_planner/features/categories/domain/category_filter_utils.dart';
 import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
 import 'package:smart_planner/features/categories/domain/tagged_entity_type.dart';
 import 'package:smart_planner/features/search/domain/search_result_item.dart';
+import 'package:smart_planner/features/todo_list/data/models/task_model.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 
 /// Case-insensitive search across local tasks and calendar events.
@@ -32,8 +33,13 @@ class GlobalSearchService {
       return const <SearchResultItem>[];
     }
 
-    final List<Task> tasks = await _db.tasks.where().findAll();
-    final List<CalendarEvent> events = await _db.calendarEvents.where().findAll();
+    final List<Task> tasks = (await _db.taskModels.where().findAll())
+        .map((TaskModel model) => model.toDomain())
+        .toList(growable: false);
+    final List<CalendarEvent> events =
+        (await _db.calendarEventModels.where().findAll())
+            .map((CalendarEventModel model) => model.toDomain())
+            .toList(growable: false);
     final Map<Id, Task> tasksById = <Id, Task>{
       for (final Task task in tasks) task.id: task,
     };

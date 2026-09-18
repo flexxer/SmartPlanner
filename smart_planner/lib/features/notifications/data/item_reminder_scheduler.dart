@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:isar_community/isar.dart';
 import 'package:smart_planner/core/database/isar_database.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
+import 'package:smart_planner/features/calendar_integration/data/models/calendar_event_model.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/notifications/domain/reminder_notification_ids.dart';
 import 'package:smart_planner/features/notifications/domain/reminder_schedule_time.dart';
 import 'package:smart_planner/features/notifications/notification_channels.dart';
 import 'package:smart_planner/features/notifications/notification_helper.dart';
+import 'package:smart_planner/features/todo_list/data/models/task_model.dart';
 import 'package:smart_planner/features/todo_list/domain/entities/task.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -72,12 +74,16 @@ class ItemReminderScheduler {
     }
     try {
       final isar = IsarDatabase.instance;
-      final List<Task> tasks = await isar.tasks.where().findAll();
+      final List<Task> tasks = (await isar.taskModels.where().findAll())
+          .map((TaskModel model) => model.toDomain())
+          .toList(growable: false);
       for (final Task task in tasks) {
         await syncTask(task);
       }
       final List<CalendarEvent> events =
-          await isar.calendarEvents.where().findAll();
+          (await isar.calendarEventModels.where().findAll())
+              .map((CalendarEventModel model) => model.toDomain())
+              .toList(growable: false);
       for (final CalendarEvent event in events) {
         await syncEvent(event);
       }

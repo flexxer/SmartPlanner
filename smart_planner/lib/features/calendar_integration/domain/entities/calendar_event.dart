@@ -1,55 +1,15 @@
-import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_sync_mapping.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/event_source.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_rule.dart';
 
-part 'calendar_event.g.dart';
-
-/// Local calendar event (Isar) with links to tasks and recurrence metadata.
-@collection
+/// Local calendar event with links to tasks and recurrence metadata.
+///
+/// Pure domain model — no Isar annotations. Persistence is handled by
+/// `CalendarEventModel` in the data layer.
 class CalendarEvent {
-  Id id = Isar.autoIncrement;
+  CalendarEvent({this.id = 0});
 
-  /// Stable identifier from the device calendar plugin ([device_calendar]).
-  @Index()
-  late String deviceEventId;
-
-  @Index(type: IndexType.value, caseSensitive: false)
-  late String title;
-
-  late DateTime start;
-  late DateTime end;
-
-  /// Context calendar id (Work, Personal, group calendar, etc.).
-  @Index()
-  late String calendarId;
-
-  int colorValue = 0xFF5C6BC0;
-
-  /// Future Google Calendar sync id.
-  String? googleEventId;
-
-  @Enumerated(EnumType.ordinal)
-  EventSource source = EventSource.local;
-
-  /// Last mutation time for sync conflict resolution.
-  DateTime? updatedAt;
-
-  /// JSON payload from [RecurrenceRule.toJsonString].
-  String? recurrenceRuleJson;
-
-  /// Local [Task.id] values linked to this event.
-  List<int> linkedTaskIds = <int>[];
-
-  /// Minutes before [start]; `null` = no reminder.
-  int? reminderMinutesBefore;
-
-  /// JSON map of device calendar id → device event id (outbound sync targets).
-  String? syncedDeviceEventIdsJson;
-
-  CalendarEvent();
-
-  /// User-created event stored only in Isar (MVP local meetings).
+  /// User-created event stored only locally (MVP local meetings).
   factory CalendarEvent.createLocal({
     required String title,
     required DateTime start,
@@ -103,32 +63,64 @@ class CalendarEvent {
     return event;
   }
 
+  /// Database id; `0` until persisted.
+  int id;
+
+  /// Stable identifier from the device calendar plugin.
+  String deviceEventId = '';
+
+  String title = '';
+
+  DateTime start = DateTime.now();
+
+  DateTime end = DateTime.now();
+
+  /// Context calendar id (Work, Personal, group calendar, etc.).
+  String calendarId = '';
+
+  int colorValue = 0xFF5C6BC0;
+
+  /// Future Google Calendar sync id.
+  String? googleEventId;
+
+  EventSource source = EventSource.local;
+
+  /// Last mutation time for sync conflict resolution.
+  DateTime? updatedAt;
+
+  /// JSON payload from [RecurrenceRule.toJsonString].
+  String? recurrenceRuleJson;
+
+  /// Local [Task.id] values linked to this event.
+  List<int> linkedTaskIds = <int>[];
+
+  /// Minutes before [start]; `null` = no reminder.
+  int? reminderMinutesBefore;
+
+  /// JSON map of device calendar id → device event id (outbound sync targets).
+  String? syncedDeviceEventIdsJson;
+
   /// Sets [updatedAt] to now. Call after in-memory field changes before persisting.
   void markUpdated() {
     updatedAt = DateTime.now();
   }
 
-  /// True when the row exists only in Isar (`local_` id or [EventSource.local]).
+  /// True when the row exists only locally (`local_` id or [EventSource.local]).
   bool get isLocalOnly =>
       source == EventSource.local || deviceEventId.startsWith('local_');
 
-  @ignore
   Map<String, String> get syncedDeviceEventIds =>
       CalendarEventSyncMapping.decode(syncedDeviceEventIdsJson);
 
-  @ignore
   set syncedDeviceEventIds(Map<String, String> mapping) {
     syncedDeviceEventIdsJson = CalendarEventSyncMapping.encode(mapping);
   }
 
-  @ignore
   List<String> get syncedCalendarIds =>
       CalendarEventSyncMapping.calendarIds(syncedDeviceEventIds);
 
-  @ignore
   bool get isSyncedToDevice => syncedDeviceEventIds.isNotEmpty;
 
-  @ignore
   RecurrenceRule? get recurrenceRule {
     final String? json = recurrenceRuleJson;
     if (json == null || json.isEmpty) {
@@ -137,7 +129,6 @@ class CalendarEvent {
     return RecurrenceRule.fromJsonString(json);
   }
 
-  @ignore
   set recurrenceRule(RecurrenceRule? rule) {
     recurrenceRuleJson = rule?.toJsonString();
   }

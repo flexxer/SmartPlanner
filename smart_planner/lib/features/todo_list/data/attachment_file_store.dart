@@ -56,14 +56,10 @@ class AttachmentFileStore {
 
   /// Picks any file and stores a copy under app documents.
   Future<StoredAttachmentFile?> pickAndStoreFile() async {
-    final FilePickerResult? result = await FilePicker.platform.pickFiles(
-      allowMultiple: false,
-      withData: false,
-    );
-    if (result == null || result.files.isEmpty) {
+    final PlatformFile? picked = await FilePicker.pickFile();
+    if (picked == null) {
       return null;
     }
-    final PlatformFile picked = result.files.single;
     final String? sourcePath = picked.path;
     if (sourcePath == null || sourcePath.isEmpty) {
       return null;

@@ -69,7 +69,7 @@ class ReminderDetailRow extends StatelessWidget {
                   ],
                 ),
               ),
-              if (showFireAt && notifyAt != null)
+              if (showFireAt)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(

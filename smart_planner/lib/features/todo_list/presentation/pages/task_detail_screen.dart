@@ -28,6 +28,8 @@ import 'package:smart_planner/features/todo_list/presentation/widgets/task_tile_
 import 'package:smart_planner/features/todo_list/presentation/widgets/task_detail_child_tasks_section.dart';
 import 'package:smart_planner/features/todo_list/domain/task_hierarchy.dart';
 import 'package:smart_planner/features/templates/data/repositories/ui_template_repository.dart';
+import 'package:smart_planner/features/templates/domain/entities/ui_template.dart';
+import 'package:smart_planner/core/result/result.dart';
 import 'package:smart_planner/features/templates/domain/ui_template_factory.dart';
 import 'package:smart_planner/features/notifications/presentation/widgets/reminder_detail_row.dart';
 
@@ -69,8 +71,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     final TodoRepository todoRepository = context.read<TodoRepository>();
     final TaskAttachmentRepository attachmentRepository =
         context.read<TaskAttachmentRepository>();
+    final CategoryTagService categoryTagService =
+        context.read<CategoryTagService>();
+    final PaymentRepository paymentRepository =
+        context.read<PaymentRepository>();
 
-    final Task? task = await todoRepository.getTaskById(widget.taskId);
+    final Task? task =
+        (await todoRepository.getTaskById(widget.taskId)).getOrElse((_) => null);
     if (!mounted) {
       return;
     }
@@ -79,10 +86,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       return;
     }
 
-    final List<TaskAttachment> attachments =
-        await attachmentRepository.getAttachmentsForTask(widget.taskId);
+    final List<TaskAttachment> attachments = (await attachmentRepository
+            .getAttachmentsForTask(widget.taskId))
+        .getOrElse((_) => <TaskAttachment>[]);
     final List<Task> allChildren =
-        await todoRepository.getAllChildTasks(widget.taskId);
+        (await todoRepository.getAllChildTasks(widget.taskId))
+            .getOrElse((_) => <Task>[]);
     allChildren.sort(TodoRepository.compareChildTasks);
 
     final List<Task> active = allChildren
@@ -92,13 +101,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         .where((Task t) => t.isCompleted)
         .toList(growable: false);
 
-    final List<Category> categories =
-        await context.read<CategoryTagService>().getTags(
-              entityType: TaggedEntityType.task,
-              entityId: widget.taskId,
-            );
+    final List<Category> categories = await categoryTagService.getTags(
+          entityType: TaggedEntityType.task,
+          entityId: widget.taskId,
+        );
     final List<Payment> payments =
-        await context.read<PaymentRepository>().getByTaskId(widget.taskId);
+        (await paymentRepository.getByTaskId(widget.taskId))
+            .getOrElse((_) => <Payment>[]);
 
     setState(() {
       _task = task;
@@ -181,7 +190,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       attachments: _attachments,
       titleOverride: title,
     );
-    await repository.save(template);
+    final Result<UiTemplate> result = await repository.save(template);
+    if (result.isFailure) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('common_error_generic'.tr())),
+        );
+      }
+      return;
+    }
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -214,9 +231,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   void _reorderAttachments(int oldIndex, int newIndex) {
-    if (newIndex > oldIndex) {
-      newIndex -= 1;
-    }
     final List<TaskAttachment> items = List<TaskAttachment>.from(_attachments);
     final TaskAttachment moved = items.removeAt(oldIndex);
     items.insert(newIndex, moved);
@@ -227,9 +241,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   void _reorderChildren(int oldIndex, int newIndex) {
-    if (newIndex > oldIndex) {
-      newIndex -= 1;
-    }
     final List<Task> items = List<Task>.from(_activeChildren);
     final Task moved = items.removeAt(oldIndex);
     items.insert(newIndex, moved);

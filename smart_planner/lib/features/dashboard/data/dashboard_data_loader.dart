@@ -67,26 +67,21 @@ class DashboardDataLoader {
       _deps.dayMarkersRepository.invalidate();
     }
 
-    final List<Object> parallel = await Future.wait<Object>(
-      <Future<Object>>[
-        _deps.todoRepository.getUncompletedTasksForDate(selectedDate),
-        _deps.todoRepository.getCompletedTasksForDate(selectedDate),
-        _loadOverdueTasks(selectedDate),
-        _deps.todoRepository.getUndatedTasks(),
-        _deps.dayMarkersRepository.loadForRange(
-          rangeStart: markerRange.start,
-          rangeEnd: markerRange.end,
-          calendarIds: calendarIds,
-        ),
-      ],
-    );
-
-    List<Task> tasks = parallel[0] as List<Task>;
-    List<Task> completedTasks = parallel[1] as List<Task>;
-    List<Task> overdueTasks = parallel[2] as List<Task>;
-    List<Task> undatedTasks = parallel[3] as List<Task>;
+    List<Task> tasks = (await _deps.todoRepository
+            .getUncompletedTasksForDate(selectedDate))
+        .getOrElse((_) => <Task>[]);
+    List<Task> completedTasks = (await _deps.todoRepository
+            .getCompletedTasksForDate(selectedDate))
+        .getOrElse((_) => <Task>[]);
+    List<Task> overdueTasks = await _loadOverdueTasks(selectedDate);
+    List<Task> undatedTasks = (await _deps.todoRepository.getUndatedTasks())
+        .getOrElse((_) => <Task>[]);
     final Map<int, DayActivityMarker> dayMarkers =
-        parallel[4] as Map<int, DayActivityMarker>;
+        await _deps.dayMarkersRepository.loadForRange(
+      rangeStart: markerRange.start,
+      rangeEnd: markerRange.end,
+      calendarIds: calendarIds,
+    );
 
     final List<Id> allTaskIds = parentTaskIdsFor(
       tasks,
@@ -136,9 +131,12 @@ class DashboardDataLoader {
       undatedTasks,
     );
     final Map<Id, ChildTasksBundle> childBundles =
-        await _deps.todoRepository.getChildTasksBundlesForParents(taskIds);
-    final Map<Id, List<TaskAttachment>> attachmentMap =
-        await _deps.attachmentRepository.getAttachmentsForTasks(taskIds);
+        (await _deps.todoRepository.getChildTasksBundlesForParents(taskIds))
+            .getOrElse((_) => <Id, ChildTasksBundle>{});
+    final Map<Id, List<TaskAttachment>> attachmentMap = (await _deps
+            .attachmentRepository
+            .getAttachmentsForTasks(taskIds))
+        .getOrElse((_) => <Id, List<TaskAttachment>>{});
 
     return DashboardTaskSnapshot(
       tasks: tasks,
@@ -159,7 +157,7 @@ class DashboardDataLoader {
     _deps.dayMarkersRepository.invalidate();
 
     final List<CalendarEvent> allStored =
-        await _deps.localCalendarEvents.getAll();
+        (await _deps.localCalendarEvents.getAll()).getOrElse((_) => <CalendarEvent>[]);
     List<CalendarEvent> visible = VisibleCalendarEventsMerger.fromStored(
       selectedDay: selectedDate,
       allStored: allStored,
@@ -224,7 +222,8 @@ class DashboardDataLoader {
     )) {
       return const <Task>[];
     }
-    return _deps.todoRepository.getOverdueUncompletedTasks();
+    return (await _deps.todoRepository.getOverdueUncompletedTasks())
+        .getOrElse((_) => <Task>[]);
   }
 
   Future<List<Id>> resolveSelectedCategoryIds(

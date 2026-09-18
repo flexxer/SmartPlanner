@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_occurrence.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_overlap_layout.dart';
 import 'package:smart_planner/features/calendar_integration/domain/calendar_event_time_utils.dart';

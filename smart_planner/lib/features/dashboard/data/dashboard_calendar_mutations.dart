@@ -18,12 +18,14 @@ class DashboardCalendarMutations {
     Id eventId, {
     bool thisInstanceOnly = false,
   }) async {
-    final CalendarEvent? event = await _deps.localCalendarEvents.getById(eventId);
+    final CalendarEvent? event =
+        (await _deps.localCalendarEvents.getById(eventId)).getOrElse((_) => null);
     if (event == null) {
       return null;
     }
-    final List<EventAttachment> attachments =
-        await _deps.eventAttachments.getAttachmentsForEvent(eventId);
+    final List<EventAttachment> attachments = (await _deps.eventAttachments
+            .getAttachmentsForEvent(eventId))
+        .getOrElse((_) => <EventAttachment>[]);
     final bool wasSynced = event.isSyncedToDevice;
     return DeletedCalendarEventSnapshot(
       event: calendarEventSnapshot(event),
@@ -38,7 +40,8 @@ class DashboardCalendarMutations {
     Id eventId, {
     bool thisInstanceOnly = false,
   }) async {
-    final CalendarEvent? event = await _deps.localCalendarEvents.getById(eventId);
+    final CalendarEvent? event =
+        (await _deps.localCalendarEvents.getById(eventId)).getOrElse((_) => null);
     if (event == null) {
       return;
     }

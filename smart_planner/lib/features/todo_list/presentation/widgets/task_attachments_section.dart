@@ -82,7 +82,7 @@ class TaskAttachmentsSection extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             buildDefaultDragHandles: false,
             itemCount: attachments.length,
-            onReorder: onReorder!,
+            onReorderItem: onReorder!,
             itemBuilder: (BuildContext context, int index) {
               final AttachmentRef attachment = attachments[index];
               return _ReorderableAttachmentRow(
@@ -245,7 +245,8 @@ class _AttachmentTile extends StatelessWidget {
     }
     final AttachmentTemplateRepository repository =
         context.read<AttachmentTemplateRepository>();
-    final int sortOrder = await repository.nextSortOrder();
+    final int sortOrder =
+        (await repository.nextSortOrder()).getOrElse((_) => 0);
     await repository.save(
       AttachmentTemplateFactory.fromAttachmentRef(
         attachment,

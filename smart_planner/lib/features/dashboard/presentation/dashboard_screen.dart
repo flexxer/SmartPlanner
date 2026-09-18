@@ -120,7 +120,6 @@ class DashboardScreen extends StatelessWidget {
               :final undatedTasks,
               :final calendarEvents,
               :final selectedDate,
-              :final selectedCalendarIds,
               :final selectedCategoryIds,
               :final categoriesByTaskId,
               :final calendarMessage,

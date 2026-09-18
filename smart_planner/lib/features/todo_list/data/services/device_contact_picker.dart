@@ -25,30 +25,29 @@ class DeviceContactPicker {
 
   /// Opens the native contact picker (Android/iOS).
   static Future<DeviceContactPickResult> pickSystem() async {
-    if (!await FlutterContacts.requestPermission(readonly: true)) {
-      return const DeviceContactPickResult(outcome: DeviceContactPickOutcome.failed);
-    }
-
-    final Contact? picked = await FlutterContacts.openExternalPick();
-    if (picked == null) {
-      return const DeviceContactPickResult(outcome: DeviceContactPickOutcome.cancelled);
-    }
-
-    Contact contact = picked;
-    if (picked.id.isNotEmpty) {
-      final Contact? full = await FlutterContacts.getContact(
-        picked.id,
-        withProperties: true,
-        withThumbnail: false,
+    final PermissionStatus status =
+        await FlutterContacts.permissions.request(PermissionType.read);
+    if (status != PermissionStatus.granted &&
+        status != PermissionStatus.limited) {
+      return const DeviceContactPickResult(
+        outcome: DeviceContactPickOutcome.failed,
       );
-      if (full != null) {
-        contact = full;
-      }
     }
 
-    final ContactAttachmentPayload? payload = _toPayload(contact);
+    final Contact? picked = await FlutterContacts.native.showPicker(
+      properties: {ContactProperty.phone, ContactProperty.email},
+    );
+    if (picked == null) {
+      return const DeviceContactPickResult(
+        outcome: DeviceContactPickOutcome.cancelled,
+      );
+    }
+
+    final ContactAttachmentPayload? payload = _toPayload(picked);
     if (payload == null) {
-      return const DeviceContactPickResult(outcome: DeviceContactPickOutcome.failed);
+      return const DeviceContactPickResult(
+        outcome: DeviceContactPickOutcome.failed,
+      );
     }
     return DeviceContactPickResult(
       outcome: DeviceContactPickOutcome.picked,
@@ -57,7 +56,7 @@ class DeviceContactPicker {
   }
 
   static ContactAttachmentPayload? _toPayload(Contact contact) {
-    final String displayName = contact.displayName.trim();
+    final String displayName = (contact.displayName ?? '').trim();
     final List<String> phones = contact.phones
         .map((Phone phone) => phone.number.trim())
         .where((String number) => number.isNotEmpty)

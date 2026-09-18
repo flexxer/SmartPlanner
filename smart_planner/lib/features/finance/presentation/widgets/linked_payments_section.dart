@@ -1,6 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:isar_community/isar.dart';
+import 'package:smart_planner/core/types/id.dart';
 import 'package:smart_planner/features/finance/domain/entities/payment.dart';
 import 'package:smart_planner/features/finance/presentation/widgets/payment_form_sheet.dart';
 import 'package:smart_planner/features/finance/presentation/widgets/payment_list_tile.dart';

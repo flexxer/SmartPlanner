@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar_community/isar.dart';
 import 'package:smart_planner/features/categories/data/category_repository_impl.dart';
-import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/data/category_tag_service.dart';
 import 'package:smart_planner/features/categories/domain/entities/category.dart';
 import 'package:smart_planner/features/categories/data/models/category_link_model.dart';
 import 'package:smart_planner/features/categories/domain/tagged_entity_type.dart';

@@ -7,6 +7,7 @@ part 'task_model.g.dart';
 
 /// Isar persistence model for [Task].
 @collection
+@Name('Task')
 class TaskModel {
   Id id = Isar.autoIncrement;
 

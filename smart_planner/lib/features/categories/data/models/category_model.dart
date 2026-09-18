@@ -6,6 +6,7 @@ part 'category_model.g.dart';
 
 /// Isar persistence model for [Category].
 @collection
+@Name('Category')
 class CategoryModel {
   Id id = Isar.autoIncrement;
 

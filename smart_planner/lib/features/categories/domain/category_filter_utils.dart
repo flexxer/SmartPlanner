@@ -1,4 +1,4 @@
-import 'package:isar_community/isar.dart';
+import 'package:smart_planner/core/types/id.dart';
 import 'package:smart_planner/features/categories/domain/entities/category.dart';
 
 /// Client-side category filter helpers (OR across selected tags).

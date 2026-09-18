@@ -7,6 +7,7 @@ part 'category_link_model.g.dart';
 
 /// Isar persistence model for [CategoryLink].
 @collection
+@Name('CategoryLink')
 class CategoryLinkModel {
   Id id = Isar.autoIncrement;
 

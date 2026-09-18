@@ -7,6 +7,7 @@ part 'event_attachment_model.g.dart';
 
 /// Isar persistence model for [EventAttachment].
 @collection
+@Name('EventAttachment')
 class EventAttachmentModel {
   Id id = Isar.autoIncrement;
 

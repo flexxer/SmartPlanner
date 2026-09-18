@@ -7,6 +7,7 @@ part 'attachment_template_model.g.dart';
 
 /// Isar persistence model for [AttachmentTemplate].
 @collection
+@Name('AttachmentTemplate')
 class AttachmentTemplateModel {
   Id id = Isar.autoIncrement;
 

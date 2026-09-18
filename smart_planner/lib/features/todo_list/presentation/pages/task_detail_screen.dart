@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:isar_community/isar.dart';
+import 'package:smart_planner/core/types/id.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
-import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/data/category_tag_service.dart';
 import 'package:smart_planner/features/categories/domain/entities/category.dart';
 import 'package:smart_planner/features/categories/domain/tagged_entity_type.dart';
 import 'package:smart_planner/features/finance/domain/entities/payment.dart';

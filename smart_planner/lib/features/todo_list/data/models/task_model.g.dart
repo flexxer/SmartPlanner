@@ -14,8 +14,8 @@ extension GetTaskModelCollection on Isar {
 }
 
 const TaskModelSchema = CollectionSchema(
-  name: r'TaskModel',
-  id: -1192054402460482572,
+  name: r'Task',
+  id: 2998003626758701373,
   properties: {
     r'calendarId': PropertySchema(
       id: 0,

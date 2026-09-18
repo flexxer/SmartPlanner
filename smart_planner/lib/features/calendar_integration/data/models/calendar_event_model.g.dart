@@ -15,8 +15,8 @@ extension GetCalendarEventModelCollection on Isar {
 }
 
 const CalendarEventModelSchema = CollectionSchema(
-  name: r'CalendarEventModel',
-  id: 15124112474898114,
+  name: r'CalendarEvent',
+  id: 2832606634183555054,
   properties: {
     r'calendarId': PropertySchema(
       id: 0,

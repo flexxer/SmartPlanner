@@ -8,6 +8,7 @@ part 'payment_model.g.dart';
 
 /// Isar persistence model for [Payment].
 @collection
+@Name('Payment')
 class PaymentModel {
   Id id = Isar.autoIncrement;
 

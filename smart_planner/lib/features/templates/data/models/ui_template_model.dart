@@ -7,6 +7,7 @@ part 'ui_template_model.g.dart';
 /// Isar persistence model for [UiTemplate]. Keeps all Isar metadata out of the
 /// domain layer.
 @collection
+@Name('UiTemplate')
 class UiTemplateModel {
   Id id = Isar.autoIncrement;
 

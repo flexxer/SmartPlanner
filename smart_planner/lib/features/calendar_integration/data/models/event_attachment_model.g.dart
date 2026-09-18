@@ -15,8 +15,8 @@ extension GetEventAttachmentModelCollection on Isar {
 }
 
 const EventAttachmentModelSchema = CollectionSchema(
-  name: r'EventAttachmentModel',
-  id: 3122572343595492269,
+  name: r'EventAttachment',
+  id: 8505899059161281201,
   properties: {
     r'createdAt': PropertySchema(
       id: 0,

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:isar_community/isar.dart';
+import 'package:smart_planner/core/types/id.dart';
 import 'package:smart_planner/core/app_initializer.dart';
 import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/data/calendar_preferences_repository.dart';
@@ -12,7 +12,7 @@ import 'package:smart_planner/features/calendar_integration/data/repositories/lo
 import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/task_event_link_service.dart';
 import 'package:smart_planner/features/categories/data/category_preferences_repository.dart';
-import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/data/category_tag_service.dart';
 import 'package:smart_planner/features/dashboard/data/dashboard_calendar_mutations.dart';
 import 'package:smart_planner/features/dashboard/data/dashboard_data_loader.dart';
 import 'package:smart_planner/features/dashboard/data/dashboard_dependencies.dart';

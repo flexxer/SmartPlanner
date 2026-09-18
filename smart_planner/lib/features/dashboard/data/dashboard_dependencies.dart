@@ -5,7 +5,7 @@ import 'package:smart_planner/features/calendar_integration/data/repositories/lo
 import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/task_event_link_service.dart';
 import 'package:smart_planner/features/categories/data/category_preferences_repository.dart';
-import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/data/category_tag_service.dart';
 import 'package:smart_planner/features/dashboard/data/dashboard_day_markers_repository.dart';
 import 'package:smart_planner/features/notifications/data/day_status_home_widget_service.dart';
 import 'package:smart_planner/features/notifications/data/day_status_notification_controller.dart';

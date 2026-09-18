@@ -1,4 +1,5 @@
 import 'package:isar_community/isar.dart';
+
 import 'package:smart_planner/core/database/isar_database.dart';
 import 'package:smart_planner/features/categories/data/category_repository_impl.dart';
 import 'package:smart_planner/features/categories/data/models/category_link_model.dart';

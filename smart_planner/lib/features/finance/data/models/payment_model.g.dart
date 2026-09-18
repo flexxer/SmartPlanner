@@ -14,8 +14,8 @@ extension GetPaymentModelCollection on Isar {
 }
 
 const PaymentModelSchema = CollectionSchema(
-  name: r'PaymentModel',
-  id: -5459064031591241697,
+  name: r'Payment',
+  id: -6533700744042574122,
   properties: {
     r'amountMinor': PropertySchema(
       id: 0,

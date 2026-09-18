@@ -3,7 +3,7 @@ import 'package:smart_planner/core/database/isar_database.dart';
 import 'package:smart_planner/features/calendar_integration/data/models/calendar_event_model.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/calendar_event.dart';
 import 'package:smart_planner/features/categories/domain/category_filter_utils.dart';
-import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/data/category_tag_service.dart';
 import 'package:smart_planner/features/categories/domain/tagged_entity_type.dart';
 import 'package:smart_planner/features/search/domain/search_result_item.dart';
 import 'package:smart_planner/features/todo_list/data/models/task_model.dart';

@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:isar_community/isar.dart';
+import 'package:smart_planner/core/types/id.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/presentation/widgets/confirm_delete_record.dart';
 import 'package:smart_planner/core/presentation/widgets/form_sheet_scaffold.dart';
@@ -9,7 +9,7 @@ import 'package:smart_planner/core/utils/app_date_utils.dart';
 import 'package:smart_planner/features/calendar_integration/data/task_event_link_service.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_frequency.dart';
 import 'package:smart_planner/features/calendar_integration/domain/entities/recurrence_rule.dart';
-import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/data/category_tag_service.dart';
 import 'package:smart_planner/features/categories/domain/tagged_entity_type.dart';
 import 'package:smart_planner/features/categories/presentation/widgets/category_tags_field.dart';
 import 'package:smart_planner/features/dashboard/presentation/bloc/dashboard_bloc.dart';

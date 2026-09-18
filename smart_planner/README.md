@@ -56,21 +56,21 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
   - **Checklist** — inline checkboxes on detail; optional **Move completed items to the end** in attachment settings (default on); slide animation when toggling
 
-  - **Attachment templates** (user-defined): quick-add chips in `AddAttachmentSheet`; manage under **Library** → Attachments tab (rename from Templates planned)
+  - **Attachment templates** (user-defined): quick-add chips in `AddAttachmentSheet`; manage under **Library** → Attachments tab
 
   - Tap attachment → action sheet: **Open / View**, **Edit** (`AddAttachmentSheet`), **Delete** (SnackBar Undo), **Save as template**
 
 - **Completion animations** — shared `SlidingCompletionList` (checklists, event linked tasks) and `CollapsingCompletionTile` (child subtasks); dashboard toggles via BLoC with stable per-task keys
 
-- **Library hub** (rename from `TemplatesPage` planned): tabs **Tasks** (UI blueprints), **Attachments** (presets), **Categories** (planned — user tag CRUD, empty on first launch)
+- **Library hub**: tabs **Tasks** (UI blueprints), **Attachments** (presets), **Categories** (user tag CRUD, empty on first launch)
 
-- **Finance** (planned): separate screen from dashboard AppBar; income/expense payments; checkbox status; default currency in Settings + per-payment currency on form
+- **Finance**: separate screen from dashboard AppBar; income/expense payments; checkbox status; default currency in Settings + per-payment currency on form
 
-- **Categories** (planned): optional multi-tag on tasks, events, payments; distinct from `Task.calendarId` (device context)
+- **Categories**: optional multi-tag on tasks, events, payments; distinct from `Task.calendarId` (device context)
 
 - **Create / edit / delete** tasks and local events via **`TaskFormSheet`** / **`EventFormSheet`** (event create: optional outbound calendar sync; all-day, cross-midnight)
 
-- **AppBar:** search, time grid, **Finance** (planned), **Library** (templates hub), **settings** (language, theme, reminders, digests, midnight roll, device calendars, **default currency** planned), refresh
+- **AppBar:** search, time grid, **Finance**, **Library** hub, **settings** (language, theme, reminders, digests, midnight roll, device calendars, **default currency**), refresh
 
 - **Device calendar** — local-first Isar; **manual outbound sync** only (`EventCalendarSyncService`); settings calendars = sync picker pool
 
@@ -92,7 +92,7 @@ Repository docs (English): [`../PRD_PRODUCT_SPEC.md`](../PRD_PRODUCT_SPEC.md), [
 
 Calendar **events** and **tasks** are stored locally in Isar. Events sync **out** to device calendars only when the user chooses. Not Google Tasks API.
 
-**Planned:** user **categories** (multi-tag), **payments** / **Finance** screen — see PRD §3.4–§3.5.
+**Implemented:** user **categories** (multi-tag), **payments** / **Finance** screen — see PRD §3.4–§3.5.
 
 
 
@@ -171,9 +171,9 @@ Includes: `task_date_visibility_test`, `task_overdue_rules_test`, `task_overdue_
 
 | `lib/features/calendar_integration/` | Device calendar, local events, `EventDetailScreen`, `EventFormSheet`, `CalendarSettingsPage` |
 
-| `lib/features/templates/` | UI task templates (save/apply); hub UI → rename to **Library** |
-| `lib/features/categories/` | (planned) User-defined tags |
-| `lib/features/finance/` | (planned) Payments / cashflow |
+| `lib/features/templates/` | UI task templates (save/apply); **Library** hub |
+| `lib/features/categories/` | User-defined tags + `CategoryLink` |
+| `lib/features/finance/` | Payments / cashflow |
 
 | `lib/features/deep_links/` | `daylinx://` parsing and routing to create sheets |
 | `lib/features/notifications/` | Local notifications, Workmanager stub, Android day-status foreground service |

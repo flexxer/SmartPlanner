@@ -14,8 +14,8 @@ extension GetUiTemplateModelCollection on Isar {
 }
 
 const UiTemplateModelSchema = CollectionSchema(
-  name: r'UiTemplateModel',
-  id: 5435881659248016592,
+  name: r'UiTemplate',
+  id: -4584535413842022981,
   properties: {
     r'checklistItems': PropertySchema(
       id: 0,

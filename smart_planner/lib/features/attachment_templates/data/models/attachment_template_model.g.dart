@@ -15,8 +15,8 @@ extension GetAttachmentTemplateModelCollection on Isar {
 }
 
 const AttachmentTemplateModelSchema = CollectionSchema(
-  name: r'AttachmentTemplateModel',
-  id: -5770099453010689445,
+  name: r'AttachmentTemplate',
+  id: -6355826260664452463,
   properties: {
     r'payloadJson': PropertySchema(
       id: 0,

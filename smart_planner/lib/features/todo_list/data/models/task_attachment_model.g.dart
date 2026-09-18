@@ -15,8 +15,8 @@ extension GetTaskAttachmentModelCollection on Isar {
 }
 
 const TaskAttachmentModelSchema = CollectionSchema(
-  name: r'TaskAttachmentModel',
-  id: 1950994286389761982,
+  name: r'TaskAttachment',
+  id: 1889394230543563079,
   properties: {
     r'createdAt': PropertySchema(
       id: 0,

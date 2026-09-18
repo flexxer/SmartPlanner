@@ -47,7 +47,7 @@ smart_planner/lib/
 │   │   ├── sliding_completion_list.dart      # Slide-to-end + strikethrough for checkbox lists
 │   │   └── collapsing_completion_tile.dart   # Collapse animation for variable-height rows
 │   ├── timezone/timezone_monitor.dart # Detect TZ change → reschedule reminders
-│   ├── finance/                       # (planned) shared finance prefs
+│   ├── finance/                       # shared finance prefs
 │   │   └── currency_preferences_repository.dart
 │   └── utils/app_date_utils.dart      # startOfDay, startOfWeek, dayKeyMs, strip ranges
 │
@@ -155,25 +155,25 @@ smart_planner/lib/
 │   │   ├── data/repositories/ui_template_repository.dart
 │   │   ├── domain/                            # UiTemplate, factory, applicator
 │   │   └── presentation/
-│   │       ├── pages/templates_page.dart      # Tabbed hub → rename to library_page.dart
+│   │       ├── pages/library_page.dart       # Tabbed hub: Tasks | Attachments | Categories
 │   │       ├── widgets/task_templates_tab.dart, template_form_sheet.dart, template_picker_sheet.dart
 │   │
-│   ├── categories/                        # (planned) user-defined tags
+│   ├── categories/                        # user-defined tags
 │   │   ├── domain/
 │   │   │   ├── entities/category.dart
 │   │   │   ├── entities/category_link.dart
 │   │   │   ├── tagged_entity_type.dart      # task | calendarEvent | payment
-│   │   │   ├── repositories/category_repository.dart
-│   │   │   └── category_tag_service.dart      # setTags / getTags / copyFromEntity
+│   │   │   └── repositories/category_repository.dart
 │   │   ├── data/
-│   │   │   └── category_repository_impl.dart
+│   │   │   ├── category_repository_impl.dart
+│   │   │   └── category_tag_service.dart      # setTags / getTags / copyFromEntity
 │   │   └── presentation/
 │   │       ├── widgets/category_tags_field.dart
 │   │       ├── widgets/category_badges_row.dart
 │   │       ├── widgets/category_form_sheet.dart
 │   │       └── tabs/categories_tab.dart     # Library tab 3
 │   │
-│   ├── finance/                           # (planned) payments / cashflow
+│   ├── finance/                           # payments / cashflow
 │   │   ├── domain/
 │   │   │   ├── entities/payment.dart
 │   │   │   ├── money.dart                   # amountMinor + currencyCode
@@ -338,16 +338,16 @@ Each feature splits **pure domain** from **Isar persistence**:
 | `SyncAccount` / `SyncRecord` | Future cloud sync; extend `SyncEntityType` with `category`, `categoryLink`, `payment` |
 | `SyncRecordRepository` | CRUD + `markSynced` / `setPendingOp` for outbox pattern |
 | `DayActivityMarker` | `hasCalendarEvents`, `hasLocalTasks`, optional calendar color |
-| `DashboardScreen` AppBar | Search; time grid; **Finance** (planned); **Library** (templates hub → rename); settings; refresh |
-| `LibraryPage` (planned rename from `TemplatesPage`) | Tabs: task templates, attachment templates, **categories** |
-| `Category` / `CategoryLink` | (planned) User tags; many-to-many via junction; empty category list on first launch |
-| `CategoryTagService` | (planned) setTags / getTags / copyFromEntity for task, event, payment |
-| `CategoryFormSheet` | (planned) Create/edit category (name, color); used from Categories tab FAB |
-| `CategoryTagsField` | (planned) Shared multi-select chips in forms |
-| `Payment` | (planned) Income/expense row; `amountMinor` + `currencyCode`; optional `linkedTaskId` + `linkedEventId` (both allowed) |
-| `FinanceScreen` | (planned) Payment list, checkbox status, monthly summary; opened from dashboard AppBar |
-| `CurrencyPreferencesRepository` | (planned) Default ISO 4217 code; Settings → Finance section |
-| `PaymentFormSheet` | (planned) Amount, currency picker (default from settings), direction, links, tags |
+| `DashboardScreen` AppBar | Search; time grid; **Finance**; **Library**; settings; refresh |
+| `LibraryPage` | Tabs: task templates, attachment templates, **categories** |
+| `Category` / `CategoryLink` | User tags; many-to-many via junction; empty category list on first launch |
+| `CategoryTagService` | setTags / getTags / copyFromEntity for task, event, payment |
+| `CategoryFormSheet` | Create/edit category (name, color); used from Categories tab FAB |
+| `CategoryTagsField` | Shared multi-select chips in forms |
+| `Payment` | Income/expense row; `amountMinor` + `currencyCode`; optional `linkedTaskId` + `linkedEventId` (both allowed) |
+| `FinanceScreen` | Payment list, checkbox status, monthly summary; opened from dashboard AppBar |
+| `CurrencyPreferencesRepository` | Default ISO 4217 code; Settings → Finance section |
+| `PaymentFormSheet` | Amount, currency picker (default from settings), direction, links, tags |
 | `TodoRepository` | Task CRUD; `getUncompletedTasksForDate`, `getUndatedTasks`, `getCompletedTasksForDate`, `getOverdueUncompletedTasks`, `deleteTask`, `reopenFromCompleted`, `reorderChildTasks`, `compareChildTasks` (`Task.sortOrder`) |
 | `TaskDateVisibility` | Dated tasks per day; undated tasks in dashboard backlog section only |
 | `LinkedCalendarsLoader` | Device calendars enabled in settings (sync picker pool) |
@@ -567,7 +567,7 @@ Domain unit tests: `task_date_visibility_test.dart`, `task_overdue_rules_test.da
 
 ---
 
-## Categories & Finance (planned schema)
+## Categories & Finance (implemented schema)
 
 ### Category + CategoryLink
 
@@ -590,7 +590,7 @@ Domain unit tests: `task_date_visibility_test.dart`, `task_overdue_rules_test.da
 - **Library:** rename `TemplatesPage` → `LibraryPage`; tabs Tasks | Attachments | **Categories**.
 - **Settings:** add **Finance** section with default currency dropdown.
 
-Implementation phases: **PRD §7** (P0–P6).
+Implementation phases: **PRD §7** (P0–P5 implemented; **P6** dashboard/search category filters pending).
 
 ---
 
@@ -603,7 +603,7 @@ When starting code generation in Cursor/Claude:
 3. Prefer extending existing services (`CategoryTagService`, `PaymentRepository`, `LocalCalendarEventRepository`, `TodoRepository`) over duplicate logic.
 4. Reuse `FormSheetScaffold`, `CategoryTagsField`, `TaskExpandableTile`, `TaskDetailScreen`, `EventDetailScreen`, `AppDateUtils`, `L10n` where applicable.
 5. New UI strings: add keys to `en.json`, `ru.json`, `es.json`; use `.tr()` — no hardcoded copy in widgets.
-6. Next feature work: **Categories + Finance** per PRD §3.4–§3.5 and §7 unless the user specifies otherwise.
+6. Next feature work: **P6 dashboard/search category filters** (PRD §7), post-MVP finance (budgets, export), or the user-specified task. Categories and Finance CRUD are already implemented (§3.4–§3.5).
 
 Example prompt:
 

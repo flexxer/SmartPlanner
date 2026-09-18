@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:isar_community/isar.dart';
+import 'package:smart_planner/core/types/id.dart';
 import 'package:smart_planner/core/localization/l10n.dart';
 import 'package:smart_planner/core/theme/app_theme.dart';
 import 'package:smart_planner/features/finance/domain/entities/payment.dart';

@@ -7,6 +7,7 @@ part 'calendar_event_model.g.dart';
 
 /// Isar persistence model for [CalendarEvent].
 @collection
+@Name('CalendarEvent')
 class CalendarEventModel {
   Id id = Isar.autoIncrement;
 

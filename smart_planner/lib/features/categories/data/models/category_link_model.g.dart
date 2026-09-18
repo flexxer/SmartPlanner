@@ -14,8 +14,8 @@ extension GetCategoryLinkModelCollection on Isar {
 }
 
 const CategoryLinkModelSchema = CollectionSchema(
-  name: r'CategoryLinkModel',
-  id: 6568219092628340166,
+  name: r'CategoryLink',
+  id: -3577824777422675610,
   properties: {
     r'categoryId': PropertySchema(
       id: 0,

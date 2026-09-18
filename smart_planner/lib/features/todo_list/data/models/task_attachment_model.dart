@@ -7,6 +7,7 @@ part 'task_attachment_model.g.dart';
 
 /// Isar persistence model for [TaskAttachment].
 @collection
+@Name('TaskAttachment')
 class TaskAttachmentModel {
   Id id = Isar.autoIncrement;
 

@@ -9,7 +9,7 @@ import 'package:smart_planner/features/calendar_integration/data/repositories/lo
 import 'package:smart_planner/features/calendar_integration/data/services/calendar_service.dart';
 import 'package:smart_planner/features/calendar_integration/data/task_event_link_service.dart';
 import 'package:smart_planner/features/categories/data/category_repository_impl.dart';
-import 'package:smart_planner/features/categories/domain/category_tag_service.dart';
+import 'package:smart_planner/features/categories/data/category_tag_service.dart';
 import 'package:smart_planner/features/categories/domain/repositories/category_repository.dart';
 import 'package:smart_planner/features/dashboard/data/dashboard_day_markers_repository.dart';
 import 'package:smart_planner/features/deep_links/data/deep_link_service.dart';
